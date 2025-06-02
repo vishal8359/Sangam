@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+/* @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap'); */
+
+*{
+  font-family: "Outfit", sans-serif;
+}
+
+:root {
+  --color-primary: #000000;
+  --color-primary-dull: #000000;
+  --color-secondary: #FFFFFF;
+  --color-accent-blue: #2978FF;
+  --color-accent-gray: #888888;
+  --color-hover-bg: #E0E0E0;
+  --color-bg-light: #FFFFFF;
+  --color-bg-dark: #121212;
+}
+
+/* Dark mode */
+.dark {
+  --color-bg-light: #121212;
+  --color-primary-white: #FFFFFF;
+  --color-primary-black: #FFFFFF; /* text in dark mode */
+}
+
+.color-primary {
+  color: var(--color-primary);
+}
+.color-primary-dull{
+    color: var(--color-primary-dull);
+}
+.color-accent{
+    color: var(--color-accent);
+}
+.no-scrollbar::-webkit-scrollbar{
+  display: none;
+}
+
+/* Add to your main CSS or index.css */
+
+.title {
+  color: var(--color-primary); /* your primary color in light mode */
+  font-weight: bold;
+  transition: color 0.3s ease;
+}
+
+.dark .title {
+  color: var(--color-primary-dull); /* lighter or dull color for dark mode */
+}
+
+.logo {
+  fill: var(--color-primary); /* for SVG logo */
+  transition: fill 0.3s ease;
+}
+
+/* For dark mode, invert or change fill */
+.dark .logo {
+  fill: var(--color-primary-dull);
+}

@@ -2,7 +2,7 @@ import '@fontsource/pacifico';
 
 const SangamLogo = () => (
   <svg
-    width="250"
+    width="200"
     height="42"
     viewBox="0 0 200 80"
     fill="none"

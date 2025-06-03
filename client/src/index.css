@@ -7,14 +7,8 @@
 }
 
 :root {
-  --color-primary: #000000;
-  --color-primary-dull: #000000;
-  --color-secondary: #FFFFFF;
-  --color-accent-blue: #2978FF;
-  --color-accent-gray: #888888;
-  --color-hover-bg: #E0E0E0;
-  --color-bg-light: #FFFFFF;
-  --color-bg-dark: #121212;
+  --color-primary: #3F51B5;
+  --color-primary-dull: #5C6BC0;
 }
 
 /* Dark mode */

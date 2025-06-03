@@ -3,6 +3,7 @@ import { Route, Routes, useLocation } from 'react-router-dom'
 import Home from './pages/Home'
 import Navbar from './components/navbar'
 import { Toaster } from 'react-hot-toast';
+import MySociety from './pages/MySociety';
 
 
 const App = () => {
@@ -17,7 +18,7 @@ const App = () => {
 
         <div>
           <Routes>
-            <Route path='/' element ={<Home/>}/>
+            
           </Routes>
         </div>
       </div>

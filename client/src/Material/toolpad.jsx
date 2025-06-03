@@ -1,5 +1,7 @@
 import * as React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { createTheme, styled } from '@mui/material/styles';
+import Box from '@mui/material/Box';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import BarChartIcon from '@mui/icons-material/BarChart';
@@ -26,49 +28,29 @@ import Diversity3Icon from '@mui/icons-material/Diversity3';
 import SocietyLogo from './logo';
 import Switch from '@mui/material/Switch';
 import SangamLogo from './sangamLogo';
-
+import MySociety from '../pages/MySociety';
+import Typography from '@mui/material/Typography';
+import WhiteBox from './box';
 import appLogo from '../assets/appLogo.png'
+
 
 const NAVIGATION = [
   {
     kind: 'header',
     title: 'Dashboard',
   },
-  {
+  { 
     segment: 'home',
     title: 'My society',
-    icon: < HomeIcon />,
+    icon: <HomeIcon />,
+    path: '/my-society',
     children: [
-      {
-        segment: 'chats',
-        title: 'Chats',
-        icon: <ForumIcon />,
-      },
-      {
-        segment: 'polls',
-        title: 'Polls',
-        icon: <PollIcon />,
-      },
-      {
-        segment: 'ads',
-        title: 'New products',
-        icon: <LocalOfferIcon />,
-      },
-      {
-        segment: 'complains',
-        title: 'Complains',
-        icon: <ReportProblemIcon />,
-      },
-      {
-        segment: 'events',
-        title: 'Events',
-        icon: <EventIcon />,
-      },
-      {
-        segment: 'notices',
-        title: 'Notices',
-        icon: <CampaignIcon />,
-      },
+      { segment: 'chats', title: 'Chats', icon: <ForumIcon />, path: '/my-society/chats' },
+      { segment: 'polls', title: 'Polls', icon: <PollIcon />, path: '/my-society/polls' },
+      { segment: 'ads', title: 'New products', icon: <LocalOfferIcon />, path: '/my-society/ads' },
+      { segment: 'complains', title: 'Complains', icon: <ReportProblemIcon />, path: '/my-society/complains' },
+      { segment: 'events', title: 'Events', icon: <EventIcon />, path: '/my-society/events' },
+      { segment: 'notices', title: 'Notices', icon: <CampaignIcon />, path: '/my-society/notices' },
     ],
   },
   {
@@ -127,32 +109,39 @@ const NAVIGATION = [
   },
 ];
 
-const Skeleton = styled('div')(({ theme, height }) => ({
-  backgroundColor: theme.palette.action.hover,
-  borderRadius: theme.shape.borderRadius,
-  height,
-  content: '" "',
-}));
 
-function useDemoRouter(initialPath) {
-  const [pathname, setPathname] = React.useState(initialPath);
-
-  const router = React.useMemo(() => {
+function useDemoRouter(initialPath = '/') {
+  const [location, setLocation] = React.useState(() => {
+    const url = new URL(`http://localhost${initialPath}`);
     return {
-      pathname,
-      searchParams: new URLSearchParams(),
-      navigate: (path) => setPathname(String(path)),
+      pathname: url.pathname,
+      searchParams: new URLSearchParams(url.search),
     };
-  }, [pathname]);
+  });
 
-  return router;
+  const navigate = React.useCallback((path) => {
+    const url = new URL(`http://localhost${path}`);
+    setLocation({
+      pathname: url.pathname,
+      searchParams: new URLSearchParams(url.search),
+    });
+  }, []);
+
+  return React.useMemo(() => ({
+    pathname: location.pathname,
+    searchParams: location.searchParams,
+    navigate,
+  }), [location, navigate]);
 }
+
+
 
 export default function DashboardLayoutBasic(props) {
   const { window } = props;
-  const [mode, setMode] = React.useState('light');
+  const [mode, setMode] = React.useState(() => window?.localStorage.getItem('theme') || 'light');
 
-  const router = useDemoRouter('/dashboard');
+
+  const router = useDemoRouter('/my-society');
   const demoWindow = window ? window() : undefined;
 
   const demoTheme = React.useMemo(
@@ -164,7 +153,7 @@ export default function DashboardLayoutBasic(props) {
         palette: {
           mode,
           primary: {
-            main: '#3F51B5',
+            main: '#6B21A8',
             dark: '#5C6BC0',
           },
           text: {
@@ -191,7 +180,7 @@ export default function DashboardLayoutBasic(props) {
               root: {
                 '&:hover': {
                   backgroundColor: 'transparent',
-                  color: '#A271F7',
+                  color: '#5C6BC0',
                 },
               },
             },
@@ -215,15 +204,91 @@ export default function DashboardLayoutBasic(props) {
       }),
     [mode]
   );
+  function renderPage(pathname) {
+    switch (pathname) {
+      case '/':
+        return <MySociety/>
+      case '/my-society':
+        return <MySociety />;
+      case '/my-society/chats':
+        return <ChatsPage />;
+      case '/my-society/polls':
+        return <PollsPage />;
+      // ... add other cases
+      default:
+        return <div>Page Not Found</div>;
+    }
+  }
 
   const toggleMode = () => setMode((prev) => (prev === 'light' ? 'dark' : 'light'));
 
+  const goToMySociety = () => {
+    router.push('/my-society')
+  }
+
+// Create a custom moon-style switch
+  const MoonSwitch = styled(Switch)(({ theme }) => ({
+    width: 60,
+    height: 34,
+    padding: 8,
+    '& .MuiSwitch-switchBase': {
+      margin: 2,
+      padding: 0,
+      transform: 'translateX(5px)',
+      '&.Mui-checked': {
+        transform: 'translateX(22px)',
+        color: '#fff',
+        '& + .MuiSwitch-track': {
+          backgroundColor: theme.palette.primary.main,
+
+          opacity: 1,
+          border: 0,
+        },
+      },
+    },
+    '& .MuiSwitch-thumb': {
+      backgroundColor: '#fff',
+      width: 28,
+      height: 28,
+      borderRadius: '50%',
+      boxShadow: 'inset -2px -2px 4px rgba(0,0,0,0.2)',
+      position: 'relative',
+      '&:before': {
+        content: '"☀️"',
+        position: 'absolute',
+        width: '100%',
+        height: '100%',
+        left: 0,
+        top: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: 18,
+      },
+    },
+    '& .MuiSwitch-switchBase.Mui-checked .MuiSwitch-thumb:before': {
+      content: '"🌙"',
+    },
+
+    '& .MuiSwitch-track': {
+      borderRadius: 20 / 2,
+      backgroundColor: '#ccc',
+      opacity: 1,
+      transition: theme.transitions.create(['background-color'], {
+        duration: 500,
+      }),
+    },
+  }));
+
+
   return (
+    
     <AppProvider
       navigation={NAVIGATION}
       router={router}
       theme={demoTheme}
       window={demoWindow}
+      
       branding={{
       title: (
         <span className='mt-1.5'>
@@ -231,53 +296,30 @@ export default function DashboardLayoutBasic(props) {
         </span>
       ),
       logo: (
-        <div style={{ maxWidth: 200 }}>
+        <div style={{ maxWidth: 200, cursor: 'pointer' }}
+        onClick={goToMySociety}>
           <img src={appLogo} alt="App Logo" style={{ width: '100%', height: '100%', marginLeft: 15}} />
         </div>
       ),
-
+      
       }}
+      
     >
+
       {/* Theme toggle switch fixed top-right */}
-      <div style={{ position: 'absolute', top: 16, right: 30, zIndex: 1500}}>
-        <Switch checked={mode === 'dark'} onChange={toggleMode} />
+      
+      <div style={{ position: 'absolute', top: 10, right: 8, zIndex: 1500 }}>
+        <MoonSwitch checked={mode === 'dark'} onChange={toggleMode} />
       </div>
 
+
       <DashboardLayout>
-        <PageContainer>
-          <Grid container spacing={1}>
-            <Grid item xs={5} />
-            <Grid item xs={12}>
-              <Skeleton height={14} />
-            </Grid>
-            <Grid item xs={12}>
-              <Skeleton height={14} />
-            </Grid>
-            <Grid item xs={4}>
-              <Skeleton height={100} />
-            </Grid>
-            <Grid item xs={8}>
-              <Skeleton height={100} />
-            </Grid>
-            <Grid item xs={12}>
-              <Skeleton height={150} />
-            </Grid>
-            <Grid item xs={12}>
-              <Skeleton height={14} />
-            </Grid>
-            <Grid item xs={3}>
-              <Skeleton height={100} />
-            </Grid>
-            <Grid item xs={3}>
-              <Skeleton height={100} />
-            </Grid>
-            <Grid item xs={3}>
-              <Skeleton height={100} />
-            </Grid>
-            <Grid item xs={3}>
-              <Skeleton height={100} />
-            </Grid>
-          </Grid>
+        <PageContainer sx={{
+          padding: 0,
+          margin: 0,
+        }}>
+          {router.pathname ? renderPage(router.pathname) : <div>Loading...</div>}
+
         </PageContainer>
       </DashboardLayout>
     </AppProvider>

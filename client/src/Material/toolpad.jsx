@@ -167,8 +167,9 @@ export default function DashboardLayoutBasic(props) {
         components: {
           MuiAppBar: {
             styleOverrides: {
+              
               root: {
-                backgroundColor: mode === 'light' ? '#e8e8e8' : '#000000',
+                backgroundColor: mode === 'light' ? '#e8e8e8' : '#121212',
                 color: mode === 'light' ? '#E5E5E5' : '#fff',
                 boxShadow: 'none',
                 borderBottom: mode === 'light' ? '1px solid #ccc' : '1px solid #333',
@@ -178,9 +179,15 @@ export default function DashboardLayoutBasic(props) {
           MuiListItemButton: {
             styleOverrides: {
               root: {
+                // backgroundColor: mode === 'light' ? 'transparent' : 'White',
+                margin: '2px',
+                color: mode === 'light' ? 'black' : 'white', 
                 '&:hover': {
-                  backgroundColor: 'transparent',
-                  color: '#5C6BC0',
+                  backgroundColor: mode === 'light' ? '#B0B0B0' : 'White',
+                  color: 'black',
+                  '& .MuiListItemIcon-root, & .MuiSvgIcon-root': {
+                  color: 'black',
+                  },
                 },
               },
             },
@@ -189,14 +196,14 @@ export default function DashboardLayoutBasic(props) {
             styleOverrides: {
               primary: {
                 color: 'var(--mui-palette-text-primary)',
-                fontWeight: 700,
+                fontWeight: 100,
               },
             },
           },
           MuiListItemIcon: {
             styleOverrides: {
               root: {
-                color: '#D8B4FE',
+                color: 'black',
               },
             },
           },

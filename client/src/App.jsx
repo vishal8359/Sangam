@@ -4,6 +4,7 @@ import Home from './pages/Home'
 import Navbar from './components/navbar'
 import { Toaster } from 'react-hot-toast';
 import MySociety from './pages/MySociety';
+import ChatsPage from './pages/Chats';
 
 
 const App = () => {
@@ -18,7 +19,7 @@ const App = () => {
 
         <div>
           <Routes>
-            
+            <Route path='/my-society/chats' element={<ChatsPage/>}/>
           </Routes>
         </div>
       </div>

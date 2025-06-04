@@ -52,3 +52,6 @@
 .dark .logo {
   fill: var(--color-primary-dull);
 }
+div[data-toolpad-header="true"] {
+  display: none !important;
+}

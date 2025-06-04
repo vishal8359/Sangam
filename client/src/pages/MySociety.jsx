@@ -2,6 +2,8 @@ import React from 'react';
 import { society } from '../assets/local.js';
 import societyBg from '../assets/societyBg.jpg';
 import MySocietyImg from '../assets/mySocietyImg.jpg';
+import HomeIcon from '@mui/icons-material/Home';
+import society_icon from '../assets/society_icon.png'
 const MySociety = () => {
 
   return (
@@ -28,7 +30,11 @@ const MySociety = () => {
         className="relative max-w-3xl w-full mx-auto p-15 bg-white bg-opacity-90 rounded-2xl shadow-xl"
         style={{ zIndex: 1 }}
       >
-        <h1 className="text-3xl font-bold text-center mb-6">My Society</h1>
+        <div>
+          
+        </div>
+        <h1 className="text-3xl font-bold text-center mb-2 flex justify-center gap-4">
+          <img className='w-10 h-10 pb-1' src={society_icon} alt="img" /> My Society</h1>
          <div className="flex justify-center mb-6">
           <img
             src={MySocietyImg}

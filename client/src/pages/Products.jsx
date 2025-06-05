@@ -15,6 +15,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import products_bg from "../assets/products_bg.png";
 
 const SocietyProductsPage = () => {
   const theme = useTheme();
@@ -91,7 +92,29 @@ const SocietyProductsPage = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ mb: 0 }}>
+    <Container
+      maxWidth="lg"
+      sx={{
+        mt: 0,
+        position: "relative",
+        zIndex: 1,
+        overflow: "hidden",
+        "&::before": {
+          content: '""',
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          // backgroundImage: `url(${products_bg})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          opacity: 0.3, // adjust opacity here
+          filter: "blur(0px)", // adjust blur here
+          zIndex: -1,
+        },
+      }}
+    >
       <Box
         component="h4"
         sx={{

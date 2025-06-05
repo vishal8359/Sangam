@@ -24,6 +24,8 @@ import LockOpenIcon from "@mui/icons-material/LockOpen";
 import HowToVoteIcon from "@mui/icons-material/HowToVote";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import { samplePolls } from "../assets/local.js";
+import poll_bg from "../assets/poll_bg.jpg";
+import Poll_icon from "../assets/Poll_icon.png";
 
 const PollsPage = () => {
   const [polls, setPolls] = useState(samplePolls);
@@ -78,18 +80,41 @@ const PollsPage = () => {
   };
 
   return (
-    <Container sx={{ mt: 0 }}>
+    <Container
+      sx={{
+        mt: 0,
+        position: "relative",
+        zIndex: 1,
+        overflow: "hidden",
+        "&::before": {
+          content: '""',
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          backgroundImage: `url(${poll_bg})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          opacity: 0.2, // adjust opacity here
+          filter: "blur(6px)", // adjust blur here
+          zIndex: -1,
+        },
+      }}
+    >
       <Box
         component="h4"
         sx={{
           fontWeight: "bold",
           display: "flex",
           alignItems: "center",
+          mt:1,
           mb: 2,
           fontSize: "2rem",
         }}
       >
-        <HowToVoteIcon sx={{ mr: 1, verticalAlign: "middle" }} />
+        <img className="w-15 h-15 rounded-2xl mr-2 mt-2" src={Poll_icon} alt="Poll Icon" />
+
         Society Polls
       </Box>
 
@@ -219,7 +244,8 @@ const PollsPage = () => {
                             (poll.type === "single" &&
                               (poll.votedHouses.has(
                                 currentHouseNumber.trim()
-                              ) || !currentHouseNumber.trim()))
+                              ) ||
+                                !currentHouseNumber.trim()))
                           }
                           onClick={() => handleVote(poll.id, i)}
                         >

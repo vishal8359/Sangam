@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -13,7 +13,6 @@ import {
   IconButton,
   useTheme,
   useMediaQuery,
-  IconButton as MuiIconButton,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import SendIcon from "@mui/icons-material/Send";
@@ -40,24 +39,35 @@ const dummyChats = [
 ];
 
 export default function ChatsPage() {
-  const [selectedChat, setSelectedChat] = useState(null);
+  const [chats, setChats] = useState(dummyChats);
+  const [selectedChatId, setSelectedChatId] = useState(null);
   const [newMessage, setNewMessage] = useState("");
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
+  const selectedChat = chats.find((chat) => chat.id === selectedChatId);
+  const messagesEndRef = useRef(null);
+
   const handleSend = () => {
-    if (newMessage.trim()) {
-      setSelectedChat((prev) => ({
-        ...prev,
-        messages: [...prev.messages, newMessage],
-      }));
+    if (newMessage.trim() && selectedChatId !== null) {
+      setChats((prevChats) =>
+        prevChats.map((chat) =>
+          chat.id === selectedChatId
+            ? { ...chat, messages: [...chat.messages, newMessage] }
+            : chat
+        )
+      );
       setNewMessage("");
     }
   };
 
   const handleBack = () => {
-    setSelectedChat(null);
+    setSelectedChatId(null);
   };
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [selectedChat?.messages]);
 
   return (
     <Box
@@ -68,48 +78,36 @@ export default function ChatsPage() {
       sx={{ borderRadius: 2, overflow: "hidden" }}
     >
       {/* Sidebar */}
-      {(!isMobile || !selectedChat) && (
+      {(!isMobile || !selectedChatId) && (
         <Box
           width={isMobile ? "100%" : "30%"}
           borderRight={isMobile ? "none" : `1px solid ${theme.palette.divider}`}
           bgcolor={theme.palette.background.paper}
-          sx={{
-            minHeight: isMobile ? "100%" : "auto",
-          }}
+          sx={{ minHeight: isMobile ? "100%" : "auto" }}
         >
           <Typography
             variant="h6"
             px={2.5}
             py={1.5}
             fontWeight={700}
-            color={
-              theme.palette.mode === "dark"
-                ? "#fff"
-                : theme.palette.text.primary
-            }
+            color={theme.palette.mode === "dark" ? "#fff" : "#333"}
           >
             Conversations
           </Typography>
           <Divider />
           <List>
-            {dummyChats.map((chat) => (
+            {chats.map((chat) => (
               <ListItem
                 button
-                color={
-                  theme.palette.mode === "dark"
-                    ? "#fff"
-                    : theme.palette.text.primary
-                }
                 key={chat.id}
-                selected={selectedChat?.id === chat.id}
-                onClick={() => setSelectedChat(chat)}
+                selected={selectedChatId === chat.id}
+                onClick={() => setSelectedChatId(chat.id)}
                 sx={{
-                  cursor: "pointer",
+                  cursor: 'pointer',
                   borderRadius: 2,
-                  mx: 0,
                   mb: 1,
                   bgcolor:
-                    selectedChat?.id === chat.id
+                    selectedChatId === chat.id
                       ? theme.palette.action.selected
                       : "transparent",
                   "&:hover": {
@@ -122,19 +120,12 @@ export default function ChatsPage() {
                 </ListItemAvatar>
                 <ListItemText
                   primary={chat.name}
-                  secondary={chat.lastMessage}
                   sx={{
                     "& .MuiTypography-root": {
                       color:
                         theme.palette.mode === "dark"
                           ? "#fff"
                           : theme.palette.text.primary,
-                    },
-                    "& .MuiTypography-body2": {
-                      color:
-                        theme.palette.mode === "dark"
-                          ? "#ccc"
-                          : theme.palette.text.secondary,
                     },
                   }}
                 />
@@ -144,8 +135,8 @@ export default function ChatsPage() {
         </Box>
       )}
 
-      {/* Chat Box */}
-      {(!isMobile || selectedChat) && (
+      {/* Chat Area */}
+      {(!isMobile || selectedChatId !== null) && (
         <Box
           flex={1}
           p={2}
@@ -153,12 +144,12 @@ export default function ChatsPage() {
           flexDirection="column"
           bgcolor={theme.palette.background.default}
         >
-          {/* Back button for mobile */}
+          {/* Mobile back button */}
           {isMobile && selectedChat && (
             <Box display="flex" alignItems="center" mb={2}>
-              <MuiIconButton onClick={handleBack} sx={{ mr: 1 }}>
+              <IconButton onClick={handleBack} sx={{ mr: 1 }}>
                 <ArrowBackIcon />
-              </MuiIconButton>
+              </IconButton>
               <Typography variant="h6" fontWeight={600}>
                 {selectedChat.name}
               </Typography>
@@ -176,6 +167,7 @@ export default function ChatsPage() {
             </Typography>
           )}
 
+          {/* Messages */}
           <Paper
             elevation={2}
             sx={{
@@ -198,20 +190,19 @@ export default function ChatsPage() {
                 {msg}
               </Typography>
             ))}
+            <div ref={messagesEndRef} />
           </Paper>
 
-          {/* Input Field */}
+          {/* Input */}
           <Box display="flex" gap={1}>
             <TextField
               fullWidth
               placeholder="Type your message..."
               value={newMessage}
-              variant="outlined"
-              size="small"
               onChange={(e) => setNewMessage(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === "Enter") handleSend();
-              }}
+              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+              size="small"
+              variant="outlined"
             />
             <IconButton
               color="primary"

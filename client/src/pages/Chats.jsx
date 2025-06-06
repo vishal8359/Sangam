@@ -73,9 +73,9 @@ export default function ChatsPage() {
     <Box
       display="flex"
       flexDirection={isMobile ? "column" : "row"}
-      height={isMobile ? "100%" : "85vh"}
+      height={isMobile ? "100%" : "95vh"}
       bgcolor={theme.palette.background.default}
-      sx={{ borderRadius: 2, overflow: "hidden" }}
+      sx={{ borderRadius: 0, overflow: "hidden" }}
     >
       {/* Sidebar */}
       {(!isMobile || !selectedChatId) && (
@@ -103,7 +103,7 @@ export default function ChatsPage() {
                 selected={selectedChatId === chat.id}
                 onClick={() => setSelectedChatId(chat.id)}
                 sx={{
-                  cursor: 'pointer',
+                  cursor: "pointer",
                   borderRadius: 2,
                   mb: 1,
                   bgcolor:
@@ -139,7 +139,7 @@ export default function ChatsPage() {
       {(!isMobile || selectedChatId !== null) && (
         <Box
           flex={1}
-          p={2}
+          p={3}
           display="flex"
           flexDirection="column"
           bgcolor={theme.palette.background.default}

@@ -82,23 +82,25 @@ const PollsPage = () => {
   return (
     <Container
       sx={{
-        mt: 0,
         position: "relative",
         zIndex: 1,
         overflow: "hidden",
+        borderRadius: 2,
+
         "&::before": {
           content: '""',
-          position: "absolute",
+          position: "fixed", 
           top: 0,
           left: 0,
-          width: "100%",
-          height: "100%",
+          width: "100vw",
+          height: "100vh",
           backgroundImage: `url(${poll_bg})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
-          opacity: 0.2, // adjust opacity here
-          filter: "blur(6px)", // adjust blur here
+          opacity: 0.2,
+          filter: "blur(6px)",
           zIndex: -1,
+          pointerEvents: "none", // optional: ensures it doesn’t block clicks
         },
       }}
     >
@@ -108,14 +110,16 @@ const PollsPage = () => {
           fontWeight: "bold",
           display: "flex",
           alignItems: "center",
-          mt:1,
-          mb: 2,
+          ml: 4,
           fontSize: "2rem",
         }}
       >
-        <img className="w-15 h-15 rounded-2xl mr-2 mt-2" src={Poll_icon} alt="Poll Icon" />
-
-        Society Polls
+        <img
+          className="w-15 h-15 rounded-2xl mr-2 mt-6"
+          src={Poll_icon}
+          alt="Poll Icon"
+        />
+        <div className="mt-5">Society Polls</div>
       </Box>
 
       {polls.map((poll) => {
@@ -127,7 +131,7 @@ const PollsPage = () => {
         const currentHouseNumber = houseNumbers[poll.id] || "";
 
         return (
-          <Paper key={poll.id} elevation={4} sx={{ p: 2, mb: 4 }}>
+          <Paper key={poll.id} elevation={4} sx={{ p: 2, m: 4 }}>
             <Box display="flex" alignItems="center" mb={2}>
               <Avatar
                 src={poll.logo}

@@ -1,96 +1,125 @@
-import React from 'react';
+import React from "react";
 import {
   Box,
-  Grid,
   Typography,
-  useTheme,
   Card,
-  CardMedia,
   CardContent,
-  CardActions,
-  Button
-} from '@mui/material';
+  CardMedia,
+  Avatar,
+  Badge,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
+import { CalendarMonth, AccessTime, LocationOn, Event } from "@mui/icons-material";
 
 const events = [
   {
     id: 1,
-    title: 'Diwali Celebration',
-    description: 'Join us for lights, sweets, and fun on the central lawn.',
-    image: '/images/diwali.jpg',
-    date: 'November 10, 2025',
+    name: "Cleanliness Drive",
+    date: "2025-06-08",
+    time: "10:00 AM",
+    place: "Community Park",
+    image: "https://source.unsplash.com/featured/?park",
+    organiser: "RWA Committee",
+    type: "local",
   },
   {
     id: 2,
-    title: 'Yoga Workshop',
-    description: 'Free yoga workshop with certified instructors.',
-    image: '/images/yoga.jpg',
-    date: 'October 2, 2025',
+    name: "Yoga Session",
+    date: "2025-06-09",
+    time: "6:00 AM",
+    place: "Club House",
+    image: "https://source.unsplash.com/featured/?yoga",
+    organiser: "Wellness Club",
+    type: "local",
   },
   {
     id: 3,
-    title: 'Annual Cultural Fest',
-    description: 'Dance, drama, music, food and much more!',
-    image: '/images/cultural.jpg',
-    date: 'December 18, 2025',
+    name: "Street Food Festival",
+    date: "2025-06-10",
+    time: "5:00 PM",
+    place: "Sector 5 Ground",
+    image: "https://source.unsplash.com/featured/?festival",
+    organiser: "Neighbouring Society",
+    type: "neighbouring",
   },
 ];
 
+const EventCard = ({ event }) => (
+  <Card sx={{ width: 320, borderRadius: 4, m: 2, boxShadow: 4 }}>
+    <CardMedia component="img" height="160" image={event.image} alt={event.name} />
+    <CardContent>
+      <Typography variant="h6" fontWeight="bold" gutterBottom>
+        {event.name}
+      </Typography>
+      <Box display="flex" alignItems="center" mb={1}>
+        <CalendarMonth fontSize="small" sx={{ mr: 1 }} />
+        <Typography variant="body2">{event.date}</Typography>
+      </Box>
+      <Box display="flex" alignItems="center" mb={1}>
+        <AccessTime fontSize="small" sx={{ mr: 1 }} />
+        <Typography variant="body2">{event.time}</Typography>
+      </Box>
+      <Box display="flex" alignItems="center" mb={1}>
+        <LocationOn fontSize="small" sx={{ mr: 1 }} />
+        <Typography variant="body2">{event.place}</Typography>
+      </Box>
+      <Box display="flex" alignItems="center">
+        <Avatar sx={{ width: 24, height: 24, mr: 1 }} />
+        <Typography variant="body2">{event.organiser}</Typography>
+      </Box>
+    </CardContent>
+  </Card>
+);
+
 const EventPage = () => {
   const theme = useTheme();
-  const isDark = theme.palette.mode === 'dark';
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const localEvents = events.filter((e) => e.type === "local");
+  const neighbouringEvents = events.filter((e) => e.type === "neighbouring");
 
   return (
-    <Box px={{ xs: 2, md: 5 }} py={4}>
-      <Typography
-        variant="h4"
-        fontWeight="bold"
-        color={isDark ? '#ccc' : '#333'}
-        mb={4}
-        textAlign="center"
-      >
-        📅 Upcoming Sangam Society Events
-      </Typography>
+    <Box p={2} sx={{ bgcolor: theme.palette.background.default, minHeight: "100vh" }}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+        <Typography variant="h4" fontWeight="bold">
+          Events
+        </Typography>
+        <Badge badgeContent={events.length} color="primary" showZero>
+          <Event color="action" fontSize="large" />
+        </Badge>
+      </Box>
 
-      <Grid container spacing={4}>
-        {events.map((event) => (
-          <Grid item xs={12} sm={6} md={4} key={event.id}>
-            <Card
-              sx={{
-                height: '100%',
-                backgroundColor: '#fff',
-                color: '#000',
-                borderRadius: 3,
-                boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                '&:hover': {
-                  transform: 'scale(1.02)',
-                  transition: 'all 0.3s ease',
-                },
-              }}
-            >
-              <CardMedia
-                component="img"
-                height="180"
-                image={event.image}
-                alt={event.title}
-              />
-              <CardContent>
-                <Typography variant="h6" fontWeight="bold" gutterBottom>
-                  {event.title}
-                </Typography>
-                <Typography variant="body2" mb={1}>
-                  {event.description}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  📆 {event.date}
-                </Typography>
-              </CardContent>
-              <CardActions>
-                <Button size="small" color="primary">Know More</Button>
-              </CardActions>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+      <Box mb={4}>
+        <Typography variant="h5" fontWeight="medium" mb={2}>
+          Society Events
+        </Typography>
+        <Box
+          display="flex"
+          flexDirection={isMobile ? "column" : "row"}
+          flexWrap="wrap"
+          justifyContent="flex-start"
+        >
+          {localEvents.map((event) => (
+            <EventCard key={event.id} event={event} />
+          ))}
+        </Box>
+      </Box>
+
+      <Box>
+        <Typography variant="h5" fontWeight="medium" mb={2}>
+          Neighbouring Events
+        </Typography>
+        <Box
+          display="flex"
+          flexDirection={isMobile ? "column" : "row"}
+          flexWrap="wrap"
+          justifyContent="flex-start"
+        >
+          {neighbouringEvents.map((event) => (
+            <EventCard key={event.id} event={event} />
+          ))}
+        </Box>
+      </Box>
     </Box>
   );
 };

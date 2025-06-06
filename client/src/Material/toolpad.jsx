@@ -1,4 +1,5 @@
 import * as React from "react";
+import { GlobalStyles } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { createTheme, styled } from "@mui/material/styles";
 import Box from "@mui/material/Box";
@@ -260,7 +261,7 @@ export default function DashboardLayoutBasic(props) {
             styleOverrides: {
               primary: {
                 color: "var(--mui-palette-text-primary)",
-                fontWeight: 100,
+                fontWeight: 500,
               },
             },
           },
@@ -271,6 +272,7 @@ export default function DashboardLayoutBasic(props) {
               },
             },
           },
+          
         },
       }),
     [mode]
@@ -285,15 +287,15 @@ export default function DashboardLayoutBasic(props) {
       case "/home/polls":
         return <PollsPage />;
       case "/home/ads":
-        return <ProductsPage/>;
+        return <ProductsPage />;
       case "/home/complaints":
-        return <ComplaintForm/>;
+        return <ComplaintForm />;
       case "/home/events":
-        return <EventPage/>;
+        return <EventPage />;
       case "/home/notices":
-        return <NoticesPage/>;
+        return <NoticesPage />;
       case "/feed":
-        return <SocietyBuzz/>
+        return <SocietyBuzz />;
       default:
         return <div>Page Not Found</div>;
     }
@@ -361,53 +363,54 @@ export default function DashboardLayoutBasic(props) {
   }));
 
   return (
-    <AppProvider
-      navigation={NAVIGATION}
-      router={router}
-      theme={demoTheme}
-      window={demoWindow}
-      branding={{
-        title: (
-          <span className="mt-1.5">
-            <SangamLogo />
-          </span>
-        ),
-        logo: (
-          <div
-            style={{ maxWidth: 200, cursor: "pointer" }}
-            onClick={goToMySociety}
+    <>
+      <AppProvider
+        navigation={NAVIGATION}
+        router={router}
+        theme={demoTheme}
+        window={demoWindow}
+        branding={{
+          title: (
+            <span className="mt-1.5">
+              <SangamLogo />
+            </span>
+          ),
+          logo: (
+            <div
+              style={{ maxWidth: 200, cursor: "pointer" }}
+              onClick={goToMySociety}
+            >
+              <img
+                src={appLogo}
+                alt="App Logo"
+                style={{ width: "100%", height: "100%", marginLeft: 15 }}
+              />
+            </div>
+          ),
+        }}
+      >
+        {/* Theme toggle switch fixed top-right */}
+
+        <div style={{ position: "absolute", top: 10, right: 8, zIndex: 1500 }}>
+          <MoonSwitch checked={mode === "dark"} onChange={toggleMode} />
+        </div>
+
+        <DashboardLayout>
+          <PageContainer
+            sx={{
+              padding: 0,
+              margin: 0,
+            }}
           >
-            <img
-              src={appLogo}
-              alt="App Logo"
-              style={{ width: "100%", height: "100%", marginLeft: 15 }}
-            />
-          </div>
-        ),
-      }}
-    >
-      {/* Theme toggle switch fixed top-right */}
-
-      <div style={{ position: "absolute", top: 10, right: 8, zIndex: 1500 }}>
-        <MoonSwitch checked={mode === "dark"} onChange={toggleMode} />
-      </div>
-
-      <DashboardLayout>
-        <PageContainer
-          sx={{
-            padding: 0,
-            margin: 0,
-          }}
-          hideTitle
-        >
-          {console.log(router.pathname)}
-          {router.pathname ? (
-            renderPage(router.pathname)
-          ) : (
-            <div>Loading...</div>
-          )}
-        </PageContainer>
-      </DashboardLayout>
-    </AppProvider>
+            {console.log(router.pathname)}
+            {router.pathname ? (
+              renderPage(router.pathname)
+            ) : (
+              <div>Loading...</div>
+            )}
+          </PageContainer>
+        </DashboardLayout>
+      </AppProvider>
+    </>
   );
 }

@@ -15,8 +15,8 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-import products_bg from "../assets/products_bg.png";
-
+import ProductIcon from "../assets/Product_Icon.png";
+import Product_Bg from "../assets/products_bg.png"
 const SocietyProductsPage = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -95,30 +95,198 @@ const SocietyProductsPage = () => {
     <Container
       maxWidth="lg"
       sx={{
-        mt: 0,
+        m: 0,
         position: "relative",
         zIndex: 1,
         overflow: "hidden",
         "&::before": {
           content: '""',
-          position: "absolute",
+          position: "fixed",
           top: 0,
           left: 0,
-          width: "100%",
-          height: "100%",
-          // backgroundImage: `url(${products_bg})`,
+          width: "100vw",
+          height: "100vh",
+          backgroundImage: `url(${Product_Bg})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
-          opacity: 0.3, // adjust opacity here
-          filter: "blur(0px)", // adjust blur here
-          zIndex: -1,
+          opacity: 0.15, // adjust opacity here
+          filter: "blur(20px)",
+          zIndex: -2,
         },
       }}
     >
+      {/* Products Display */}
+      <Typography
+        variant={isMobile ? "h6" : "h5"}
+        sx={{
+          m: 3,
+          color: "#000",
+          fontWeight: "bold",
+        }}
+      >
+        Available Products
+      </Typography>
+
+      {products.length === 0 && (
+        <Typography
+          variant="body1"
+          sx={{ color: theme.palette.text.secondary, m: 3 }}
+        >
+          No products uploaded yet.
+        </Typography>
+      )}
+
+      <Grid container spacing={3}>
+        {products.map(({ id, name, price, quantity, description, images }) => (
+          <Grid item xs={12} sm={6} md={4} key={id}>
+            <Paper
+              sx={{
+                p: 2,
+                ml: isMobile ? 5 : 3,
+                borderRadius: 2,
+                boxShadow: theme.shadows[4],
+                backgroundColor:
+                  theme.palette.mode === "dark" ? "#222" : "#fff",
+                display: "flex",
+                flexDirection: "column",
+                width: 330, // ✅ Fixed height
+                justifyContent: "space-between",
+                marginBottom: 3,
+              }}
+            >
+              {/* Images container: scroll horizontally on mobile */}
+              <Box
+                sx={{
+                  display: "flex",
+                  overflowX: isMobile ? "auto" : "visible",
+                  gap: 1,
+                  mb: 1,
+                  scrollbarWidth: "thin",
+                }}
+              >
+                {images.map((img, i) => (
+                  <img
+                    key={i}
+                    src={img.url}
+                    alt={`${name} ${i}`}
+                    style={{
+                      width: 90,
+                      height: 90,
+                      objectFit: "cover",
+                      borderRadius: 8,
+                      flexShrink: 0,
+                      boxShadow: theme.shadows[2],
+                    }}
+                  />
+                ))}
+                <Box className="ml-2.5">
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      mb: 0.5,
+                      color: "text.primary",
+                      fontSize: isMobile ? "1.1rem" : "1.25rem",
+                    }}
+                  >
+                    {name}
+                  </Typography>
+                  <Typography
+                    variant="subtitle1"
+                    sx={{
+                      fontWeight: "bold",
+                      fontSize: isMobile ? "1rem" : "1.1rem",
+                    }}
+                  >
+                    ₹ {price}
+                  </Typography>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{
+                      fontWeight: "medium",
+                      color:
+                        theme.palette.mode === "dark" ? "#f5f5f5" : "#121212",
+                      mb: 1,
+                      fontSize: isMobile ? "0.85rem" : "0.95rem",
+                    }}
+                  >
+                    Quantity Available: {quantity}
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* Description as bullet points with icon */}
+              {description ? (
+                <Box
+                  sx={{
+                    mb: 1,
+                    minHeight: 40,
+                    color:
+                      theme.palette.mode === "dark" ? "#f5f5f5" : "#121212",
+                  }}
+                >
+                  {description
+                    .split("\n")
+                    .filter((line) => line.trim() !== "")
+                    .map((point, idx) => (
+                      <Box
+                        key={idx}
+                        sx={{
+                          display: "flex",
+                          alignItems: "flex-start",
+                          gap: 1,
+                          fontSize: isMobile ? "0.8rem" : "0.9rem",
+                          mb: 0.5,
+                          flexWrap: "wrap", // ensures the row wraps
+                        }}
+                      >
+                        <FiberManualRecordIcon
+                          sx={{
+                            fontSize: "0.6rem",
+                            color: "text.secondary",
+                            mt: "4px",
+                          }}
+                        />
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            wordBreak: "break-word", // wraps long words
+                            whiteSpace: "pre-wrap", // respects \n and wraps
+                            lineHeight: 1.4,
+                          }}
+                        >
+                          {point.trim()}
+                        </Typography>
+                      </Box>
+                    ))}
+                </Box>
+              ) : (
+                <Typography
+                  variant="body2"
+                  sx={{ mb: 1, color: "text.secondary", minHeight: 40 }}
+                >
+                  No description provided.
+                </Typography>
+              )}
+              <Button
+                variant="outlined"
+                size="small"
+                sx={{
+                  mt: "auto",
+                  backgroundColor:
+                    theme.palette.mode === "dark" ? "#fff" : "#f5f5f5",
+                }}
+                fullWidth={isMobile}
+              >
+                Buy Now
+              </Button>
+            </Paper>
+          </Grid>
+        ))}
+      </Grid>
       <Box
         component="h4"
         sx={{
-          mb: 2,
+          m: 3,
           color: "#000",
           fontWeight: "bold",
           display: "flex",
@@ -134,17 +302,25 @@ const SocietyProductsPage = () => {
       <Paper
         sx={{
           ...inputContainerStyle,
-          width: isMobile ? "100%" : "440", // full width on mobile, fixed on desktop
-          mx: "auto",
-          p: 3,
+          width: isMobile ? "50" : "440", // full width on mobile, fixed on desktop
+          m:3,
+          p:3,
         }}
       >
         <Typography
           variant={isMobile ? "h6" : "h5"}
-          sx={{ mb: 2, color: theme.palette.mode === "dark" ? "#fff" : "#000" }}
+          sx={{
+            display: "flex",
+            mb: 2,
+            color: theme.palette.mode === "dark" ? "#fff" : "#000",
+          }}
         >
-          <AddCircleOutlineIcon sx={{ pb: 0.5 }} />
-          Add Your Product
+          <img
+            className="w-10 h-10 mr-4 rounded-2xl"
+            src={ProductIcon}
+            alt="img"
+          />
+          <div className="mt-1">Add Your Product</div>
         </Typography>
 
         <Box
@@ -358,172 +534,6 @@ const SocietyProductsPage = () => {
           </Button>
         </Box>
       </Paper>
-
-      {/* Products Display */}
-      <Typography
-        variant={isMobile ? "h6" : "h5"}
-        sx={{
-          mb: 2,
-          color: "#000",
-          fontWeight: "bold",
-        }}
-      >
-        Available Products
-      </Typography>
-
-      {products.length === 0 && (
-        <Typography
-          variant="body1"
-          sx={{ color: theme.palette.text.secondary, mb: 2 }}
-        >
-          No products uploaded yet.
-        </Typography>
-      )}
-
-      <Grid container spacing={3}>
-        {products.map(({ id, name, price, quantity, description, images }) => (
-          <Grid item xs={12} sm={6} md={4} key={id}>
-            <Paper
-              sx={{
-                p: 2,
-                borderRadius: 2,
-                boxShadow: theme.shadows[4],
-                backgroundColor:
-                  theme.palette.mode === "dark" ? "#222" : "#fff",
-                display: "flex",
-                flexDirection: "column",
-                width: 360, // ✅ Fixed height
-                justifyContent: "space-between", // ✅ Push button to bottom
-              }}
-            >
-              {/* Images container: scroll horizontally on mobile */}
-              <Box
-                sx={{
-                  display: "flex",
-                  overflowX: isMobile ? "auto" : "visible",
-                  gap: 1,
-                  mb: 1,
-                  scrollbarWidth: "thin",
-                }}
-              >
-                {images.map((img, i) => (
-                  <img
-                    key={i}
-                    src={img.url}
-                    alt={`${name} ${i}`}
-                    style={{
-                      width: 80,
-                      height: 80,
-                      objectFit: "cover",
-                      borderRadius: 8,
-                      flexShrink: 0,
-                      boxShadow: theme.shadows[2],
-                    }}
-                  />
-                ))}
-              </Box>
-
-              <Typography
-                variant="h6"
-                sx={{
-                  mb: 0.5,
-                  color: "text.primary",
-                  fontSize: isMobile ? "1.1rem" : "1.25rem",
-                }}
-              >
-                {name}
-              </Typography>
-
-              {/* Description as bullet points with icon */}
-              {description ? (
-                <Box
-                  sx={{
-                    mb: 1,
-                    minHeight: 40,
-                    color:
-                      theme.palette.mode === "dark" ? "#f5f5f5" : "#121212",
-                  }}
-                >
-                  {description
-                    .split("\n")
-                    .filter((line) => line.trim() !== "")
-                    .map((point, idx) => (
-                      <Box
-                        key={idx}
-                        sx={{
-                          display: "flex",
-                          alignItems: "flex-start",
-                          gap: 1,
-                          fontSize: isMobile ? "0.8rem" : "0.9rem",
-                          mb: 0.5,
-                          flexWrap: "wrap", // ensures the row wraps
-                        }}
-                      >
-                        <FiberManualRecordIcon
-                          sx={{
-                            fontSize: "0.6rem",
-                            color: "text.secondary",
-                            mt: "4px",
-                          }}
-                        />
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            wordBreak: "break-word", // wraps long words
-                            whiteSpace: "pre-wrap", // respects \n and wraps
-                            lineHeight: 1.4,
-                          }}
-                        >
-                          {point.trim()}
-                        </Typography>
-                      </Box>
-                    ))}
-                </Box>
-              ) : (
-                <Typography
-                  variant="body2"
-                  sx={{ mb: 1, color: "text.secondary", minHeight: 40 }}
-                >
-                  No description provided.
-                </Typography>
-              )}
-
-              <Typography
-                variant="subtitle1"
-                sx={{
-                  fontWeight: "bold",
-                  fontSize: isMobile ? "1rem" : "1.1rem",
-                }}
-              >
-                ₹ {price}
-              </Typography>
-              <Typography
-                variant="subtitle2"
-                sx={{
-                  fontWeight: "medium",
-                  color: theme.palette.mode === "dark" ? "#f5f5f5" : "#121212",
-                  mb: 1,
-                  fontSize: isMobile ? "0.85rem" : "0.95rem",
-                }}
-              >
-                Quantity Available: {quantity}
-              </Typography>
-              <Button
-                variant="outlined"
-                size="small"
-                sx={{
-                  mt: "auto",
-                  backgroundColor:
-                    theme.palette.mode === "dark" ? "#fff" : "#f5f5f5",
-                }}
-                fullWidth={isMobile}
-              >
-                Buy Now
-              </Button>
-            </Paper>
-          </Grid>
-        ))}
-      </Grid>
     </Container>
   );
 };

@@ -27,9 +27,9 @@
 .color-accent{
     color: var(--color-accent);
 }
-.no-scrollbar::-webkit-scrollbar{
+/* .no-scrollbar::-webkit-scrollbar{
   display: none;
-}
+} */
 
 /* Add to your main CSS or index.css */
 
@@ -54,4 +54,17 @@
 }
 div[data-toolpad-header="true"] {
   display: none !important;
+}
+.MuiContainer-root {
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+}
+.MuiStack-root {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+.MuiBox-root{
+  margin-top: 0 !important;
 }

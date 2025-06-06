@@ -32,6 +32,7 @@ const PollsPage = () => {
   const [houseNumbers, setHouseNumbers] = useState({});
 
   const theme = useTheme();
+  const isDark = theme.palette.mode === "dark"
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const handleVote = (pollId, optionIndex) => {
@@ -82,27 +83,37 @@ const PollsPage = () => {
   return (
     <Container
       sx={{
-        position: "relative",
-        zIndex: 1,
-        overflow: "hidden",
-        borderRadius: 2,
-
-        "&::before": {
-          content: '""',
-          position: "fixed", 
-          top: 0,
-          left: 0,
-          width: "100vw",
-          height: "100vh",
-          backgroundImage: `url(${poll_bg})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          opacity: 0.2,
-          filter: "blur(6px)",
-          zIndex: -1,
-          pointerEvents: "none", // optional: ensures it doesn’t block clicks
-        },
-      }}
+              m: 0,
+              position: "relative",
+              zIndex: 1,
+              overflow: "hidden",
+              "&::before": {
+                content: '""',
+                position: "fixed",
+                top: 0,
+                left: 0,
+                width: "100vw",
+                height: "150vh",
+                backgroundImage: `url(${poll_bg})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                opacity: 0.15,
+                filter: "blur(8px)",
+                zIndex: -2,
+              },
+              ...(isDark && {
+                "&::after": {
+                  content: '""',
+                  position: "fixed",
+                  top: 0,
+                  left: 0,
+                  width: "100vw",
+                  height: "150vh",
+                  backgroundColor: "rgba(100, 10, 10, 0.1)", // slightly darker dim
+                  zIndex: -1,
+                },
+              }),
+            }}
     >
       <Box
         component="h4"

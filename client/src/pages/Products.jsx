@@ -16,11 +16,11 @@ import StorefrontIcon from "@mui/icons-material/Storefront";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import ProductIcon from "../assets/Product_Icon.png";
-import Product_Bg from "../assets/products_bg.png"
+import Product_Bg from "../assets/products_bg.png";
 const SocietyProductsPage = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-
+  const isDark = theme.palette.mode === "dark";
   // Dark mode styles for input container
   const inputContainerStyle = {
     backgroundColor: theme.palette.mode === "dark" ? "#121212" : "#f5f5f5",
@@ -105,38 +105,43 @@ const SocietyProductsPage = () => {
           top: 0,
           left: 0,
           width: "100vw",
-          height: "100vh",
+          height: "150vh",
           backgroundImage: `url(${Product_Bg})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
-          opacity: 0.15, // adjust opacity here
-          filter: "blur(20px)",
+          opacity: 0.15,
+          filter: "blur(8px)",
           zIndex: -2,
         },
+        ...(isDark && {
+          "&::after": {
+            content: '""',
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "150vh",
+            backgroundColor: "rgba(100, 10, 10, 0.1)", // slightly darker dim
+            zIndex: -1,
+          },
+        }),
       }}
     >
       {/* Products Display */}
-      <Typography
-        variant={isMobile ? "h6" : "h5"}
-        sx={{
-          m: 3,
-          color: "#000",
-          fontWeight: "bold",
-        }}
-      >
-        Available Products
-      </Typography>
-
-      {products.length === 0 && (
+      {products.length !== 0 && (
         <Typography
-          variant="body1"
-          sx={{ color: theme.palette.text.secondary, m: 3 }}
+          variant={isMobile ? "h6" : "h5"}
+          sx={{
+            m: 3,
+            color: "#000",
+            fontWeight: "bold",
+          }}
         >
-          No products uploaded yet.
+          Available Products
         </Typography>
       )}
 
-      <Grid container spacing={3}>
+      <Grid container spacing={3} mt={4}>
         {products.map(({ id, name, price, quantity, description, images }) => (
           <Grid item xs={12} sm={6} md={4} key={id}>
             <Paper
@@ -249,8 +254,8 @@ const SocietyProductsPage = () => {
                         <Typography
                           variant="body2"
                           sx={{
-                            wordBreak: "break-word", // wraps long words
-                            whiteSpace: "pre-wrap", // respects \n and wraps
+                            wordBreak: "break-word",
+                            whiteSpace: "pre-wrap",
                             lineHeight: 1.4,
                           }}
                         >
@@ -303,8 +308,8 @@ const SocietyProductsPage = () => {
         sx={{
           ...inputContainerStyle,
           width: isMobile ? "50" : "440", // full width on mobile, fixed on desktop
-          m:3,
-          p:3,
+          m: 3,
+          p: 3,
         }}
       >
         <Typography

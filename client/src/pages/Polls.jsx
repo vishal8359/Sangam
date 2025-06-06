@@ -32,7 +32,7 @@ const PollsPage = () => {
   const [houseNumbers, setHouseNumbers] = useState({});
 
   const theme = useTheme();
-  const isDark = theme.palette.mode === "dark"
+  const isDark = theme.palette.mode === "dark";
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const handleVote = (pollId, optionIndex) => {
@@ -83,37 +83,37 @@ const PollsPage = () => {
   return (
     <Container
       sx={{
-              m: 0,
-              position: "relative",
-              zIndex: 1,
-              overflow: "hidden",
-              "&::before": {
-                content: '""',
-                position: "fixed",
-                top: 0,
-                left: 0,
-                width: "100vw",
-                height: "150vh",
-                backgroundImage: `url(${poll_bg})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                opacity: 0.15,
-                filter: "blur(8px)",
-                zIndex: -2,
-              },
-              ...(isDark && {
-                "&::after": {
-                  content: '""',
-                  position: "fixed",
-                  top: 0,
-                  left: 0,
-                  width: "100vw",
-                  height: "150vh",
-                  backgroundColor: "rgba(100, 10, 10, 0.1)", // slightly darker dim
-                  zIndex: -1,
-                },
-              }),
-            }}
+        m: 0,
+        position: "relative",
+        zIndex: 1,
+        overflow: "hidden",
+        "&::before": {
+          content: '""',
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "150vh",
+          backgroundImage: `url(${poll_bg})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          opacity: 0.15,
+          filter: "blur(8px)",
+          zIndex: -2,
+        },
+        ...(isDark && {
+          "&::after": {
+            content: '""',
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "150vh",
+            backgroundColor: "rgba(100, 10, 10, 0.1)", // slightly darker dim
+            zIndex: -1,
+          },
+        }),
+      }}
     >
       <Box
         component="h4"
@@ -142,7 +142,7 @@ const PollsPage = () => {
         const currentHouseNumber = houseNumbers[poll.id] || "";
 
         return (
-          <Paper key={poll.id} elevation={4} sx={{ p: 2, m: 4 }}>
+          <Paper key={poll.id} elevation={4} sx={{ p: 2, m: 2 }}>
             <Box display="flex" alignItems="center" mb={2}>
               <Avatar
                 src={poll.logo}
@@ -192,7 +192,7 @@ const PollsPage = () => {
               </Box>
             )}
 
-            <Table size="small" sx={{ minWidth: 300 }}>
+            <Table size="medium" sx={{ minWidth: 300 }}>
               <TableHead>
                 <TableRow>
                   <TableCell>
@@ -221,7 +221,12 @@ const PollsPage = () => {
                     <TableRow key={i}>
                       <TableCell>
                         <Box display="flex" alignItems="center">
-                          {opt.name}
+                          {isMobile
+                            ? opt.name.length > 15
+                              ? `${opt.name.slice(0, 8)}..`
+                              : opt.name
+                            : opt.name}
+
                           {isMajority && (
                             <EmojiEventsIcon
                               color="warning"

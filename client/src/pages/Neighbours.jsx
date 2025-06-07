@@ -112,7 +112,7 @@ export default function NeighboursPage() {
   };
 
   const openNeighbouringSocieties = () => {
-    setTab(5); // Open "Neighbouring Societies" tab (index 5)
+    setTab(5); 
   };
 
   return (

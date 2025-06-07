@@ -40,6 +40,10 @@ import NoticesPage from "../pages/Notices";
 import EventPage from "../pages/Events";
 import SocietyBuzz from "../pages/Buzz";
 import NeighboursPage from "../pages/Neighbours";
+import SocietyGalleryPage from "../pages/Gallery";
+import UserEngagementPage from "../pages/UserEngagement";
+import TopContributorsPage from "../pages/TopContributors";
+import SocietyHealthScore from "./HealthScore";
 const NAVIGATION = [
   {
     kind: "header",
@@ -298,6 +302,14 @@ export default function DashboardLayoutBasic(props) {
         return <SocietyBuzz />;
       case "/neighbours":
         return <NeighboursPage/>
+      case "/gallery":
+        return <SocietyGalleryPage/>
+      case "/reports/user_engagement":
+        return <UserEngagementPage/>
+      case "/reports/top_contributors":
+        return <TopContributorsPage/>
+      case "/reports/Society_health_score":
+        return <SocietyHealthScore/>
       default:
         return <div>Page Not Found</div>;
     }

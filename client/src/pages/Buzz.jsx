@@ -14,6 +14,9 @@ import {
 } from "@mui/material";
 import { Send, Mic, CameraAlt } from "@mui/icons-material";
 import Groups2Icon from "@mui/icons-material/Groups2";
+import ForumIcon from "@mui/icons-material/Forum";
+import chatWindow from "../assets/ChatWindow.jpg";
+import EmojiEmotionsIcon from "@mui/icons-material/EmojiEmotions";
 
 const dummyGroups = ["Chai Group", "Mandir Group", "Festival Team"];
 
@@ -46,8 +49,7 @@ export default function SocietyBuzz() {
   const [messages, setMessages] = useState(dummyMessages);
 
   const isDark = theme.palette.mode === "dark";
-
-  const dummyGroups = ["Chai Group", "Mandir Group", "Festival Team"];
+  const tabColor = isDark ? "#f5f5f5" : "inherit";
   const currentGroup = tab > 0 ? dummyGroups[tab - 1] : null;
 
   const handleSend = () => {
@@ -67,6 +69,12 @@ export default function SocietyBuzz() {
       setMessage("");
     }
   };
+  const scrollAnimation = {
+    "@keyframes scrollVertical": {
+      "0%": { backgroundPositionY: "0%" },
+      "100%": { backgroundPositionY: "100%" },
+    },
+  };
 
   const getFilteredMessages = () => {
     if (tab === 0) return messages.filter((msg) => !msg.group);
@@ -76,22 +84,16 @@ export default function SocietyBuzz() {
   return (
     <Box
       sx={{
-        height: "100vh",
-        p: isMobile ? 1 : 3,
-        pt: 2,
+        height: "94vh",
         bgcolor: isDark ? "#121212" : "#f0f0f0",
-        backgroundImage: isDark
-          ? "linear-gradient(135deg, #1f1f1f, #2a2a2a)"
-          : "linear-gradient(135deg, #fdfbfb, #ebedee)",
       }}
     >
       <Paper
-        elevation={4}
         sx={{
-          maxWidth: "960px",
+          maxWidth: "1200px",
           mx: "auto",
           p: isMobile ? 1 : 3,
-          borderRadius: 3,
+          borderRadius: 0,
           height: "100%",
           display: "flex",
           flexDirection: "column",
@@ -101,9 +103,10 @@ export default function SocietyBuzz() {
           component="h4"
           textAlign="center"
           fontWeight="bold"
-          mb={2}
+          mb={1}
+          pt={1}
           sx={{
-            color: theme.palette.primary.main,
+            color: isDark ? "#ccc" : theme.palette.primary.main,
             fontSize: "2rem",
             lineHeight: 1.2,
           }}
@@ -117,20 +120,53 @@ export default function SocietyBuzz() {
           variant="scrollable"
           scrollButtons
           allowScrollButtonsMobile
-          textColor="primary"
+          textColor={isDark ? "#f5f5f5" : "#ccc"}
           indicatorColor="primary"
-          sx={{ mb: 2 }}
+          sx={{
+            mb: 1.5, // Slight margin below the tabs for spacing from chatbox
+            px: 1, // Horizontal padding for scrollable area
+            "& .MuiTabs-indicator": {
+              backgroundColor: isDark ? "#f5f5f5" : "#122525",
+              height: 2,
+              borderRadius: 2,
+            },
+          }}
         >
-          <Tab label="Public Chat" />
+          <Tab
+            label={
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                  color: tabColor,
+                }}
+              >
+                <ForumIcon sx={{ fontSize: 20 }} />
+                Public Chat
+              </Box>
+            }
+            sx={{
+              color: tabColor,
+              minHeight: "48px",
+              px: 2,
+            }}
+          />
+
           {dummyGroups.map((g, i) => (
             <Tab
               key={i}
               label={
-                <>
-                  <Groups2Icon sx={{ fontSize: 18, mr: 1 }} />
+                <Box display="flex" alignItems="center">
+                  <Groups2Icon sx={{ fontSize: 20, mr: 1, color: tabColor }} />
                   {g}
-                </>
+                </Box>
               }
+              sx={{
+                color: tabColor,
+                minHeight: "48px",
+                px: 2,
+              }}
             />
           ))}
         </Tabs>
@@ -138,65 +174,109 @@ export default function SocietyBuzz() {
         {/* Chat Window */}
         <Box
           sx={{
+            height: 600,
             flexGrow: 1,
             overflowY: "auto",
             bgcolor: isDark ? "#1a1a1a" : "#ffffff",
             borderRadius: 2,
             p: 2,
-            mb: 2,
+            pt: 2,
+            mb: 3,
             boxShadow: isDark ? "0 0 10px #000" : "0 0 5px #ccc",
+            maxHeight: isMobile ? 600 : 500,
+            position: "relative",
+            zIndex: 1,
+            ...scrollAnimation,
           }}
         >
-          {getFilteredMessages().map((msg) => {
-            const isSelf = msg.sender === "self";
-            const showName = msg.sender === "group" && msg.senderName;
+          {/* Background Image Layer inside chat box */}
+          <Box
+            sx={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundImage: `url(${chatWindow})`,
+              backgroundSize: "cover",
+              backgroundRepeat: "repeat-y",
+              backgroundPosition: "center",
+              filter: isDark
+                ? "blur(6px) opacity(0.2)"
+                : "blur(6px) opacity(0.2)",
+              borderRadius: 0,
+              zIndex: 0,
+              animation: "scrollVertical 60s linear infinite",
+              pointerEvents: "none",
+              userSelect: "none",
+            }}
+          />
 
-            return (
-              <Box
-                key={msg.id}
-                sx={{
-                  display: "flex",
-                  justifyContent: isSelf ? "flex-end" : "flex-start",
-                  mb: 1.5,
-                  p:0,
-                  textAlign: isSelf ? "right" : "left",
-                }}
-              >
-                <Box>
-                  {showName && (
-                    <Typography
-                      variant="caption"
+          {/* Chat Content Layer */}
+          <Box
+            sx={{
+              position: "relative",
+              zIndex: 1,
+              overflowY: "auto",
+              height: "100%",
+              p: 2,
+            }}
+          >
+            {getFilteredMessages().map((msg, idx) => {
+              const isSelf = msg.sender === "self";
+              const showName = msg.sender === "group" && msg.senderName;
+
+              return (
+                <Box
+                  key={msg.id}
+                  sx={{
+                    display: "flex",
+                    justifyContent: isSelf ? "flex-end" : "flex-start",
+                    mb: 1.5,
+                    p: 0,
+                    textAlign: isSelf ? "right" : "left",
+                    mt: idx === 0 ? 0 : 1.5, // no margin top for first message
+                  }}
+                >
+                  <Box>
+                    {showName && (
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: isDark ? "#ccc" : "#121212",
+                          ml: 1,
+                          mb: 0.3,
+                          display: "block",
+                          mt: 0,
+                        }}
+                      >
+                        {msg.senderName}
+                      </Typography>
+                    )}
+                    <Box
                       sx={{
-                        color: isDark ? "#ccc" : "#555",
-                        ml: 1,
-                        mb: 0.3,
-                        display: "block",
+                        maxWidth: "105%",
+                        bgcolor: isSelf
+                          ? theme.palette.primary.main
+                          : theme.palette.grey[300],
+                        color: isSelf ? "white" : "black",
+                        px: 2,
+                        py: 1,
+                        borderRadius: 2,
+                        fontSize: "0.9rem",
+                        whiteSpace: "pre-line",
+                        boxShadow: 1,
+                        backdropFilter: "blur(4px)",
+                        mt: 0,
                       }}
                     >
-                      {msg.senderName}
-                    </Typography>
-                  )}
-                  <Box
-                    sx={{
-                      maxWidth: "105%",
-                      bgcolor: isSelf
-                        ? theme.palette.primary.main
-                        : theme.palette.grey[300],
-                      color: isSelf ? "white" : "black",
-                      px: 2,
-                      py: 1,
-                      borderRadius: 2,
-                      fontSize: "0.9rem",
-                      whiteSpace: "pre-line",
-                      boxShadow: 1,
-                    }}
-                  >
-                    {msg.content}
+                      {msg.content}
+                    </Box>
                   </Box>
                 </Box>
-              </Box>
-            );
-          })}
+              );
+            })}
+          </Box>
         </Box>
 
         {/* Chat Input */}
@@ -208,6 +288,15 @@ export default function SocietyBuzz() {
           variant="outlined"
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
           InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Tooltip title="Add Emoji">
+                  <IconButton size="small" edge="start">
+                    <EmojiEmotionsIcon />
+                  </IconButton>
+                </Tooltip>
+              </InputAdornment>
+            ),
             endAdornment: (
               <InputAdornment position="end">
                 <Tooltip title="Record Voice">
@@ -221,7 +310,10 @@ export default function SocietyBuzz() {
                   </IconButton>
                 </Tooltip>
                 <Tooltip title="Send">
-                  <IconButton onClick={handleSend} color="primary">
+                  <IconButton
+                    onClick={handleSend}
+                    color={isDark ? "#f5f5f5" : "primary"}
+                  >
                     <Send />
                   </IconButton>
                 </Tooltip>

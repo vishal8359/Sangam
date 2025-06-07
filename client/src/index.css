@@ -5,6 +5,22 @@
 *{
   font-family: "Outfit", sans-serif;
 }
+/* Hide scrollbars globally */
+body,
+html {
+  overflow: hidden;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+body::-webkit-scrollbar,
+html::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+}
+
 
 :root {
   --color-primary: #3F51B5;
@@ -67,4 +83,9 @@ div[data-toolpad-header="true"] {
 }
 .MuiBox-root{
   margin-top: 0 !important;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+}
+.MuiBox-root::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
 }

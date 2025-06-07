@@ -39,7 +39,7 @@ import ComplaintForm from "../pages/complaints";
 import NoticesPage from "../pages/Notices";
 import EventPage from "../pages/Events";
 import SocietyBuzz from "../pages/Buzz";
-
+import NeighboursPage from "../pages/Neighbours";
 const NAVIGATION = [
   {
     kind: "header",
@@ -296,6 +296,8 @@ export default function DashboardLayoutBasic(props) {
         return <NoticesPage />;
       case "/feed":
         return <SocietyBuzz />;
+      case "/neighbours":
+        return <NeighboursPage/>
       default:
         return <div>Page Not Found</div>;
     }
@@ -389,8 +391,6 @@ export default function DashboardLayoutBasic(props) {
           ),
         }}
       >
-        {/* Theme toggle switch fixed top-right */}
-
         <div style={{ position: "absolute", top: 10, right: 8, zIndex: 1500 }}>
           <MoonSwitch checked={mode === "dark"} onChange={toggleMode} />
         </div>

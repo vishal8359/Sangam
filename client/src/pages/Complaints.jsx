@@ -16,7 +16,7 @@ import {
   IconButton,
 } from "@mui/material";
 import { UploadFile, Send } from "@mui/icons-material";
-
+import Complaint_Bg from "../assets/Complaint_Bg.jpg"
 const complaintTypes = [
   "Water Leakage",
   "Electricity Issue",
@@ -87,7 +87,44 @@ const ComplaintForm = () => {
   };
 
   return (
-    <Slide direction="up" in mountOnEnter unmountOnExit>
+    <Slide
+      direction="up"
+      in
+      mountOnEnter
+      unmountOnExit
+      sx={{
+        m: 0,
+        position: "relative",
+        zIndex: 1,
+        overflow: "hidden",
+        "&::before": {
+          content: '""',
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "150vh",
+          backgroundImage: `url(${Complaint_Bg})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          opacity: 0.15,
+          filter: "blur(8px)",
+          zIndex: -2,
+        },
+        ...(isDark && {
+          "&::after": {
+            content: '""',
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "150vh",
+            backgroundColor: "rgba(100, 10, 10, 0.1)", // slightly darker dim
+            zIndex: -1,
+          },
+        }),
+      }}
+    >
       <Box
         display="flex"
         flexDirection="column"
@@ -107,8 +144,9 @@ const ComplaintForm = () => {
               variant="h5"
               fontWeight="bold"
               mb={3}
+              mt={3}
               ml={isMobile ? 1 : 4}
-              color={isDark ? "white" : "#555"}
+              color={"#555"}
             >
               📋 Registered Complaints
             </Typography>
@@ -231,6 +269,7 @@ const ComplaintForm = () => {
             bgcolor: backgroundColor,
             color: textColor,
             mb: 5,
+            mt: 5,
             ml: isMobile ? 0 : 5,
           }}
         >
@@ -352,9 +391,7 @@ const ComplaintForm = () => {
                 borderColor: isDark ? "#777" : undefined,
                 "&:hover": {
                   borderColor: theme.palette.primary.main,
-                  backgroundColor: isDark
-                    ? "rgba(139,92,246,0.1)"
-                    : undefined,
+                  backgroundColor: isDark ? "rgba(139,92,246,0.1)" : undefined,
                 },
               }}
               startIcon={<UploadFile />}

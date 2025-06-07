@@ -44,6 +44,7 @@ import SocietyGalleryPage from "../pages/Gallery";
 import UserEngagementPage from "../pages/UserEngagement";
 import TopContributorsPage from "../pages/TopContributors";
 import SocietyHealthScore from "./HealthScore";
+import IntegrationPage from "../pages/Integration";
 const NAVIGATION = [
   {
     kind: "header",
@@ -310,6 +311,8 @@ export default function DashboardLayoutBasic(props) {
         return <TopContributorsPage/>
       case "/reports/Society_health_score":
         return <SocietyHealthScore/>
+      case "/integrations":
+        return <IntegrationPage/>
       default:
         return <div>Page Not Found</div>;
     }

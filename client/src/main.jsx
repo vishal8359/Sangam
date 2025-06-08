@@ -5,6 +5,7 @@ import App from './App';
 import { AppContextProvider } from './context/AppContext';
 import './index.css'
 
+
 createRoot(document.getElementById('root')).render(
   <BrowserRouter>
     <AppContextProvider>

@@ -8,6 +8,8 @@ import {
   Avatar,
   Chip,
   useTheme,
+  Tooltip,
+  Divider,
 } from "@mui/material";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import StarsIcon from "@mui/icons-material/Stars";
@@ -57,41 +59,58 @@ const TopContributorsPage = () => {
         minHeight: "100vh",
       }}
     >
-      {/* Page Heading */}
-      <Typography
-        variant="h4"
-        fontWeight={700}
-        gutterBottom
-        sx={{ color: theme.palette.primary.main, letterSpacing: 0.5 }}
+      {/* Page Title */}
+      <Box
+        sx={{
+          textAlign: "center",
+          mb: 4,
+          p: 2,
+          borderRadius: 3,
+          background: `linear-gradient(90deg, ${theme.palette.primary.light}, ${theme.palette.secondary.light})`,
+          color: theme.palette.primary.contrastText,
+          fontSize: {
+            xs: "1.8rem",
+            sm: "2.2rem",
+            md: "2.5rem",
+          },
+          fontWeight: 800,
+          letterSpacing: 1,
+          boxShadow: 4,
+        }}
       >
-        🌟 Top Contributors of Our Society
-      </Typography>
+        🌟 Celebrating Our Top Contributors
+      </Box>
 
-      {/* Contributor Cards */}
-      <Grid container spacing={3} mt={1}>
+      <Grid container spacing={4}>
         {contributors.map((contributor, idx) => (
           <Grid item xs={12} sm={6} md={4} key={idx}>
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.2 }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              transition={{ delay: idx * 0.2, duration: 0.5 }}
             >
               <Card
-                elevation={4}
+                elevation={6}
                 sx={{
-                  borderRadius: 4,
-                  p: 2,
-                  bgcolor: theme.palette.background.paper,
+                  borderRadius: 5,
+                  background: `linear-gradient(to bottom right, ${theme.palette.primary.light}, ${theme.palette.background.paper})`,
+                  color: theme.palette.text.primary,
+                  boxShadow: theme.shadows[10],
+                  overflow: "hidden",
+                  px: 3,
+                  pt: 3,
+                  pb: 2,
                 }}
               >
-                <Box display="flex" alignItems="center" gap={2} mb={2}>
+                <Box display="flex" alignItems="center" gap={2}>
                   <Avatar
                     sx={{
-                      bgcolor: theme.palette.secondary.main,
+                      background: "linear-gradient(to right, #FF6B6B, #FFD93D)",
                       fontWeight: "bold",
-                      fontSize: "1.2rem",
-                      width: 56,
-                      height: 56,
+                      fontSize: "1.5rem",
+                      width: 60,
+                      height: 60,
+                      color: "#fff",
                     }}
                   >
                     {contributor.name.charAt(0)}
@@ -102,7 +121,7 @@ const TopContributorsPage = () => {
                     </Typography>
                     <Typography
                       variant="body2"
-                      color="text.secondary"
+                      color="text.primary"
                       sx={{ fontStyle: "italic" }}
                     >
                       {contributor.house}
@@ -113,30 +132,42 @@ const TopContributorsPage = () => {
                 <Chip
                   icon={<StarsIcon />}
                   label={contributor.designation}
-                  color="primary"
-                  sx={{ mb: 2, fontWeight: "medium" }}
+                  color="secondary"
+                  size="small"
+                  sx={{
+                    mt: 2,
+                    fontWeight: "bold",
+                    borderRadius: "8px",
+                    px: 1.5,
+                  }}
                 />
+
+                <Divider sx={{ my: 2, borderColor: theme.palette.divider }} />
 
                 <Typography
                   variant="subtitle2"
-                  fontWeight="bold"
+                  fontWeight={700}
                   gutterBottom
+                  sx={{ textTransform: "uppercase", color: theme.palette.mode === "dark" ? "text.secondary" : "#121212" }}
                 >
                   🏆 Achievements
                 </Typography>
+
                 {contributor.achievements.map((ach, i) => (
                   <Box
                     key={i}
                     display="flex"
                     alignItems="center"
-                    mb={1}
                     gap={1}
+                    mb={1}
                   >
-                    <EmojiEventsIcon
-                      fontSize="small"
-                      color="secondary"
-                      sx={{ mt: "2px" }}
-                    />
+                    <Tooltip title="Achievement" arrow>
+                      <EmojiEventsIcon
+                        fontSize="small"
+                        color="warning"
+                        sx={{ mt: "1px" }}
+                      />
+                    </Tooltip>
                     <Typography variant="body2">{ach}</Typography>
                   </Box>
                 ))}

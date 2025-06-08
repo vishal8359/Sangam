@@ -80,7 +80,7 @@ export default function IntegrationPage() {
         variant="h3"
         fontWeight="bold"
         mb={4}
-        color={isDark ? "primary.light" : "primary.main"}
+        color={isDark ? "#f5f5f5" : "primary.main"}
         textAlign="center"
         sx={{ userSelect: "none" }}
       >

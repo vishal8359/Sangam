@@ -43,15 +43,16 @@ import NeighboursPage from "../pages/Neighbours";
 import SocietyGalleryPage from "../pages/Gallery";
 import UserEngagementPage from "../pages/UserEngagement";
 import TopContributorsPage from "../pages/TopContributors";
-import SocietyHealthScore from "./HealthScore";
+import SocietyHealthScore from "../pages/HealthScore";
 import IntegrationPage from "../pages/Integration";
+import ResidentLogin from "../pages/ResidentLogin";
 const NAVIGATION = [
   {
     kind: "header",
     title: "Dashboard",
   },
   {
-    segment: "home",
+    segment: "my-society",
     title: "My society",
     icon: <HomeIcon />,
     path: "/my-society",
@@ -95,7 +96,7 @@ const NAVIGATION = [
     ],
   },
   {
-    segment: "feed",
+    segment: "buzz",
     title: "Society Buzz",
     icon: <DynamicFeedIcon />,
   },
@@ -132,7 +133,7 @@ const NAVIGATION = [
         icon: <MilitaryTechIcon />,
       },
       {
-        segment: "Society_health_score",
+        segment: "society_health_score",
         title: "Society Health Score",
         icon: <HealthAndSafetyIcon />,
       },
@@ -183,7 +184,7 @@ export default function DashboardLayoutBasic(props) {
     () => window?.localStorage.getItem("theme") || "light"
   );
 
-  const router = useDemoRouter("/my-society");
+  const router = useDemoRouter("/");
   const demoWindow = window ? window() : undefined;
 
   const demoTheme = React.useMemo(
@@ -285,21 +286,22 @@ export default function DashboardLayoutBasic(props) {
   function renderPage(pathname) {
     switch (pathname) {
       case "/":
+        return <ResidentLogin/>
       case "/my-society":
         return <MySociety />;
-      case "/home/chats":
+      case "/my-society/chats":
         return <ChatsPage />;
-      case "/home/polls":
+      case "/my-society/polls":
         return <PollsPage />;
-      case "/home/ads":
+      case "/my-society/ads":
         return <ProductsPage />;
-      case "/home/complaints":
+      case "/my-society/complaints":
         return <ComplaintForm />;
-      case "/home/events":
+      case "/my-society/events":
         return <EventPage />;
-      case "/home/notices":
+      case "/my-society/notices":
         return <NoticesPage />;
-      case "/feed":
+      case "/buzz":
         return <SocietyBuzz />;
       case "/neighbours":
         return <NeighboursPage/>
@@ -309,7 +311,7 @@ export default function DashboardLayoutBasic(props) {
         return <UserEngagementPage/>
       case "/reports/top_contributors":
         return <TopContributorsPage/>
-      case "/reports/Society_health_score":
+      case "/reports/society_health_score":
         return <SocietyHealthScore/>
       case "/integrations":
         return <IntegrationPage/>

@@ -32,7 +32,9 @@ const initialPerson = {
   name: "",
   house: "",
   age: "",
-  bmi: "",
+  feet: "",
+  inches: "",
+  weight: "",
   fat: "",
   condition: "",
 };
@@ -53,6 +55,14 @@ const computeHealthScore = ({ age, bmi, fat, condition }) => {
   return Math.max(0, Math.min(10, score.toFixed(1)));
 };
 
+const calculateBMI = (feet, inches, weight) => {
+  const heightInMeters =
+    (parseFloat(feet || 0) * 0.3048) + (parseFloat(inches || 0) * 0.0254);
+  if (!heightInMeters || !weight) return "";
+  const bmi = weight / (heightInMeters * heightInMeters);
+  return bmi.toFixed(1);
+};
+
 export default function SocietyHealthScore() {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
@@ -60,13 +70,15 @@ export default function SocietyHealthScore() {
   const [data, setData] = useState([]);
   const [person, setPerson] = useState(initialPerson);
 
+  const bmi = calculateBMI(person.feet, person.inches, person.weight);
+
   const handleChange = (e) => {
     setPerson({ ...person, [e.target.name]: e.target.value });
   };
 
   const handleAdd = () => {
-    const healthScore = computeHealthScore(person);
-    const newPerson = { ...person, healthScore: parseFloat(healthScore) };
+    const healthScore = computeHealthScore({ ...person, bmi });
+    const newPerson = { ...person, bmi, healthScore: parseFloat(healthScore) };
     setData([...data, newPerson]);
     setPerson(initialPerson);
   };
@@ -86,6 +98,7 @@ export default function SocietyHealthScore() {
 
   return (
     <Box p={4} bgcolor={isDark ? "#121212" : "#f5f5f5"} minHeight="100vh">
+      {/* Heading */}
       <Box
         fontSize={{ xs: "1.8rem", sm: "2.2rem", md: "2.5rem" }}
         fontWeight="bold"
@@ -95,7 +108,7 @@ export default function SocietyHealthScore() {
         🏡 Society Health Score System
       </Box>
 
-      {/* Form */}
+      {/* Form Section */}
       <Box
         p={3}
         mb={5}
@@ -108,19 +121,98 @@ export default function SocietyHealthScore() {
           Add Individual Health Data
         </Typography>
         <Grid container spacing={2}>
-          {["name", "house", "age", "bmi", "fat"].map((field) => (
-            <Grid item xs={12} sm={6} key={field}>
-              <TextField
-                label={field.charAt(0).toUpperCase() + field.slice(1)}
-                name={field}
-                value={person[field]}
-                onChange={handleChange}
-                fullWidth
-                variant="outlined"
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-          ))}
+          <Grid item xs={12} sm={6}>
+            <TextField
+              label="Name"
+              name="name"
+              value={person.name}
+              onChange={handleChange}
+              fullWidth
+              variant="outlined"
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              label="House"
+              name="house"
+              value={person.house}
+              onChange={handleChange}
+              fullWidth
+              variant="outlined"
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              label="Age"
+              name="age"
+              type="number"
+              value={person.age}
+              onChange={handleChange}
+              fullWidth
+              variant="outlined"
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <TextField
+              label="Height (Feet)"
+              name="feet"
+              type="number"
+              value={person.feet}
+              onChange={handleChange}
+              fullWidth
+              variant="outlined"
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <TextField
+              label="Height (Inches)"
+              name="inches"
+              type="number"
+              value={person.inches}
+              onChange={handleChange}
+              fullWidth
+              variant="outlined"
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              label="Weight (kg)"
+              name="weight"
+              type="number"
+              value={person.weight}
+              onChange={handleChange}
+              fullWidth
+              variant="outlined"
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              label="BMI (Auto Calculated)"
+              value={bmi}
+              disabled
+              fullWidth
+              variant="outlined"
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              label="Fat %"
+              name="fat"
+              type="number"
+              value={person.fat}
+              onChange={handleChange}
+              fullWidth
+              variant="outlined"
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
           <Grid item xs={12}>
             <TextField
               select
@@ -149,27 +241,20 @@ export default function SocietyHealthScore() {
             </TextField>
           </Grid>
           <Grid item xs={12}>
-            <Button variant="contained" fullWidth onClick={handleAdd} sx={{mt:2, ml: 3}}>
+            <Button variant="contained" fullWidth onClick={handleAdd} sx={{ mt: 2, ml: 3 }}>
               ➕ Add Person
             </Button>
           </Grid>
         </Grid>
       </Box>
 
-      {/* Individual Cards */}
+      {/* Cards Display */}
       <Grid container spacing={2} mb={6}>
         {data.map((item, index) => (
           <Grid item xs={12} md={4} key={index}>
-            <Card
-              sx={{
-                bgcolor: isDark ? "#1e1e1e" : "#fafafa",
-                boxShadow: 4,
-              }}
-            >
+            <Card sx={{ bgcolor: isDark ? "#1e1e1e" : "#fafafa", boxShadow: 4 }}>
               <CardContent>
-                <Typography variant="h6" color="text.primary">
-                  {item.name}
-                </Typography>
+                <Typography variant="h6" color="text.primary">{item.name}</Typography>
                 <Typography variant="body2">House: {item.house}</Typography>
                 <Typography variant="body2">Age: {item.age}</Typography>
                 <Typography variant="body2">BMI: {item.bmi}</Typography>
@@ -207,13 +292,8 @@ export default function SocietyHealthScore() {
         ))}
       </Grid>
 
-      {/* Bar Chart */}
-      <Box
-        p={3}
-        bgcolor={isDark ? "#1e1e1e" : "#ffffff"}
-        borderRadius={2}
-        boxShadow={3}
-      >
+      {/* Bar Chart Section */}
+      <Box p={3} bgcolor={isDark ? "#1e1e1e" : "#ffffff"} borderRadius={2} boxShadow={3}>
         <Typography variant="h6" gutterBottom color="text.primary">
           📊 Average Health Score Per Family
         </Typography>

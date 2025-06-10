@@ -1,6 +1,6 @@
 import * as React from "react";
 import { GlobalStyles } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { createTheme, styled } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import DashboardIcon from "@mui/icons-material/Dashboard";
@@ -46,6 +46,9 @@ import TopContributorsPage from "../pages/TopContributors";
 import SocietyHealthScore from "../pages/HealthScore";
 import IntegrationPage from "../pages/Integration";
 import ResidentLogin from "../pages/ResidentLogin";
+import { Info } from "@mui/icons-material";
+import AdminLogin from "../pages/AdminLogin";
+
 const NAVIGATION = [
   {
     kind: "header",
@@ -99,16 +102,19 @@ const NAVIGATION = [
     segment: "buzz",
     title: "Society Buzz",
     icon: <DynamicFeedIcon />,
+    path: "/buzz",
   },
   {
     segment: "neighbours",
     title: "Neighbours",
     icon: <GroupsIcon />,
+    path: "/neighbours",
   },
   {
     segment: "gallery",
     title: "Gallery",
     icon: <PhotoLibraryIcon />,
+    path: "/gallery",
   },
   {
     kind: "divider",
@@ -121,26 +127,31 @@ const NAVIGATION = [
     segment: "reports",
     title: "Reports",
     icon: <BarChartIcon />,
+    path: "/reports",
     children: [
       {
         segment: "user_engagement",
         title: "User Engagement",
         icon: <ShowChartIcon />,
+        path: "/reports/user_engagement",
       },
       {
         segment: "top_contributors",
         title: "Top Contributors",
         icon: <MilitaryTechIcon />,
+        path: "/reports/top_contributors",
       },
       {
         segment: "society_health_score",
         title: "Society Health Score",
         icon: <HealthAndSafetyIcon />,
+        path: "/reports/society_health_score",
       },
       {
         segment: "age_groups",
         title: "Age Groups",
         icon: <Diversity3Icon />,
+        path: "/reports/age_groups",
       },
     ],
   },
@@ -148,35 +159,9 @@ const NAVIGATION = [
     segment: "integrations",
     title: "Integrations",
     icon: <LayersIcon />,
+    path: "/integrations",
   },
 ];
-
-function useDemoRouter(initialPath = "/") {
-  const [location, setLocation] = React.useState(() => {
-    const url = new URL(`http://localhost${initialPath}`);
-    return {
-      pathname: url.pathname,
-      searchParams: new URLSearchParams(url.search),
-    };
-  });
-
-  const navigate = React.useCallback((path) => {
-    const url = new URL(`http://localhost${path}`);
-    setLocation({
-      pathname: url.pathname,
-      searchParams: new URLSearchParams(url.search),
-    });
-  }, []);
-
-  return React.useMemo(
-    () => ({
-      pathname: location.pathname,
-      searchParams: location.searchParams,
-      navigate,
-    }),
-    [location, navigate]
-  );
-}
 
 export default function DashboardLayoutBasic(props) {
   const { window } = props;
@@ -184,8 +169,8 @@ export default function DashboardLayoutBasic(props) {
     () => window?.localStorage.getItem("theme") || "light"
   );
 
-  const router = useDemoRouter("/");
-  const demoWindow = window ? window() : undefined;
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const demoTheme = React.useMemo(
     () =>
@@ -200,8 +185,8 @@ export default function DashboardLayoutBasic(props) {
             dark: "grey",
           },
           text: {
-            primary: mode === "light" ? "#212121" : "#E5E5E5",
-            secondary: "#757575",
+            primary: mode === "light" ? "#212121" ? "#121212":
+            secondary: "#f5f5f5",
           },
           background: {
             default: mode === "light" ? "#E5E5E5" : "#121212",
@@ -211,9 +196,8 @@ export default function DashboardLayoutBasic(props) {
           MuiTypography: {
             styleOverrides: {
               root: {
-                // Hide header titles only if they belong to the PageHeader
                 "&.MuiTypography-h4": {
-                  display: "none", // Hides "Chats" title
+                  display: "none",
                 },
               },
             },
@@ -221,7 +205,7 @@ export default function DashboardLayoutBasic(props) {
           MuiBreadcrumbs: {
             styleOverrides: {
               root: {
-                display: "none", // Hides "My society / Chats" breadcrumb
+                display: "none",
               },
             },
           },
@@ -251,7 +235,6 @@ export default function DashboardLayoutBasic(props) {
                 "&:active": {
                   backgroundColor: mode === "light" ? "white" : "white",
                 },
-                // or if you want the selected state:
                 "&.Mui-selected": {
                   backgroundColor: "white",
                   color: "black",
@@ -262,7 +245,6 @@ export default function DashboardLayoutBasic(props) {
               },
             },
           },
-
           MuiListItemText: {
             styleOverrides: {
               primary: {
@@ -278,56 +260,18 @@ export default function DashboardLayoutBasic(props) {
               },
             },
           },
-          
         },
       }),
     [mode]
   );
-  function renderPage(pathname) {
-    switch (pathname) {
-      case "/":
-        return <ResidentLogin/>
-      case "/my-society":
-        return <MySociety />;
-      case "/my-society/chats":
-        return <ChatsPage />;
-      case "/my-society/polls":
-        return <PollsPage />;
-      case "/my-society/ads":
-        return <ProductsPage />;
-      case "/my-society/complaints":
-        return <ComplaintForm />;
-      case "/my-society/events":
-        return <EventPage />;
-      case "/my-society/notices":
-        return <NoticesPage />;
-      case "/buzz":
-        return <SocietyBuzz />;
-      case "/neighbours":
-        return <NeighboursPage/>
-      case "/gallery":
-        return <SocietyGalleryPage/>
-      case "/reports/user_engagement":
-        return <UserEngagementPage/>
-      case "/reports/top_contributors":
-        return <TopContributorsPage/>
-      case "/reports/society_health_score":
-        return <SocietyHealthScore/>
-      case "/integrations":
-        return <IntegrationPage/>
-      default:
-        return <div>Page Not Found</div>;
-    }
-  }
 
   const toggleMode = () =>
     setMode((prev) => (prev === "light" ? "dark" : "light"));
 
   const goToMySociety = () => {
-    router.navigate("/my-society");
+    navigate("/my-society");
   };
 
-  // Create a custom moon-style switch
   const MoonSwitch = styled(Switch)(({ theme }) => ({
     width: 60,
     height: 34,
@@ -341,7 +285,6 @@ export default function DashboardLayoutBasic(props) {
         color: "#fff",
         "& + .MuiSwitch-track": {
           backgroundColor: "white",
-
           opacity: 1,
           border: 0,
         },
@@ -370,7 +313,6 @@ export default function DashboardLayoutBasic(props) {
     "& .MuiSwitch-switchBase.Mui-checked .MuiSwitch-thumb:before": {
       content: '"🌙"',
     },
-
     "& .MuiSwitch-track": {
       borderRadius: 20 / 2,
       backgroundColor: "#ccc",
@@ -385,25 +327,13 @@ export default function DashboardLayoutBasic(props) {
     <>
       <AppProvider
         navigation={NAVIGATION}
-        router={router}
         theme={demoTheme}
-        window={demoWindow}
+        window={window ? window() : undefined}
         branding={{
-          title: (
-            <span className="mt-1.5">
-              <SangamLogo />
-            </span>
-          ),
+          title: <span className="mt-1.5"><SangamLogo /></span>,
           logo: (
-            <div
-              style={{ maxWidth: 200, cursor: "pointer" }}
-              onClick={goToMySociety}
-            >
-              <img
-                src={appLogo}
-                alt="App Logo"
-                style={{ width: "100%", height: "100%", marginLeft: 15 }}
-              />
+            <div style={{ maxWidth: 200, cursor: "pointer" }} onClick={goToMySociety}>
+              <img src={appLogo} alt="App Logo" style={{ width: "100%", height: "100%", marginLeft: 15 }} />
             </div>
           ),
         }}
@@ -411,20 +341,28 @@ export default function DashboardLayoutBasic(props) {
         <div style={{ position: "absolute", top: 10, right: 8, zIndex: 1500 }}>
           <MoonSwitch checked={mode === "dark"} onChange={toggleMode} />
         </div>
-
         <DashboardLayout>
-          <PageContainer
-            sx={{
-              padding: 0,
-              margin: 0,
-            }}
-          >
-            {console.log(router.pathname)}
-            {router.pathname ? (
-              renderPage(router.pathname)
-            ) : (
-              <div>Loading...</div>
-            )}
+          <PageContainer sx={{ padding: 0, margin: 0 }}>
+            <Routes>
+              <Route path="/" element={<MySociety />} />
+              <Route path="/my-society" element={<MySociety />} />
+              <Route path="/my-society/chats" element={<ChatsPage />} />
+              <Route path="/my-society/polls" element={<PollsPage />} />
+              <Route path="/my-society/ads" element={<ProductsPage />} />
+              <Route path="/my-society/complaints" element={<ComplaintForm />} />
+              <Route path="/my-society/events" element={<EventPage />} />
+              <Route path="/my-society/notices" element={<NoticesPage />} />
+              <Route path="/resident-login" element={<ResidentLogin />} />
+              <Route path="/admin-login" element={<AdminLogin />} />
+              <Route path="/buzz" element={<SocietyBuzz />} />
+              <Route path="/neighbours" element={<NeighboursPage />} />
+              <Route path="/gallery" element={<SocietyGalleryPage />} />
+              <Route path="/reports/user_engagement" element={<UserEngagementPage />} />
+              <Route path="/reports/top_contributors" element={<TopContributorsPage />} />
+              <Route path="/reports/society_health_score" element={<SocietyHealthScore />} />
+              <Route path="/integrations" element={<IntegrationPage />} />
+              <Route path="*" element={<div>Page Not Found</div>} />
+            </Routes>
           </PageContainer>
         </DashboardLayout>
       </AppProvider>

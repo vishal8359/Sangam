@@ -219,7 +219,7 @@ export default function SocietyBuzz() {
               zIndex: 1,
               overflowY: "auto",
               height: "100%",
-              p: 2,
+              p: 0,
             }}
           >
             {getFilteredMessages().map((msg, idx) => {
@@ -231,14 +231,19 @@ export default function SocietyBuzz() {
                   key={msg.id}
                   sx={{
                     display: "flex",
-                    justifyContent: isSelf ? "flex-end" : "flex-start",
+                    justifyContent: isSelf ? "flex-end" : "flex-start", 
                     mb: 1.5,
-                    p: 0,
-                    textAlign: isSelf ? "right" : "left",
-                    mt: idx === 0 ? 0 : 1.5, // no margin top for first message
+                    mt: idx === 0 ? 0 : 1.5,
+                    px: 1,
                   }}
                 >
-                  <Box>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: isSelf ? "flex-end" : "flex-start", // control alignment of the message content box
+                    }}
+                  >
                     {showName && (
                       <Typography
                         variant="caption"
@@ -247,7 +252,6 @@ export default function SocietyBuzz() {
                           ml: 1,
                           mb: 0.3,
                           display: "block",
-                          mt: 0,
                         }}
                       >
                         {msg.senderName}
@@ -255,7 +259,7 @@ export default function SocietyBuzz() {
                     )}
                     <Box
                       sx={{
-                        maxWidth: "105%",
+                        maxWidth: isMobile ? "75%" : "90%",
                         bgcolor: isSelf
                           ? theme.palette.primary.main
                           : theme.palette.grey[300],
@@ -267,7 +271,7 @@ export default function SocietyBuzz() {
                         whiteSpace: "pre-line",
                         boxShadow: 1,
                         backdropFilter: "blur(4px)",
-                        mt: 0,
+                        alignSelf: isSelf ? "flex-end" : "flex-start", // push the bubble to the correct side
                       }}
                     >
                       {msg.content}

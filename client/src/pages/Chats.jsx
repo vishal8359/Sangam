@@ -73,7 +73,7 @@ export default function ChatsPage() {
     <Box
       display="flex"
       flexDirection={isMobile ? "column" : "row"}
-      height={isMobile ? "100%" : "95vh"}
+      height={isMobile ? "100%" : "92vh"}
       bgcolor={theme.palette.background.default}
       sx={{ borderRadius: 0, overflow: "hidden" }}
     >

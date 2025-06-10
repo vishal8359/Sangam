@@ -29,7 +29,7 @@ const MySociety = () => {
 
       {/* Main Content */}
       <div
-        className="relative max-w-3xl w-full mx-auto p-10 bg-white bg-opacity-90 rounded-2xl shadow-xl"
+        className="relative max-w-5xl w-full mx-auto mt-5 p-10 bg-white bg-opacity-90 rounded-2xl shadow-xl"
         style={{ zIndex: 1 }}
       >
         <h1 className="text-3xl font-bold text-center mb-2 flex justify-center gap-4">
@@ -76,6 +76,7 @@ const MySociety = () => {
           {/* Leave Button */}
           <button
             style={{
+              cursor: "pointer",
               backgroundColor: 'var(--color-primary)',
               cursor: 'pointer',
             }}
@@ -92,16 +93,16 @@ const MySociety = () => {
 
           {/* Resident Login */}
           <button
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl transition w-48"
-            onClick={() => navigate("/resident-login")}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl transition w-48 cursor-pointer"
+            onClick={() => navigate('resident-login')}
           >
             Resident Login
           </button>
 
           {/* Admin Login */}
           <button
-            className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-xl transition w-48"
-             onClick={() => navigate('/admin-login')}
+            className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-xl transition w-48 cursor-pointer"
+             onClick={() => navigate('admin-login')}
           >
             Admin Login
           </button>

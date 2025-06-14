@@ -1,14 +1,19 @@
 // server.js (or server.mjs if not using "type": "module")
-
+import cookieParser from 'cookie-parser'
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import connectDB from "./Configs/db.js";
+import connectCloudinary from "./Configs/cloudinary.js";
 
 dotenv.config();
 await connectDB();
+await connectCloudinary();
 
 const app = express();
+
+// Middlewares
+app.use(cookieParser());
 app.use(cors());
 app.use(express.json());
 

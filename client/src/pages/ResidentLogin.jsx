@@ -1,143 +1,160 @@
 import React, { useState } from "react";
+import {
+  Box,
+  TextField,
+  Button,
+  Typography,
+  Paper,
+  useMediaQuery,
+  useTheme,
+  Link,
+} from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import { useAppContext } from "../context/AppContext";
 
-function ResidentLogin() {
-  const [houseId, setHouseId] = useState("");
+export default function ResidentLogin() {
   const [societyId, setSocietyId] = useState("");
-  const [phoneNo, setPhoneNo] = useState("");
+  const [houseId, setHouseId] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
+  const {navigate} = useAppContext();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-    // Validate required fields
-    if (!houseId.trim() || !societyId.trim() || !phoneNo.trim()) {
-      setError("House ID, Society ID, and Phone Number are required.");
-      return;
-    }
+  const handleSubmit = (e) => {
+    e.preventDefault();
 
-    // Optional: Validate phone number format (basic example)
-    const phoneRegex = /^[0-9]{10}$/;
-    if (!phoneRegex.test(phoneNo.trim())) {
-      setError("Phone Number must be a 10-digit number.");
+    if (!societyId.trim() || !houseId.trim() || !email.trim() || !password.trim()) {
+      setError("All fields are required.");
       return;
     }
 
     setError(null);
 
-    // Example login data object
     const loginData = {
-      houseId: houseId.trim(),
       societyId: societyId.trim(),
-      phoneNo: phoneNo.trim(),
-      email: email.trim() || null,
+      houseId: houseId.trim(),
+      email: email.trim(),
+      password: password.trim(),
     };
 
     console.log("Logging in with:", loginData);
 
-    // Clear form or redirect after login success
-    setHouseId("");
-    setSocietyId("");
-    setPhoneNo("");
-    setEmail("");
+    // Simulate successful login and navigate
+    navigate("/my-society");
+  };
+
+  const handleRegisterClick = (e) => {
+    e.preventDefault();
+    navigate("/register");
   };
 
   return (
-    <div style={styles.container}>
-      <h2>Resident Login</h2>
-      <form onSubmit={handleSubmit} style={styles.form}>
-        <label style={styles.label}>
-          House ID*:
-          <input
-            type="text"
-            value={houseId}
-            onChange={(e) => setHouseId(e.target.value)}
-            style={styles.input}
-            placeholder="Enter your House ID"
-          />
-        </label>
+    <Box
+      display="flex"
+      justifyContent="center"
+      alignItems="center"
+      minHeight="100vh"
+      bgcolor="#f4f6f8"
+      px={2}
+    >
+      <Paper
+        elevation={6}
+        sx={{
+          p: 4,
+          maxWidth: 500,
+          width: "100%",
+          borderRadius: 3,
+        }}
+      >
+        <Typography
+          variant="h5"
+          fontWeight="bold"
+          textAlign="center"
+          gutterBottom
+          color={theme.palette.mode === "dark" ? "#f5f5ff" : ""}
+        >
+          Resident Login
+        </Typography>
 
-        <label style={styles.label}>
-          Society ID*:
-          <input
-            type="text"
+        <form onSubmit={handleSubmit}>
+          <TextField
+            fullWidth
+            label="User ID"
             value={societyId}
             onChange={(e) => setSocietyId(e.target.value)}
-            style={styles.input}
-            placeholder="Enter your Society ID"
+            variant="outlined"
+            margin="normal"
+            required
           />
-        </label>
 
-        <label style={styles.label}>
-          Phone Number*:
-          <input
-            type="tel"
-            value={phoneNo}
-            onChange={(e) => setPhoneNo(e.target.value)}
-            style={styles.input}
-            placeholder="Enter your 10-digit phone number"
+          <TextField
+            fullWidth
+            label="House ID"
+            value={houseId}
+            onChange={(e) => setHouseId(e.target.value)}
+            variant="outlined"
+            margin="normal"
+            required
           />
-        </label>
 
-        <label style={styles.label}>
-          Email (Optional):
-          <input
+          <TextField
+            fullWidth
+            label="Email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            style={styles.input}
-            placeholder="Enter your email (optional)"
+            variant="outlined"
+            margin="normal"
+            required
           />
-        </label>
 
-        {error && <p style={styles.error}>{error}</p>}
+          <TextField
+            fullWidth
+            label="Password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            variant="outlined"
+            margin="normal"
+            required
+          />
 
-        <button type="submit" style={styles.button}>
-          Login
-        </button>
-      </form>
-    </div>
+          {error && (
+            <Typography color="error" mt={1} mb={2}>
+              {error}
+            </Typography>
+          )}
+
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            fullWidth
+            sx={{ mt: 2, py: 1.2 }}
+          >
+            Login
+          </Button>
+
+          <Typography
+            variant="body2"
+            textAlign="center"
+            mt={2}
+          >
+            New User?{" "}
+            <Link
+              href="#"
+              onClick={handleRegisterClick}
+              color="primary"
+              underline="hover"
+            >
+              Register here
+            </Link>
+          </Typography>
+        </form>
+      </Paper>
+    </Box>
   );
 }
-
-const styles = {
-  container: {
-    maxWidth: "400px",
-    margin: "50px auto",
-    padding: "20px",
-    border: "1px solid #ccc",
-    borderRadius: "8px",
-    boxShadow: "0 0 10px rgba(0,0,0,0.1)",
-    fontFamily: "Arial, sans-serif",
-  },
-  form: {
-    display: "flex",
-    flexDirection: "column",
-  },
-  label: {
-    marginBottom: "15px",
-    fontWeight: "bold",
-  },
-  input: {
-    marginTop: "5px",
-    padding: "8px",
-    fontSize: "16px",
-    borderRadius: "4px",
-    border: "1px solid #ccc",
-  },
-  button: {
-    padding: "10px",
-    fontSize: "16px",
-    borderRadius: "4px",
-    backgroundColor: "#007bff",
-    color: "white",
-    border: "none",
-    cursor: "pointer",
-  },
-  error: {
-    color: "red",
-    marginBottom: "15px",
-  },
-};
-
-export default ResidentLogin;

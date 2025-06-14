@@ -128,6 +128,7 @@ export default function NeighboursPage() {
         sx={{
           fontWeight: "bold",
           mb: 2,
+          color: theme.palette.mode === "dark" ? "#f5f5ff" : "",
           fontSize: (theme) => theme.typography.h4.fontSize,
           lineHeight: (theme) => theme.typography.h4.lineHeight,
         }}
@@ -142,8 +143,8 @@ export default function NeighboursPage() {
           onChange={handleTabChange}
           variant={isMobile ? "scrollable" : "fullWidth"}
           scrollButtons="auto"
-          indicatorColor="primary"
-          textColor="primary"
+          indicatorColor="#121212"
+          textColor="#f5f5ff"
           aria-label="Neighbours sections tabs"
           centered={!isMobile}
         >

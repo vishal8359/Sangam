@@ -20,13 +20,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-// Severe conditions list
-const SEVERE_CONDITIONS = [
-  "Heart Disease",
-  "Cancer",
-  "Chronic Kidney",
-  "Severe Diabetes",
-];
+import { SEVERE_CONDITIONS } from "../assets/local.js";
 
 const initialPerson = {
   name: "",
@@ -57,7 +51,7 @@ const computeHealthScore = ({ age, bmi, fat, condition }) => {
 
 const calculateBMI = (feet, inches, weight) => {
   const heightInMeters =
-    (parseFloat(feet || 0) * 0.3048) + (parseFloat(inches || 0) * 0.0254);
+    parseFloat(feet || 0) * 0.3048 + parseFloat(inches || 0) * 0.0254;
   if (!heightInMeters || !weight) return "";
   const bmi = weight / (heightInMeters * heightInMeters);
   return bmi.toFixed(1);
@@ -76,13 +70,6 @@ export default function SocietyHealthScore() {
     setPerson({ ...person, [e.target.name]: e.target.value });
   };
 
-  const handleAdd = () => {
-    const healthScore = computeHealthScore({ ...person, bmi });
-    const newPerson = { ...person, bmi, healthScore: parseFloat(healthScore) };
-    setData([...data, newPerson]);
-    setPerson(initialPerson);
-  };
-
   const familyScores = Object.values(
     data.reduce((acc, cur) => {
       if (!acc[cur.house])
@@ -95,6 +82,31 @@ export default function SocietyHealthScore() {
     house: item.house,
     avgScore: parseFloat((item.total / item.count).toFixed(2)),
   }));
+  const handleAdd = () => {
+     const healthScore = computeHealthScore({ ...person, bmi });
+    
+    const { name, house, age, feet, inches, weight, fat, condition } = person;
+    if (
+      !name ||
+      !house ||
+      !age ||
+      !feet ||
+      !inches ||
+      !weight ||
+      !fat ||
+      !condition
+    ) {
+      alert("Please fill all required fields.");
+      return;
+    }
+    else{
+      const newPerson = { ...person, bmi, healthScore: parseFloat(healthScore) };
+    setData([...data, newPerson]);
+    setPerson(initialPerson);
+    }
+
+    // Proceed to add person
+  };
 
   return (
     <Box p={4} bgcolor={isDark ? "#121212" : "#f5f5f5"} minHeight="100vh">
@@ -130,6 +142,7 @@ export default function SocietyHealthScore() {
               fullWidth
               variant="outlined"
               InputLabelProps={{ shrink: true }}
+              required
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -141,6 +154,7 @@ export default function SocietyHealthScore() {
               fullWidth
               variant="outlined"
               InputLabelProps={{ shrink: true }}
+              required
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -153,6 +167,7 @@ export default function SocietyHealthScore() {
               fullWidth
               variant="outlined"
               InputLabelProps={{ shrink: true }}
+              required
             />
           </Grid>
           <Grid item xs={6} sm={3}>
@@ -165,6 +180,7 @@ export default function SocietyHealthScore() {
               fullWidth
               variant="outlined"
               InputLabelProps={{ shrink: true }}
+              required
             />
           </Grid>
           <Grid item xs={6} sm={3}>
@@ -177,6 +193,7 @@ export default function SocietyHealthScore() {
               fullWidth
               variant="outlined"
               InputLabelProps={{ shrink: true }}
+              required
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -189,6 +206,7 @@ export default function SocietyHealthScore() {
               fullWidth
               variant="outlined"
               InputLabelProps={{ shrink: true }}
+              required
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -199,6 +217,7 @@ export default function SocietyHealthScore() {
               fullWidth
               variant="outlined"
               InputLabelProps={{ shrink: true }}
+              required
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -211,6 +230,7 @@ export default function SocietyHealthScore() {
               fullWidth
               variant="outlined"
               InputLabelProps={{ shrink: true }}
+              required
             />
           </Grid>
           <Grid item xs={12}>
@@ -223,6 +243,7 @@ export default function SocietyHealthScore() {
               variant="outlined"
               fullWidth
               sx={{ minWidth: 222 }}
+              required
             >
               {[
                 "None",
@@ -241,7 +262,13 @@ export default function SocietyHealthScore() {
             </TextField>
           </Grid>
           <Grid item xs={12}>
-            <Button variant="contained" fullWidth onClick={handleAdd} sx={{ mt: 2, ml: 3 }}>
+            <Button
+              variant="contained"
+              fullWidth
+              onClick={handleAdd}
+              sx={{ mt: 2, ml: 3 }}
+              required
+            >
               ➕ Add Person
             </Button>
           </Grid>
@@ -252,9 +279,13 @@ export default function SocietyHealthScore() {
       <Grid container spacing={2} mb={6}>
         {data.map((item, index) => (
           <Grid item xs={12} md={4} key={index}>
-            <Card sx={{ bgcolor: isDark ? "#1e1e1e" : "#fafafa", boxShadow: 4 }}>
+            <Card
+              sx={{ bgcolor: isDark ? "#1e1e1e" : "#fafafa", boxShadow: 4 }}
+            >
               <CardContent>
-                <Typography variant="h6" color="text.primary">{item.name}</Typography>
+                <Typography variant="h6" color="text.primary">
+                  {item.name}
+                </Typography>
                 <Typography variant="body2">House: {item.house}</Typography>
                 <Typography variant="body2">Age: {item.age}</Typography>
                 <Typography variant="body2">BMI: {item.bmi}</Typography>
@@ -293,7 +324,12 @@ export default function SocietyHealthScore() {
       </Grid>
 
       {/* Bar Chart Section */}
-      <Box p={3} bgcolor={isDark ? "#1e1e1e" : "#ffffff"} borderRadius={2} boxShadow={3}>
+      <Box
+        p={3}
+        bgcolor={isDark ? "#1e1e1e" : "#ffffff"}
+        borderRadius={2}
+        boxShadow={3}
+      >
         <Typography variant="h6" gutterBottom color="text.primary">
           📊 Average Health Score Per Family
         </Typography>

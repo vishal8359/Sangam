@@ -3,10 +3,10 @@ import { society } from '../assets/local.js';
 import societyBg from '../assets/societyBg.jpg';
 import MySocietyImg from '../assets/mySocietyImg.jpg';
 import society_icon from '../assets/society_icon.png';
-import { useNavigate } from "react-router-dom";
+import { useAppContext } from '../context/AppContext.jsx';
 
 const MySociety = () => {
-  const navigate = useNavigate();
+  const {navigate} = useAppContext();
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-gray-100">
@@ -75,6 +75,11 @@ const MySociety = () => {
         <div className="mt-6 flex flex-col items-center space-y-4">
           {/* Leave Button */}
           <button
+            onClick={() => {
+              event.preventDefault();
+              navigate('/');
+            }
+            }
             style={{
               cursor: "pointer",
               backgroundColor: 'var(--color-primary)',
@@ -92,20 +97,20 @@ const MySociety = () => {
           </button>
 
           {/* Resident Login */}
-          <button
+          {/* <button
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl transition w-48 cursor-pointer"
             onClick={() => navigate('resident-login')}
           >
             Resident Login
-          </button>
+          </button> */}
 
           {/* Admin Login */}
-          <button
+          {/* <button
             className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-xl transition w-48 cursor-pointer"
              onClick={() => navigate('admin-login')}
           >
             Admin Login
-          </button>
+          </button> */}
         </div>
       </div>
     </div>

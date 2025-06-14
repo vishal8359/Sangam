@@ -142,7 +142,7 @@ const PollsPage = () => {
         const currentHouseNumber = houseNumbers[poll.id] || "";
 
         return (
-          <Paper key={poll.id} elevation={4} sx={{ p: 2, m: 2 }}>
+          <Paper key={poll.id} elevation={4} sx={{ p: 2, m: 1, mb:3 }}>
             <Box display="flex" alignItems="center" mb={2}>
               <Avatar
                 src={poll.logo}

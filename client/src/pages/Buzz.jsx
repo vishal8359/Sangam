@@ -17,28 +17,7 @@ import Groups2Icon from "@mui/icons-material/Groups2";
 import ForumIcon from "@mui/icons-material/Forum";
 import chatWindow from "../assets/ChatWindow.jpg";
 import EmojiEmotionsIcon from "@mui/icons-material/EmojiEmotions";
-
-const dummyGroups = ["Chai Group", "Mandir Group", "Festival Team"];
-
-const dummyMessages = [
-  { id: 1, sender: "self", content: "Hey everyone!" },
-  { id: 2, sender: "other", content: "Hello! What’s up?" },
-  { id: 3, sender: "self", content: "Shall we plan a chai meetup?" },
-  {
-    id: 4,
-    sender: "group",
-    group: "Chai Group",
-    senderName: "Radha",
-    content: "Yes please!",
-  },
-  {
-    id: 5,
-    sender: "group",
-    group: "Mandir Group",
-    senderName: "Suresh",
-    content: "Join aarti at 7!",
-  },
-];
+import { dummyGroups, dummyMessages } from "../assets/local.js";
 
 export default function SocietyBuzz() {
   const theme = useTheme();
@@ -84,6 +63,7 @@ export default function SocietyBuzz() {
   return (
     <Box
       sx={{
+        maxWidth: "100vw",
         height: "94vh",
         bgcolor: isDark ? "#121212" : "#f0f0f0",
       }}
@@ -266,10 +246,11 @@ export default function SocietyBuzz() {
                         color: isSelf ? "white" : "black",
                         px: 2,
                         py: 1,
+                        mr: 0.5,
                         borderRadius: 2,
                         fontSize: "0.9rem",
                         whiteSpace: "pre-line",
-                        boxShadow: 1,
+                        boxShadow: 3,
                         backdropFilter: "blur(4px)",
                         alignSelf: isSelf ? "flex-end" : "flex-start", // push the bubble to the correct side
                       }}

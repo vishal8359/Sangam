@@ -6,12 +6,12 @@ const sendSMS = async (to, body) => {
   try {
     await client.messages.create({
       body,
-      from: process.env.TWILIO_PHONE,
-      to: `+91${to}`, // or just use `to` if it's already in international format
+      from: 'whatsapp:' + process.env.TWILIO_PHONE,  // WhatsApp sandbox number
+      to: 'whatsapp:+91' + to,                       // User's number
     });
-    console.log("📱 SMS sent to", to);
+    console.log("📱 WhatsApp message sent to", to);
   } catch (error) {
-    console.error("❌ SMS error:", error);
+    console.error("❌ SMS error:", error.message || error);
   }
 };
 

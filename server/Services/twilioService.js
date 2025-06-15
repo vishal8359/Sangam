@@ -1,22 +1,22 @@
-// server/services/twilioService.js
-
+// server/Utils/smsService.js
 import twilio from "twilio";
 
-const accountSid = process.env.TWILIO_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
-const twilioPhone = process.env.TWILIO_PHONE;
+const client = twilio(
+  process.env.TWILIO_SID,
+  process.env.TWILIO_AUTH_TOKEN
+);
 
-const client = twilio(accountSid, authToken);
-
-export const sendSMS = async (to, message) => {
+const sendSMS = async (to, body) => {
   try {
     await client.messages.create({
-      body: message,
-      from: twilioPhone,
-      to: to.startsWith('+') ? to : `+91${to}`, // Defaulting to India code if not present
+      from: `whatsapp:${process.env.TWILIO_PHONE}`, // WhatsApp sandbox number
+      to:   `whatsapp:+91${to}`,                   // ensure +91 prefix
+      body
     });
-    console.log("SMS sent to", to);
+    console.log("📱 WhatsApp message sent to +91" + to);
   } catch (err) {
-    console.error("Failed to send SMS:", err.message);
+    console.error("❌ WhatsApp error:", err.message);
   }
 };
+
+export default sendSMS;

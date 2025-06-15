@@ -1,6 +1,7 @@
-import User from "../Models/User.js";
+// server/Controllers/adminController.js
+import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import generateToken from "../Utils/generateAdminToken.js";
+import User from "../Models/User.js";
 
 export const loginAdmin = async (req, res) => {
   const { email, password } = req.body;
@@ -13,24 +14,14 @@ export const loginAdmin = async (req, res) => {
     }
 
     const isMatch = await bcrypt.compare(password, admin.password);
+    if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
 
-    if (!isMatch) {
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
+    const token = jwt.sign({ id: admin._id }, process.env.JWT_SECRET, { expiresIn: "1d" });
 
-    const token = generateToken(admin);
+    res.json({ token, admin: { name: admin.name, email: admin.email, role: admin.role } });
 
-    res.status(200).json({
-      token,
-      admin: {
-        id: admin._id,
-        email: admin.email,
-        name: admin.name,
-        role: admin.role,
-      },
-    });
   } catch (err) {
-    console.error("Admin login error:", err);
+    console.error("Login error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };

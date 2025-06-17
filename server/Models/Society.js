@@ -1,10 +1,17 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
-const societySchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  location: String,
-  created_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  residents: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-});
+const societySchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    location: { type: String, required: true },
+    created_by: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    residents: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+  },
+  { timestamps: true }
+);
 
-export default mongoose.model('Society', societySchema);
+export default mongoose.model("Society", societySchema);

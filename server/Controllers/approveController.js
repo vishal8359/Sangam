@@ -2,6 +2,7 @@ import User from "../Models/User.js";
 import sendSMS from "../Utils/smsService.js"; // or adjust path
 import sendEmail from "../Utils/emailService.js"; // or adjust path
 
+
 export const approveResident = async (req, res) => {
   const { userId } = req.params;
 
@@ -47,11 +48,17 @@ export const approveJoinRequest = async (req, res) => {
     if (!user || !society) {
       return res.status(404).json({ message: "User or society not found" });
     }
+    if (!user.joined_societies.includes(society._id)) {
+      user.joined_societies.push(society._id);
+    }
 
+    if (!society.residents.includes(user._id)) {
+      society.residents.push(user._id);
+    }
     // Update records
     user.role = "resident";
-    user.joined_society = society._id;
-    society.residents.push(user._id);
+    // user.joined_society = society._id;
+    // society.residents.push(user._id);
     request.status = "approved";
     request.approved_at = new Date();
 

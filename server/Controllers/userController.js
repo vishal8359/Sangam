@@ -4,11 +4,8 @@ import { v4 as uuidv4 } from "uuid";
 import jwt from "jsonwebtoken";
 import Society from "../Models/Society.js";
 import JoinRequest from "../Models/JoinRequest.js"
+import Home from "../Models/Home.js";
 // For example only — replace with actual DB model if you store electricity bills separately
-const getHomeIdByBillNumber = async (bill_no) => {
-  const existingUser = await User.findOne({ electricity_bill_no: bill_no });
-  return existingUser?.home_id || null;
-};
 
 export const registerResident = async (req, res) => {
   try {
@@ -22,14 +19,10 @@ export const registerResident = async (req, res) => {
       electricity_bill_no,
     } = req.body;
 
+    // Validate required fields
     if (
-      !name ||
-      !email ||
-      !phone_no ||
-      !address ||
-      !password ||
-      !confirm_password ||
-      !electricity_bill_no
+      !name || !email || !phone_no || !address ||
+      !password || !confirm_password || !electricity_bill_no
     ) {
       return res.status(400).json({ message: "All fields are required" });
     }
@@ -38,54 +31,56 @@ export const registerResident = async (req, res) => {
       return res.status(400).json({ message: "Passwords do not match" });
     }
 
-    const existingUser = await User.findOne({
-      $or: [{ phone_no }, { email }],
-    });
-
+    // Check if user already exists
+    const existingUser = await User.findOne({ $or: [{ email }, { phone_no }] });
     if (existingUser) {
-      return res
-        .status(400)
-        .json({ message: "Email or phone already registered" });
+      return res.status(400).json({ message: "Email or phone already registered" });
     }
 
+    // Find or create home based on bill number
+    let home = await Home.findOne({ electricity_bill_no });
+    if (!home) {
+      home = new Home({
+        electricity_bill_no,
+        residents: [],
+      });
+      await home.save();
+    }
+
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Generate user_id
-    const user_id = uuidv4();
-
-    // Check if home_id exists for given bill number
-    let home_id = await getHomeIdByBillNumber(electricity_bill_no);
-
-    // If not, generate a new home_id
-    if (!home_id) home_id = uuidv4();
-
+    // Create user
     const newUser = new User({
-      user_id,
+      user_id: uuidv4(),
       name,
       email,
       phone_no,
       address,
       password: hashedPassword,
-      home_id,
-      is_approved: false, // Wait for admin approval
+      home_id: home._id,
+      is_approved: false,
     });
 
     await newUser.save();
 
-    // Admin notification logic placeholder
-    // In actual app: send socket/push/email notification to admin
+    // Add user to home residents
+    home.residents.push(newUser._id);
+    await home.save();
+
     console.log("⚠️ New registration pending admin approval:", newUser.name);
 
     return res.status(201).json({
       message: "Registration successful. Awaiting admin approval.",
-      user_id,
-      home_id,
+      user_id: newUser.user_id,
+      home_id: home._id,
     });
   } catch (error) {
     console.error("Registration Error:", error);
     return res.status(500).json({ message: "Server error" });
   }
 };
+
 
 export const loginUser = async (req, res) => {
   const { email, password } = req.body;

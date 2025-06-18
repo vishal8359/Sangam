@@ -2,7 +2,6 @@ import User from "../Models/User.js";
 import sendSMS from "../Utils/smsService.js"; // or adjust path
 import sendEmail from "../Utils/emailService.js"; // or adjust path
 
-
 export const approveResident = async (req, res) => {
   const { userId } = req.params;
 
@@ -19,12 +18,15 @@ export const approveResident = async (req, res) => {
     await user.save();
 
     // Send notifications
-    await sendSMS(user.phone_no, `✅ You are approved. Your user ID is ${user.user_id}, home ID is ${user.home_id}`);
-    await sendEmail(
-      user.email,
-      "🎉 Society App Approval",
-      `Hi ${user.name},\n\nYou have been approved!\nUser ID: ${user.user_id}\nHome ID: ${user.home_id}`
+    await sendSMS(
+      user.phone_no,
+      `✅ You are approved. Your user ID is ${user.user_id}, home ID is ${user.home_id}`
     );
+    await sendEmail({
+      to: user.email,
+      subject: "🎉 Society App Approval",
+      text: `Hi ${user.name},\n\nYou have been approved!\nUser ID: ${user.user_id}\nHome ID: ${user.home_id}`,
+    });
 
     res.status(200).json({ message: "User approved and notified" });
   } catch (err) {
@@ -39,7 +41,9 @@ export const approveJoinRequest = async (req, res) => {
   try {
     const request = await JoinRequest.findById(req.params.requestId);
     if (!request || request.status !== "pending") {
-      return res.status(404).json({ message: "Request not found or already handled" });
+      return res
+        .status(404)
+        .json({ message: "Request not found or already handled" });
     }
 
     const user = await User.findById(request.user_id);
@@ -82,7 +86,6 @@ export const approveJoinRequest = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 export const getPendingUsers = async (req, res) => {
   try {

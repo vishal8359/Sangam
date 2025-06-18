@@ -12,6 +12,11 @@ const transporter = nodemailer.createTransport({
 });
 
 const sendEmail = async ({ to, subject, text }) => {
+
+  if (!to) {
+    console.error("❌ Cannot send email: 'to' field is missing or empty");
+    return;
+  }
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to,

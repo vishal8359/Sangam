@@ -22,6 +22,9 @@ const userSchema = new mongoose.Schema(
         ref: "Society",
       },
     ],
+    otp: String,
+    otp_expiry: Date,
+    is_verified: { type: Boolean, default: false },
   },
 
   { timestamps: true }

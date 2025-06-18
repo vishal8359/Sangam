@@ -3,8 +3,10 @@ import bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
 import jwt from "jsonwebtoken";
 import Society from "../Models/Society.js";
-import JoinRequest from "../Models/JoinRequest.js"
+import JoinRequest from "../Models/JoinRequest.js";
 import Home from "../Models/Home.js";
+import crypto from "crypto";
+import sendSMS from "../Utils/smsService.js";
 // For example only — replace with actual DB model if you store electricity bills separately
 
 export const registerResident = async (req, res) => {
@@ -21,8 +23,13 @@ export const registerResident = async (req, res) => {
 
     // Validate required fields
     if (
-      !name || !email || !phone_no || !address ||
-      !password || !confirm_password || !electricity_bill_no
+      !name ||
+      !email ||
+      !phone_no ||
+      !address ||
+      !password ||
+      !confirm_password ||
+      !electricity_bill_no
     ) {
       return res.status(400).json({ message: "All fields are required" });
     }
@@ -34,7 +41,9 @@ export const registerResident = async (req, res) => {
     // Check if user already exists
     const existingUser = await User.findOne({ $or: [{ email }, { phone_no }] });
     if (existingUser) {
-      return res.status(400).json({ message: "Email or phone already registered" });
+      return res
+        .status(400)
+        .json({ message: "Email or phone already registered" });
     }
 
     // Find or create home based on bill number
@@ -50,6 +59,8 @@ export const registerResident = async (req, res) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpiry = Date.now() + 5 * 60 * 1000;
     // Create user
     const newUser = new User({
       user_id: uuidv4(),
@@ -60,6 +71,9 @@ export const registerResident = async (req, res) => {
       password: hashedPassword,
       home_id: home._id,
       is_approved: false,
+      otp,
+      otp_expiry: new Date(otpExpiry),
+      is_verified: false,
     });
 
     await newUser.save();
@@ -69,6 +83,10 @@ export const registerResident = async (req, res) => {
     await home.save();
 
     console.log("⚠️ New registration pending admin approval:", newUser.name);
+    await sendSMS(
+      phone_no,
+      `🔐 Your OTP for Society registration is: ${otp}. Valid for 5 minutes.`
+    );
 
     return res.status(201).json({
       message: "Registration successful. Awaiting admin approval.",
@@ -81,6 +99,31 @@ export const registerResident = async (req, res) => {
   }
 };
 
+export const verifyOtp = async (req, res) => {
+  const { phone_no, otp } = req.body;
+
+  try {
+    const user = await User.findOne({ phone_no });
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (!user.otp || user.otp !== otp || Date.now() > new Date(user.otp_expiry).getTime()) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+
+    user.is_verified = true;
+    user.otp = undefined;
+    user.otp_expiry = undefined;
+
+    await user.save();
+
+    res.status(200).json({ message: "Phone number verified successfully" });
+
+  } catch (err) {
+    console.error("OTP Verification Error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
 
 export const loginUser = async (req, res) => {
   const { email, password } = req.body;

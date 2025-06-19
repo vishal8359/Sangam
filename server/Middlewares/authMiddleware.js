@@ -31,7 +31,12 @@ export const verifyAdmin = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.id);
 
-    if (!user || user.role !== "admin") {
+    if (!user) return res.status(404).json({ msg: "User not found" });
+
+    // ✅ Check if user has any admin role
+    const isAdmin = user.roles?.some(r => r.role === "admin");
+
+    if (!isAdmin) {
       return res.status(403).json({ msg: "Access denied: Admins only" });
     }
 

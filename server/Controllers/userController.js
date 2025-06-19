@@ -5,9 +5,9 @@ import jwt from "jsonwebtoken";
 import Society from "../Models/Society.js";
 import JoinRequest from "../Models/JoinRequest.js";
 import Home from "../Models/Home.js";
-import crypto from "crypto";
 import sendSMS from "../Utils/smsService.js";
 // For example only — replace with actual DB model if you store electricity bills separately
+const pendingRegistrations = new Map();
 
 export const registerResident = async (req, res) => {
   try {
@@ -46,52 +46,30 @@ export const registerResident = async (req, res) => {
         .json({ message: "Email or phone already registered" });
     }
 
-    // Find or create home based on bill number
-    let home = await Home.findOne({ electricity_bill_no });
-    if (!home) {
-      home = new Home({
-        electricity_bill_no,
-        residents: [],
-      });
-      await home.save();
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpExpiry = Date.now() + 5 * 60 * 1000;
-    // Create user
-    const newUser = new User({
-      user_id: uuidv4(),
+
+    pendingRegistrations.set(phone_no, {
       name,
       email,
-      phone_no,
       address,
-      password: hashedPassword,
-      home_id: home._id,
-      is_approved: false,
+      password,
+      electricity_bill_no,
       otp,
-      otp_expiry: new Date(otpExpiry),
-      is_verified: false,
+      otpExpiry,
     });
 
-    await newUser.save();
-
-    // Add user to home residents
-    home.residents.push(newUser._id);
-    await home.save();
-
-    console.log("⚠️ New registration pending admin approval:", newUser.name);
+    console.log(
+      "⚠️ Registration initiated. Awaiting OTP verification:",
+      phone_no
+    );
     await sendSMS(
       phone_no,
       `🔐 Your OTP for Society registration is: ${otp}. Valid for 5 minutes.`
     );
 
-    return res.status(201).json({
-      message: "Registration successful. Awaiting admin approval.",
-      user_id: newUser.user_id,
-      home_id: home._id,
+    return res.status(200).json({
+      message: "OTP sent for verification",
     });
   } catch (error) {
     console.error("Registration Error:", error);
@@ -103,22 +81,56 @@ export const verifyOtp = async (req, res) => {
   const { phone_no, otp } = req.body;
 
   try {
-    const user = await User.findOne({ phone_no });
+    const pendingData = pendingRegistrations.get(phone_no);
 
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    if (!user.otp || user.otp !== otp || Date.now() > new Date(user.otp_expiry).getTime()) {
-      return res.status(400).json({ message: "Invalid or expired OTP" });
+    if (!pendingData) {
+      return res.status(400).json({ message: "No pending registration found" });
     }
 
-    user.is_verified = true;
-    user.otp = undefined;
-    user.otp_expiry = undefined;
+    // if (pendingData.otp !== otp || Date.now() > pendingData.otpExpiry) {
+    //   return res.status(400).json({ message: "Invalid or expired OTP" });
+    // }
 
-    await user.save();
+    // Hash password
+    const hashedPassword = await bcrypt.hash(pendingData.password, 10);
 
-    res.status(200).json({ message: "Phone number verified successfully" });
+    // Check or create Home
+    let home = await Home.findOne({
+      electricity_bill_no: pendingData.electricity_bill_no,
+    });
+    if (!home) {
+      home = await Home.create({
+        electricity_bill_no: pendingData.electricity_bill_no,
+        residents: [],
+      });
+    }
 
+    const newUser = await User.create({
+      user_id: uuidv4(),
+      name: pendingData.name,
+      email: pendingData.email,
+      phone_no,
+      address: pendingData.address,
+      password: hashedPassword,
+      home_id: home._id,
+      is_approved: true,
+      is_verified: true,
+      roles: [],
+    });
+
+    home.residents.push(newUser._id);
+    await home.save();
+
+    pendingRegistrations.delete(phone_no);
+    await sendSMS(
+      phone_no,
+      `✅ Registration complete! Dear ${newUser.name}, this is your User ID: ${newUser.user_id} \n and Home ID: ${home._id}\nWelcome to the society app.`
+    );
+    res.status(201).json({
+      message: "Phone verified and user registered successfully",
+      user_id: newUser.user_id,
+      home_id: home._id,
+    });
   } catch (err) {
     console.error("OTP Verification Error:", err);
     res.status(500).json({ message: "Server error" });
@@ -173,19 +185,32 @@ export const createSociety = async (req, res) => {
   const { name, location } = req.body;
   const userId = req.user._id;
 
-  const society = await Society.create({
-    name,
-    location,
-    created_by: userId,
-    residents: [userId],
-  });
+  try {
+    // 1. Create the new society
+    const society = await Society.create({
+      name,
+      location,
+      created_by: userId,
+      residents: [userId],
+    });
 
-  await User.findByIdAndUpdate(userId, {
-    role: "admin",
-    created_society: society._id,
-  });
+    // 2. Update user: add role entry and optional created_society
+    await User.findByIdAndUpdate(userId, {
+      $push: {
+        roles: {
+          society_id: society._id,
+          role: "admin",
+        },
+      },
+      // Optional: store reference if you want to highlight "created society"
+      created_society: society._id,
+    });
 
-  res.status(201).json({ message: "Society created", society });
+    res.status(201).json({ message: "Society created", society });
+  } catch (error) {
+    console.error("Error creating society:", error);
+    res.status(500).json({ message: "Server error" });
+  }
 };
 
 // POST : /api/society/:id/join

@@ -11,9 +11,12 @@ import { verifyUser } from "../Middlewares/authMiddleware.js";
 
 const userRoutes = express.Router();
 
+// first register
 userRoutes.post("/register", registerResident);
-userRoutes.post("/login", loginUser);
+//send OTP
 userRoutes.post("/verify-otp", verifyOtp);
+// login
+userRoutes.post("/login", loginUser);
 
 userRoutes.post("/society/create", verifyUser, createSociety);
 

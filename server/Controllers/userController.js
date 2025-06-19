@@ -215,18 +215,33 @@ export const createSociety = async (req, res) => {
 
 // POST : /api/society/:id/join
 export const requestJoinSociety = async (req, res) => {
-  const userId = req.user._id;
-  const societyId = req.params.id;
+  try {
+    const userId = req.user._id;
+    const societyId = req.params.id;
 
-  const existing = await JoinRequest.findOne({
-    user_id: userId,
-    society_id: societyId,
-  });
-  if (existing) return res.status(400).json({ message: "Already requested" });
+    // ✅ Check if a pending or approved request already exists
+    const existing = await JoinRequest.findOne({
+      user_id: userId,
+      society_id: societyId,
+      status: { $in: ["pending", "approved"] },
+    });
 
-  const request = await JoinRequest.create({
-    user_id: userId,
-    society_id: societyId,
-  });
-  res.status(201).json({ message: "Join request sent", request });
+    if (existing) {
+      return res.status(400).json({ message: "You already have a pending or approved request for this society." });
+    }
+
+    // ✅ Create new request
+    const request = await JoinRequest.create({
+      user_id: userId,
+      society_id: societyId,
+      status: "pending",
+      requested_at: new Date(),
+    });
+
+    res.status(201).json({ message: "Join request sent", request });
+  } catch (err) {
+    console.error("Join request error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
 };
+

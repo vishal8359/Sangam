@@ -8,18 +8,33 @@ import {
 } from "../Controllers/userController.js";
 
 import { verifyUser } from "../Middlewares/authMiddleware.js";
+import { getPollsBySociety, voteInPoll } from "../Controllers/pollController.js";
+import { getNoticesBySociety } from "../Controllers/noticeController.js";
+import { getGroupsBySociety, getGroupDetails, postInGroup } from "../Controllers/buzzController.js";
 
-const userRoutes = express.Router();
+const router = express.Router();
 
 // first register
-userRoutes.post("/register", registerResident);
+router.post("/register", registerResident);
 //send OTP
-userRoutes.post("/verify-otp", verifyOtp);
+router.post("/verify-otp", verifyOtp);
 // login
-userRoutes.post("/login", loginUser);
+router.post("/login", loginUser);
 
-userRoutes.post("/society/create", verifyUser, createSociety);
+router.post("/society/create", verifyUser, createSociety);
 
-userRoutes.post("/society/:id/join", verifyUser, requestJoinSociety);
+router.post("/society/:id/join", verifyUser, requestJoinSociety);
 
-export default userRoutes;
+// Polls
+router.get("/polls/:societyId", verifyUser, getPollsBySociety);
+router.post("/polls/:pollId/vote", verifyUser, voteInPoll);
+
+// Notices
+router.get("/notices/:societyId", verifyUser, getNoticesBySociety);
+
+// Buzz groups
+router.get("/buzz/groups/:societyId", verifyUser, getGroupsBySociety);
+router.get("/buzz/group/:groupId", verifyUser, getGroupDetails);
+router.post("/buzz/group/:groupId/post", verifyUser, postInGroup);
+
+export default router;

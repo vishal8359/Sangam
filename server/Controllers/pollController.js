@@ -44,7 +44,7 @@ export const createPoll = async (req, res) => {
       poll,
     });
   } catch (err) {
-    console.error("❌ Create poll error:", err);
+    console.error("Create poll error:", err);
     res.status(500).json({ message: "Server error during poll creation" });
   }
 };
@@ -57,7 +57,7 @@ export const getPollsBySociety = async (req, res) => {
 
     res.status(200).json(polls);
   } catch (err) {
-    console.error("❌ Get polls error:", err);
+    console.error("Get polls error:", err);
     res.status(500).json({ message: "Server error while fetching polls" });
   }
 };
@@ -97,7 +97,7 @@ export const voteInPoll = async (req, res) => {
 
     res.status(200).json({ message: "Vote registered successfully", poll });
   } catch (err) {
-    console.error("❌ Vote error:", err);
+    console.error("Vote error:", err);
     res.status(500).json({ message: "Server error during voting" });
   }
 };
@@ -120,7 +120,7 @@ export const getPollResults = async (req, res) => {
       totalVotes: results.reduce((sum, r) => sum + r.votes, 0),
     });
   } catch (err) {
-    console.error("❌ Poll results error:", err);
+    console.error("Poll results error:", err);
     res.status(500).json({ message: "Server error while fetching results" });
   }
 };

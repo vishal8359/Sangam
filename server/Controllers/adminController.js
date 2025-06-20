@@ -22,7 +22,7 @@ export const loginAdmin = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // ✅ Check if user has any admin role
+    // Check if user has any admin role
     const hasAdminRole = user.roles.some((r) => r.role === "admin");
     if (!hasAdminRole) {
       return res.status(403).json({ message: "Not authorized as admin" });

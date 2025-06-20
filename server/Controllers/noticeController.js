@@ -1,6 +1,6 @@
 import Notice from "../Models/Notice.js";
 
-// ✅ Create a new notice
+// Create a new notice
 export const createNotice = async (req, res) => {
   try {
     const { title, description, society_id } = req.body;
@@ -35,7 +35,7 @@ export const getNoticesBySociety = async (req, res) => {
 
     res.status(200).json(notices);
   } catch (err) {
-    console.error("❌ Get notices error:", err);
+    console.error("Get notices error:", err);
     res.status(500).json({ message: "Server error while fetching notices" });
   }
 };

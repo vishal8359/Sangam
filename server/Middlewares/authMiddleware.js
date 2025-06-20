@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import User from "../Models/User.js";
 
-// ✅ General user auth middleware
+// General user auth middleware
 export const verifyUser = async (req, res, next) => {
   const token = req.headers.authorization?.split(" ")[1];
 
@@ -21,7 +21,7 @@ export const verifyUser = async (req, res, next) => {
   }
 };
 
-// ✅ Admin-only middleware
+// Admin-only middleware
 export const verifyAdmin = async (req, res, next) => {
   const token = req.headers.authorization?.split(" ")[1];
 
@@ -33,7 +33,7 @@ export const verifyAdmin = async (req, res, next) => {
 
     if (!user) return res.status(404).json({ msg: "User not found" });
 
-    // ✅ Check if user has any admin role
+    // Check if user has any admin role
     const isAdmin = user.roles?.some(r => r.role === "admin");
 
     if (!isAdmin) {

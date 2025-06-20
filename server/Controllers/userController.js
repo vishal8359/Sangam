@@ -87,9 +87,9 @@ export const verifyOtp = async (req, res) => {
       return res.status(400).json({ message: "No pending registration found" });
     }
 
-    // if (pendingData.otp !== otp || Date.now() > pendingData.otpExpiry) {
-    //   return res.status(400).json({ message: "Invalid or expired OTP" });
-    // }
+    if (pendingData.otp !== otp || Date.now() > pendingData.otpExpiry) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(pendingData.password, 10);
@@ -219,7 +219,7 @@ export const requestJoinSociety = async (req, res) => {
     const userId = req.user._id;
     const societyId = req.params.id;
 
-    // ✅ Check if a pending or approved request already exists
+    // Check if a pending or approved request already exists
     const existing = await JoinRequest.findOne({
       user_id: userId,
       society_id: societyId,
@@ -230,7 +230,7 @@ export const requestJoinSociety = async (req, res) => {
       return res.status(400).json({ message: "You already have a pending or approved request for this society." });
     }
 
-    // ✅ Create new request
+    // Create new request
     const request = await JoinRequest.create({
       user_id: userId,
       society_id: societyId,

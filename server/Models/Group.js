@@ -53,7 +53,7 @@ const groupSchema = new mongoose.Schema(
       ref: "user",
       required: true,
     },
-    posts: [postSchema], // Added posts field
+    posts: [postSchema], 
   },
   { timestamps: true }
 );

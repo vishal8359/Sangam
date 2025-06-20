@@ -1,11 +1,13 @@
 import express from "express";
 import { loginAdmin, approveJoinRequest, rejectJoinRequest } from "../Controllers/adminController.js";
-import { approveResident, getPendingUsers } from "../Controllers/approveController.js";
+import { getPendingUsers } from "../Controllers/approveController.js";
 import { verifyAdmin, verifyUser } from "../Middlewares/authMiddleware.js";
 
 import { createPoll, getPollsBySociety, voteInPoll, getPollResults } from "../Controllers/pollController.js";
 import { createNotice, getNoticesBySociety } from "../Controllers/noticeController.js";
 import { createGroup, getGroupsBySociety, getGroupDetails, postInGroup } from "../Controllers/buzzController.js";
+import { rejectGroupJoinRequest, approveGroupJoinRequest } from "../Controllers/groupJoinController.js";
+
 const router = express.Router();
 
 // first login admin and generate a token
@@ -35,5 +37,7 @@ router.post("/buzz/groups/create", verifyAdmin, createGroup);
 router.get("/buzz/groups/:societyId", verifyUser, getGroupsBySociety);
 router.get("/buzz/group/:groupId", verifyUser, getGroupDetails);
 router.post("/buzz/group/:groupId/post", verifyUser, postInGroup);
+router.post("/buzz/groups/requests/:requestId/approve", verifyAdmin, approveGroupJoinRequest);
+router.post("/buzz/groups/requests/:requestId/reject", verifyAdmin, rejectGroupJoinRequest);
 
 export default router;

@@ -6,7 +6,7 @@ const noticeSchema = new mongoose.Schema(
     description: { type: String, required: true }, 
     society_id: { type: mongoose.Schema.Types.ObjectId, ref: "Society", required: true },
     posted_by: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true }, 
-    posted_at: { type: Date, default: Date.now }, // explicitly included
+    posted_at: { type: Date, default: Date.now },
   },
   { timestamps: true }
 );

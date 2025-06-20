@@ -12,7 +12,7 @@ import { getPollsBySociety, voteInPoll } from "../Controllers/pollController.js"
 import { getNoticesBySociety } from "../Controllers/noticeController.js";
 import { getGroupsBySociety, getGroupDetails, postInGroup } from "../Controllers/buzzController.js";
 import upload from "../Configs/multer.js";
-
+import { requestToJoinGroup } from "../Controllers/groupJoinController.js";
 const router = express.Router();
 
 // first register
@@ -46,6 +46,7 @@ router.post(
   ]),
   postInGroup
 );
+router.post("/buzz/groups/:groupId/join-request", verifyUser, requestToJoinGroup);
 
 
 export default router;

@@ -110,23 +110,3 @@ export const postInGroup = async (req, res) => {
   }
 };
 
-// group join req
-export const requestGroupJoin = async (req, res) => {
-  const { groupId } = req.params;
-  const userId = req.user._id;
-
-  const existing = await GroupJoinRequest.findOne({
-    user_id: userId,
-    group_id: groupId,
-    status: "pending",
-  });
-
-  if (existing) return res.status(400).json({ message: "Request already pending" });
-
-  const request = await GroupJoinRequest.create({
-    user_id: userId,
-    group_id: groupId,
-  });
-
-  res.status(201).json({ message: "Join request sent", request });
-};

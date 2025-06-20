@@ -11,6 +11,7 @@ import { verifyUser } from "../Middlewares/authMiddleware.js";
 import { getPollsBySociety, voteInPoll } from "../Controllers/pollController.js";
 import { getNoticesBySociety } from "../Controllers/noticeController.js";
 import { getGroupsBySociety, getGroupDetails, postInGroup } from "../Controllers/buzzController.js";
+import upload from "../Configs/multer.js";
 
 const router = express.Router();
 
@@ -35,6 +36,16 @@ router.get("/notices/:societyId", verifyUser, getNoticesBySociety);
 // Buzz groups
 router.get("/buzz/groups/:societyId", verifyUser, getGroupsBySociety);
 router.get("/buzz/group/:groupId", verifyUser, getGroupDetails);
-router.post("/buzz/group/:groupId/post", verifyUser, postInGroup);
+router.post(
+  "/buzz/groups/:groupId/post",
+  verifyUser,
+  upload.fields([
+    { name: "image", maxCount: 1 },
+    { name: "audio", maxCount: 1 },
+    { name: "reel", maxCount: 1 },
+  ]),
+  postInGroup
+);
+
 
 export default router;

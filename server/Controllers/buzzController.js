@@ -1,4 +1,7 @@
 import Group from "../Models/Group.js";
+import GroupJoinRequest from "../Models/GroupJoinRequest.js";
+import { uploadToCloudinary } from "../Utils/cloudinaryUpload.js";
+import User from "../Models/User.js";
 
 // Create a group
 export const createGroup = async (req, res) => {
@@ -58,19 +61,72 @@ export const postInGroup = async (req, res) => {
     const userId = req.user._id;
     const { groupId } = req.params;
 
-    if (!text || text.trim() === "") {
-      return res.status(400).json({ message: "Post text cannot be empty." });
-    }
-
     const group = await Group.findById(groupId);
     if (!group) return res.status(404).json({ message: "Group not found" });
 
-    group.posts.push({ user: userId, text: text.trim(), created_at: new Date() });
+    const user = await User.findById(userId);
+    const isMember = user.roles.some(
+      (role) => role.society_id?.toString() === group.society_id?.toString()
+    );
+
+    if (!isMember) {
+      return res.status(403).json({ message: "Access denied: Not a member of this society." });
+    }
+
+    // Handle file uploads (Multer adds files to req.files)
+    const media = {};
+
+    if (req.files?.image?.[0]) {
+      media.image = await uploadToCloudinary(req.files.image[0].path, "buzz/posts/images");
+    }
+    if (req.files?.audio?.[0]) {
+      media.audio = await uploadToCloudinary(req.files.audio[0].path, "buzz/posts/audio");
+    }
+    if (req.files?.reel?.[0]) {
+      media.reel = await uploadToCloudinary(req.files.reel[0].path, "buzz/posts/reels");
+    }
+
+    if (!text && Object.keys(media).length === 0) {
+      return res.status(400).json({ message: "Post must have text or media." });
+    }
+
+    const newPost = {
+      user: userId,
+      text: text?.trim() || "",
+      created_at: new Date(),
+      media: Object.keys(media).length ? media : undefined,
+    };
+
+    group.posts.push(newPost);
     await group.save();
 
-    res.status(200).json({ message: "Posted in group", group });
+    res.status(201).json({
+      message: "Post added successfully",
+      post: group.posts[group.posts.length - 1],
+    });
   } catch (err) {
-    console.error("Post in group error:", err);
+    console.error("❌ Post in group error:", err);
     res.status(500).json({ message: "Server error" });
   }
+};
+
+// group join req
+export const requestGroupJoin = async (req, res) => {
+  const { groupId } = req.params;
+  const userId = req.user._id;
+
+  const existing = await GroupJoinRequest.findOne({
+    user_id: userId,
+    group_id: groupId,
+    status: "pending",
+  });
+
+  if (existing) return res.status(400).json({ message: "Request already pending" });
+
+  const request = await GroupJoinRequest.create({
+    user_id: userId,
+    group_id: groupId,
+  });
+
+  res.status(201).json({ message: "Join request sent", request });
 };

@@ -14,6 +14,7 @@ import { getGroupsBySociety, getGroupDetails, postInGroup } from "../Controllers
 import upload from "../Configs/multer.js";
 import { requestToJoinGroup } from "../Controllers/groupJoinController.js";
 const router = express.Router();
+import { createProduct, getActiveProducts, deleteProduct } from "../Controllers/productController.js";
 
 // first register
 router.post("/register", registerResident);
@@ -48,5 +49,13 @@ router.post(
 );
 router.post("/buzz/groups/:groupId/join-request", verifyUser, requestToJoinGroup);
 
-
+// products
+router.post(
+  "/products/create",
+  verifyUser,
+  upload.array("images", 5),
+  createProduct
+);
+router.get("/products", verifyUser, getActiveProducts);
+router.delete("/products/:productId", verifyUser, deleteProduct);
 export default router;

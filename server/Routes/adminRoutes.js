@@ -7,6 +7,8 @@ import { createPoll, getPollsBySociety, voteInPoll, getPollResults } from "../Co
 import { createNotice, getNoticesBySociety } from "../Controllers/noticeController.js";
 import { createGroup, getGroupsBySociety, getGroupDetails, postInGroup } from "../Controllers/buzzController.js";
 import { rejectGroupJoinRequest, approveGroupJoinRequest } from "../Controllers/groupJoinController.js";
+import { deactivateProduct } from "../Controllers/productController.js";
+
 
 const router = express.Router();
 
@@ -39,5 +41,9 @@ router.get("/buzz/group/:groupId", verifyUser, getGroupDetails);
 router.post("/buzz/group/:groupId/post", verifyUser, postInGroup);
 router.post("/buzz/groups/requests/:requestId/approve", verifyAdmin, approveGroupJoinRequest);
 router.post("/buzz/groups/requests/:requestId/reject", verifyAdmin, rejectGroupJoinRequest);
+
+// Product Delete
+router.put("/products/:productId/deactivate", verifyAdmin, deactivateProduct);
+
 
 export default router;

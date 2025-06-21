@@ -1,11 +1,15 @@
 import Product from "../Models/Product.js";
 import { uploadToCloudinary } from "../Utils/cloudinaryUpload.js";
+import { v2 as cloudinary } from "cloudinary";
+import mongoose from "mongoose";
+
 
 // POST: User uploads product
 export const createProduct = async (req, res) => {
   try {
     const { name, price, quantity, description, society_id } = req.body;
-    const files = req.files?.images || [];
+
+    const files = req.files || [];
 
     const imageUrls = await Promise.all(
       files.map((file) => uploadToCloudinary(file.path, "products"))
@@ -31,7 +35,10 @@ export const createProduct = async (req, res) => {
 // GET: All active products
 export const getActiveProducts = async (req, res) => {
   try {
-    const products = await Product.find({ society_id: req.user.joined_society, is_active: true });
+    const products = await Product.find({
+      society_id: req.user.joined_society,
+      is_active: true,
+    });
     res.json(products);
   } catch (err) {
     console.error("Fetch products error:", err);
@@ -62,13 +69,27 @@ export const deleteProduct = async (req, res) => {
     const userId = req.user._id;
 
     const product = await Product.findById(productId);
+
     if (!product) return res.status(404).json({ message: "Product not found" });
 
-    if (product.created_by.toString() !== userId.toString()) {
-      return res.status(403).json({ message: "Unauthorized to delete this product" });
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      return res.status(400).json({ message: "Invalid product ID" });
     }
 
-    await Product.findByIdAndDelete(productId);
+    if (product.created_by.toString() !== userId.toString()) {
+      return res
+        .status(403)
+        .json({ message: "Unauthorized to delete this product" });
+    }
+
+    for (const img of product.images) {
+      if (img.public_id) {
+        await cloudinary.uploader.destroy(img.public_id);
+      }
+    }
+
+    await product.deleteOne();
+
     res.status(200).json({ message: "Product deleted successfully" });
   } catch (err) {
     console.error("❌ Delete product error:", err);

@@ -13,8 +13,8 @@ export const uploadToCloudinary = async (filePath, folder) => {
       folder,
       resource_type: "auto",
     });
-    fs.unlinkSync(filePath); // cleanup local file
-    return res.secure_url;
+    fs.unlinkSync(filePath); 
+    return { url: res.secure_url, public_id: res.public_id };
   } catch (err) {
     throw new Error("Cloudinary upload failed");
   }

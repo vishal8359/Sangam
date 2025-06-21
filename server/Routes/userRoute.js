@@ -15,7 +15,7 @@ import upload from "../Configs/multer.js";
 import { requestToJoinGroup } from "../Controllers/groupJoinController.js";
 const router = express.Router();
 import { createProduct, getActiveProducts, deleteProduct } from "../Controllers/productController.js";
-
+import { submitComplaint, getComplaintsBySociety, deleteComplaint } from "../Controllers/complaintController.js";
 // first register
 router.post("/register", registerResident);
 //send OTP
@@ -58,4 +58,18 @@ router.post(
 );
 router.get("/products", verifyUser, getActiveProducts);
 router.delete("/products/:productId", verifyUser, deleteProduct);
+
+// Complaint
+
+router.post(
+  "/complaints/submit",
+  verifyUser,
+  upload.single("file"),
+  submitComplaint
+);
+router.delete("/complaints/:complaintId", verifyUser, deleteComplaint);
+router.get("/complaints/society/:societyId", verifyUser, getComplaintsBySociety);
+
+
+
 export default router;

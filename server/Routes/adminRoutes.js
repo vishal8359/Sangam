@@ -8,7 +8,7 @@ import { createNotice, getNoticesBySociety } from "../Controllers/noticeControll
 import { createGroup, getGroupsBySociety, getGroupDetails, postInGroup } from "../Controllers/buzzController.js";
 import { rejectGroupJoinRequest, approveGroupJoinRequest } from "../Controllers/groupJoinController.js";
 import { deactivateProduct } from "../Controllers/productController.js";
-import { resolveComplaint, getComplaintsBySociety } from "../Controllers/complaintController.js";
+import { resolveComplaint, getComplaintsBySociety, getResolvedComplaints } from "../Controllers/complaintController.js";
 
 
 const router = express.Router();
@@ -49,7 +49,6 @@ router.put("/products/:productId/deactivate", verifyAdmin, deactivateProduct);
 // Complaints
 router.get("/complaints/:societyId", verifyAdmin, getComplaintsBySociety);
 router.put("/complaints/resolve/:complaintId", verifyAdmin, resolveComplaint);
-
-
+router.get("/complaints/resolved/:societyId", verifyAdmin, getResolvedComplaints);
 
 export default router;

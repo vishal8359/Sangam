@@ -16,6 +16,9 @@ import { requestToJoinGroup } from "../Controllers/groupJoinController.js";
 const router = express.Router();
 import { createProduct, getActiveProducts, deleteProduct } from "../Controllers/productController.js";
 import { submitComplaint, getComplaintsBySociety, deleteComplaint } from "../Controllers/complaintController.js";
+import { createEvent, getAllEvents, cancelEvent, rsvpToEvent, commentOnEvent } from "../Controllers/eventController.js";
+
+
 // first register
 router.post("/register", registerResident);
 //send OTP
@@ -70,6 +73,10 @@ router.post(
 router.delete("/complaints/:complaintId", verifyUser, deleteComplaint);
 router.get("/complaints/society/:societyId", verifyUser, getComplaintsBySociety);
 
-
-
+// Events
+router.post("/create-events", verifyUser, upload.single("image"), createEvent);
+router.patch("/events/:eventId/cancel", verifyUser, cancelEvent);
+router.get("/events", verifyUser, getAllEvents);
+router.post("/events/:eventId/rsvp", verifyUser, rsvpToEvent);
+router.post("/events/:eventId/comment", verifyUser, commentOnEvent);
 export default router;

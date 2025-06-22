@@ -167,3 +167,25 @@ export const deleteComplaint = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+export const getResolvedComplaints = async (req, res) => {
+  try {
+    const { societyId } = req.params;
+
+    const complaints = await Complaint.find({
+      society_id: societyId,
+      status: "Resolved"
+    })
+    .populate({
+      path: "user",
+      model: "user",
+      select: "name email",
+    })
+    .sort({ updatedAt: -1 });
+
+    res.status(200).json(complaints);
+  } catch (err) {
+    console.error("❌ Get resolved complaints error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};

@@ -48,6 +48,10 @@ import UserEngagementPage from "../pages/UserEngagement";
 import TopContributorsPage from "../pages/TopContributors";
 import SocietyHealthScore from "../pages/HealthScore";
 import IntegrationPage from "../pages/Integration";
+import UploadReelPage from "../pages/Gallery/uploadReelPage";
+import ScrollReelsPage from "../pages/Gallery/scrollReelsPage";
+import UploadImagePage from "../pages/Gallery/uploadImagePage";
+
 const NAVIGATION = [
   {
     kind: "header",
@@ -309,6 +313,12 @@ export default function DashboardLayoutBasic(props) {
         return <NeighboursPage />;
       case "/gallery":
         return <SocietyGalleryPage />;
+      case "/gallery/upload-reel":
+        return <UploadReelPage />;
+      case "/gallery/reels":
+        return <ScrollReelsPage />;
+      case "/gallery/upload-image":
+        return <UploadImagePage />;
       case "/reports/user_engagement":
         return <UserEngagementPage />;
       case "/reports/top_contributors":
@@ -384,25 +394,24 @@ export default function DashboardLayoutBasic(props) {
   }));
 
   React.useEffect(() => {
-  const collapseButton = document.querySelector(
-    'button[aria-label="Collapse navigation menu"]'
-  );
-  if (isDesktop && collapseButton) {
-    // Disable interaction
-    collapseButton.disabled = true;
-    collapseButton.style.pointerEvents = "none";
-    collapseButton.style.opacity = "0.5"; // Optional: make it look disabled
-    // Or fully hide it with:
-    // collapseButton.style.display = "none";
-  } else if (collapseButton) {
-    // Re-enable on smaller screens
-    collapseButton.disabled = false;
-    collapseButton.style.pointerEvents = "auto";
-    collapseButton.style.opacity = "1";
-    // collapseButton.style.display = "inline-flex";
-  }
-}, [isDesktop]);
-
+    const collapseButton = document.querySelector(
+      'button[aria-label="Collapse navigation menu"]'
+    );
+    if (isDesktop && collapseButton) {
+      // Disable interaction
+      collapseButton.disabled = true;
+      collapseButton.style.pointerEvents = "none";
+      collapseButton.style.opacity = "0.5"; // Optional: make it look disabled
+      // Or fully hide it with:
+      // collapseButton.style.display = "none";
+    } else if (collapseButton) {
+      // Re-enable on smaller screens
+      collapseButton.disabled = false;
+      collapseButton.style.pointerEvents = "auto";
+      collapseButton.style.opacity = "1";
+      // collapseButton.style.display = "inline-flex";
+    }
+  }, [isDesktop]);
 
   return (
     <>

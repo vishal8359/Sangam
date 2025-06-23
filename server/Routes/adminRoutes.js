@@ -9,7 +9,7 @@ import { createGroup, getGroupsBySociety, getGroupDetails, postInGroup } from ".
 import { rejectGroupJoinRequest, approveGroupJoinRequest } from "../Controllers/groupJoinController.js";
 import { deactivateProduct } from "../Controllers/productController.js";
 import { resolveComplaint, getComplaintsBySociety, getResolvedComplaints } from "../Controllers/complaintController.js";
-
+import { getNeighbouringSocieties } from "../Controllers/societyController.js";
 
 const router = express.Router();
 
@@ -50,5 +50,9 @@ router.put("/products/:productId/deactivate", verifyAdmin, deactivateProduct);
 router.get("/complaints/:societyId", verifyAdmin, getComplaintsBySociety);
 router.put("/complaints/resolve/:complaintId", verifyAdmin, resolveComplaint);
 router.get("/complaints/resolved/:societyId", verifyAdmin, getResolvedComplaints);
+
+// Societies
+
+router.get("/society/:id/neighbours", verifyAdmin, getNeighbouringSocieties);
 
 export default router;

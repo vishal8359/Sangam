@@ -54,7 +54,10 @@ export const approveJoinRequest = async (req, res) => {
 
     const request = await JoinRequest.findById(requestId);
     if (!request) return res.status(404).json({ message: "Request not found" });
-    if (request.status === "approved") return res.status(400).json({ message: "Already approved" });
+
+    if (request.status === "approved") {
+      return res.status(400).json({ message: "Already approved" });
+    }
 
     const userId = request.user_id;
     const societyId = request.society_id;
@@ -64,18 +67,22 @@ export const approveJoinRequest = async (req, res) => {
     request.approved_at = new Date();
     await request.save();
 
-    // Add user to society's residents using $addToSet to prevent duplicates
+    // Add user to society
     await Society.findByIdAndUpdate(societyId, {
       $addToSet: { residents: userId },
     });
 
-    // Add role and society only if not already present
+    // Add role and mark approved
     await User.findByIdAndUpdate(userId, {
       $addToSet: {
         joined_societies: societyId,
         roles: {
-          society_id: societyId,
-          role: "resident",
+          $each: [
+            {
+              society_id: societyId,
+              role: "resident",
+            },
+          ],
         },
       },
       $set: {
@@ -86,17 +93,35 @@ export const approveJoinRequest = async (req, res) => {
     const user = await User.findById(userId);
     const society = await Society.findById(societyId);
 
-    // Send Notifications
-    await sendEmail({
-      to: user.email,
-      subject: "Your Join Request is Approved",
-      text: `Hi ${user.name}, your request to join the society "${society.name}" has been approved.`,
-    });
+    if (!user || !society) {
+      console.warn("⚠️ User or Society missing during approval:", {
+        userId,
+        societyId,
+      });
+      return res.status(200).json({
+        message:
+          "User approved but notification could not be sent (missing user or society)",
+      });
+    }
 
-    await sendSMS(user.phone_no, `✅ Hi ${user.name}, your request to join "${society.name}" has been approved.`);
+    // Send Email
+    if (user.email) {
+      await sendEmail({
+        to: user.email,
+        subject: "Your Join Request is Approved",
+        text: `Hi ${user.name}, your request to join the society "${society.name}" has been approved.`,
+      });
+    }
+
+    // Send SMS
+    if (user.phone_no) {
+      await sendSMS(
+        user.phone_no,
+        `✅ Hi ${user.name}, your request to join "${society.name}" has been approved.`
+      );
+    }
 
     res.status(200).json({ message: "User approved and added to society" });
-
   } catch (err) {
     console.error("Approval error:", err);
     res.status(500).json({ message: "Server error during approval" });
@@ -114,7 +139,11 @@ export const rejectJoinRequest = async (req, res) => {
 
     // Prevent rejecting if already approved or rejected
     if (request.status !== "pending") {
-      return res.status(400).json({ message: `Cannot reject a request that is already ${request.status}` });
+      return res
+        .status(400)
+        .json({
+          message: `Cannot reject a request that is already ${request.status}`,
+        });
     }
 
     const user = await User.findById(request.user_id);
@@ -141,8 +170,9 @@ export const rejectJoinRequest = async (req, res) => {
       `❌ Hi ${user.name}, your request to join "${society.name}" has been rejected.`
     );
 
-    return res.status(200).json({ message: "Request rejected and user notified" });
-
+    return res
+      .status(200)
+      .json({ message: "Request rejected and user notified" });
   } catch (err) {
     console.error("❌ Rejection error:", err);
     return res.status(500).json({ message: "Server error during rejection" });

@@ -17,7 +17,8 @@ const router = express.Router();
 import { createProduct, getActiveProducts, deleteProduct } from "../Controllers/productController.js";
 import { submitComplaint, getComplaintsBySociety, deleteComplaint } from "../Controllers/complaintController.js";
 import { createEvent, getAllEvents, cancelEvent, rsvpToEvent, commentOnEvent } from "../Controllers/eventController.js";
-
+import {getNeighbourHomes} from "../Controllers/getNeighbourHomes.js";
+import { getNeighbouringSocieties } from "../Controllers/societyController.js";
 
 // first register
 router.post("/register", registerResident);
@@ -79,4 +80,12 @@ router.patch("/events/:eventId/cancel", verifyUser, cancelEvent);
 router.get("/events", verifyUser, getAllEvents);
 router.post("/events/:eventId/rsvp", verifyUser, rsvpToEvent);
 router.post("/events/:eventId/comment", verifyUser, commentOnEvent);
+
+// Neighbours
+
+router.get("/homes/neighbours", verifyUser, getNeighbourHomes);
+
+// societies
+
+router.get("/society/:id/neighbours/", verifyUser, getNeighbouringSocieties)
 export default router;

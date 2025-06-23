@@ -89,3 +89,11 @@ div[data-toolpad-header="true"] {
 .MuiBox-root::-webkit-scrollbar {
   display: none; 
 }
+.MuiBox-root.css-jylp6k {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.MuiBox-root.css-4w6qv3{
+  margin: 0 !important;
+  padding: 0 !important;
+}

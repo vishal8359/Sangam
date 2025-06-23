@@ -1,158 +1,156 @@
-import React, { useState, useRef } from "react";
+import React from "react";
 import {
   Box,
   Typography,
   Grid,
   Card,
-  CardMedia,
-  CardActions,
-  IconButton,
+  CardContent,
   Button,
-  Stack,
   useTheme,
-  useMediaQuery,
 } from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
-import UploadFileIcon from "@mui/icons-material/UploadFile";
+import { useNavigate } from "react-router-dom";
+import VideoLibraryIcon from "@mui/icons-material/VideoLibrary";
+import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
+import ImageIcon from "@mui/icons-material/Image";
+import { keyframes } from "@emotion/react";
+import gallery_bg from "../assets/gallery_bg.jpg";
 
 export default function SocietyGalleryPage() {
+  const navigate = useNavigate();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const fileInputRef = useRef(null);
+  const isDark = theme.palette.mode === "dark";
 
-  // Store uploaded media as array of objects { id, type: "image"|"video", url }
-  const [mediaFiles, setMediaFiles] = useState([]);
+  const sections = [
+    {
+      title: "Upload Reel",
+      description: "Post your reels with tags and descriptions",
+      icon: (
+        <VideoLibraryIcon sx={{ fontSize: 50, color: theme.palette.primary.main }} />
+      ),
+      path: "/gallery/upload-reel",
+    },
+    {
+      title: "Scroll Reels",
+      description: "Watch and interact with reels from the community",
+      icon: (
+        <AddPhotoAlternateIcon sx={{ fontSize: 50, color: theme.palette.secondary.main }} />
+      ),
+      path: "/gallery/reels",
+    },
+    {
+      title: "Upload Images",
+      description: "Share pictures visible only to residents of your society",
+      icon: (
+        <ImageIcon sx={{ fontSize: 50, color: theme.palette.success.main }} />
+      ),
+      path: "/gallery/upload-image",
+    },
+    {
+      title: "Images",
+      description: "View images from your society only.",
+      icon: (
+        <ImageIcon sx={{ fontSize: 50, color: theme.palette.success.dark }} />
+      ),
+      path: "/gallery/images",
+    },
+  ];
 
-  // Handle file upload
-  const handleFilesUpload = (event) => {
-    const files = event.target.files;
-    if (!files) return;
-
-    const newMedia = [];
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const type = file.type.startsWith("video") ? "video" : "image";
-      const url = URL.createObjectURL(file);
-      newMedia.push({
-        id: Date.now() + i,
-        type,
-        url,
-        name: file.name,
-      });
-    }
-
-    setMediaFiles((prev) => [...prev, ...newMedia]);
-    // Reset input so same file can be uploaded again if needed
-    event.target.value = null;
-  };
-
-  // Delete media by id
-  const handleDelete = (id) => {
-    setMediaFiles((prev) => prev.filter((m) => m.id !== id));
-  };
+  const backgroundMove = keyframes`
+    0% { background-position: 0% 100%; }
+    100% { background-position: 0% 0%; }
+  `;
 
   return (
-    <Box
-      sx={{
-        p: isMobile ? 2 : 4,
-        bgcolor: theme.palette.background.default,
-        minHeight: "100vh",
-      }}
-    >
-      <Typography variant="h4" fontWeight="bold" mb={3} align="center">
-        Society Gallery
-      </Typography>
+    <Box sx={{ position: "relative", minHeight: "100vh", overflow: "hidden" }}>
+      {/* Blurred animated background layer */}
+      <Box
+        sx={{
+          position: "absolute",
+          inset: 0,
+          zIndex: 0,
+          backgroundImage: `url(${gallery_bg})`,
+          backgroundSize: "cover",
+          backgroundRepeat: "repeat-y",
+          backgroundPosition: "center bottom",
+          animation: `${backgroundMove} 60s linear infinite`,
+          filter: "blur(6px)",
+          opacity: 0.6,
+        }}
+      />
 
-      <Box textAlign="center" mb={3}>
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          accept="image/*,video/*"
-          onChange={handleFilesUpload}
-          style={{ display: "none" }}
-        />
-        <Button
-          variant="contained"
-          startIcon={<UploadFileIcon />}
-          onClick={() => fileInputRef.current.click()}
-          size={isMobile ? "medium" : "large"}
+      {/* Optional dark overlay for better contrast */}
+      <Box
+        sx={{
+          position: "absolute",
+          inset: 0,
+          zIndex: 1,
+          backgroundColor: isDark ? "rgba(100, 10, 10, 0.1)" : "rgba(255,255,255,0.3)",
+        }}
+      />
+
+      {/* Main content layer */}
+      <Box
+        sx={{
+          position: "relative",
+          zIndex: 2,
+          p: { xs: 2, sm: 4 },
+          color: isDark ? "#f5f5ff" : "inherit",
+        }}
+      >
+        <Box
+          component="h4"
+          sx={{
+            fontWeight: "bold",
+            textAlign: "center",
+            mb: 4,
+            fontSize: "2rem",
+            color: isDark ?"#f5f5ff" : "#121212",
+          }}
         >
-          Upload Images/Videos
-        </Button>
-      </Box>
+          Society Gallery Hub
+        </Box>
 
-      {mediaFiles.length === 0 ? (
-        <Typography variant="body1" color="text.secondary" align="center">
-          No media uploaded yet. Use the button above to add images or videos.
-        </Typography>
-      ) : (
-        <Grid container spacing={2}>
-          {mediaFiles.map((media) => (
-            <Grid
-              item
-              key={media.id}
-              xs={12}
-              sm={6}
-              md={4}
-              lg={3}
-              sx={{ display: "flex" }}
-            >
+        <Grid container spacing={4} justifyContent="center">
+          {sections.map((section) => (
+            <Grid item xs={12} sm={6} md={4} key={section.title}>
               <Card
+                elevation={4}
                 sx={{
-                  width: "100%",
                   display: "flex",
                   flexDirection: "column",
+                  alignItems: "center",
+                  p: 3,
+                  textAlign: "center",
+                  borderRadius: 3,
                 }}
-                elevation={3}
               >
-                {media.type === "image" ? (
-                  <CardMedia
-                    component="img"
-                    height="180"
-                    image={media.url}
-                    alt={media.name}
-                    sx={{ objectFit: "cover" }}
-                  />
-                ) : (
-                  <CardMedia
-                    component="video"
-                    height="180"
-                    controls
-                    src={media.url}
-                    title={media.name}
-                    sx={{ backgroundColor: "black" }}
-                  />
-                )}
-                <CardActions
-                  sx={{
-                    justifyContent: "space-between",
-                    px: 1,
-                    py: 0.5,
-                  }}
-                >
-                  <Typography
-                    variant="body2"
-                    noWrap
-                    sx={{ maxWidth: "80%" }}
-                    title={media.name}
-                  >
-                    {media.name}
+                {section.icon}
+                <CardContent>
+                  <Typography variant="h6" fontWeight="bold">
+                    {section.title}
                   </Typography>
-                  <IconButton
-                    color="error"
-                    size="small"
-                    onClick={() => handleDelete(media.id)}
-                    aria-label="delete media"
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    {section.description}
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    onClick={() => navigate(section.path)}
+                    sx={{
+                      bgcolor: isDark ? "#ffffff" : "primary.main",
+                      color: isDark ? "#000000" : "#ffffff",
+                      "&:hover": {
+                        bgcolor: isDark ? "#f0f0f0" : "primary.dark",
+                      },
+                    }}
                   >
-                    <DeleteIcon />
-                  </IconButton>
-                </CardActions>
+                    Go
+                  </Button>
+                </CardContent>
               </Card>
             </Grid>
           ))}
         </Grid>
-      )}
+      </Box>
     </Box>
   );
 }

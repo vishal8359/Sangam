@@ -6,6 +6,7 @@ import Society from "../Models/Society.js";
 import JoinRequest from "../Models/JoinRequest.js";
 import Home from "../Models/Home.js";
 import sendSMS from "../Utils/smsService.js";
+import { extractSortOrder } from "./getNeighbourHomes.js";
 // For example only — replace with actual DB model if you store electricity bills separately
 const pendingRegistrations = new Map();
 
@@ -87,20 +88,28 @@ export const verifyOtp = async (req, res) => {
       return res.status(400).json({ message: "No pending registration found" });
     }
 
-    if (pendingData.otp !== otp || Date.now() > pendingData.otpExpiry) {
-      return res.status(400).json({ message: "Invalid or expired OTP" });
-    }
+    // if (pendingData.otp !== otp || Date.now() > pendingData.otpExpiry) {
+    //   return res.status(400).json({ message: "Invalid or expired OTP" });
+    // }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(pendingData.password, 10);
 
     // Check or create Home
+    const [houseNumber, ...rest] = pendingData.address.split(",");
+    const street = rest.join(",").trim();
     let home = await Home.findOne({
       electricity_bill_no: pendingData.electricity_bill_no,
+      street: street,
+      houseNumber: houseNumber.trim(),
     });
+
     if (!home) {
       home = await Home.create({
         electricity_bill_no: pendingData.electricity_bill_no,
+        street: street,
+        houseNumber: houseNumber.trim(),
+        houseSortOrder: extractSortOrder(houseNumber),
         residents: [],
       });
     }
@@ -181,12 +190,31 @@ export const loginUser = async (req, res) => {
 };
 
 // POST : /api/society/create
+
 export const createSociety = async (req, res) => {
   const { name, location } = req.body;
   const userId = req.user._id;
 
   try {
-    // 1. Create the new society
+    // Validate location
+    if (
+      !location ||
+      location.type !== "Polygon" ||
+      !Array.isArray(location.coordinates)
+    ) {
+      return res.status(400).json({
+        message: "Invalid location format. Must be GeoJSON Polygon.",
+      });
+    }
+    if (
+      location.type === "Polygon" &&
+      location.coordinates.length &&
+      location.coordinates[0][0] !==
+        location.coordinates[0][location.coordinates[0].length - 1]
+    ) {
+      location.coordinates[0].push(location.coordinates[0][0]); 
+    }
+
     const society = await Society.create({
       name,
       location,
@@ -194,7 +222,6 @@ export const createSociety = async (req, res) => {
       residents: [userId],
     });
 
-    // 2. Update user: add role entry and optional created_society
     await User.findByIdAndUpdate(userId, {
       $push: {
         roles: {
@@ -202,7 +229,6 @@ export const createSociety = async (req, res) => {
           role: "admin",
         },
       },
-      // Optional: store reference if you want to highlight "created society"
       created_society: society._id,
     });
 
@@ -227,7 +253,10 @@ export const requestJoinSociety = async (req, res) => {
     });
 
     if (existing) {
-      return res.status(400).json({ message: "You already have a pending or approved request for this society." });
+      return res.status(400).json({
+        message:
+          "You already have a pending or approved request for this society.",
+      });
     }
 
     // Create new request
@@ -244,4 +273,3 @@ export const requestJoinSociety = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-

@@ -19,6 +19,15 @@ import { submitComplaint, getComplaintsBySociety, deleteComplaint } from "../Con
 import { createEvent, getAllEvents, cancelEvent, rsvpToEvent, commentOnEvent } from "../Controllers/eventController.js";
 import {getNeighbourHomes} from "../Controllers/getNeighbourHomes.js";
 import { getNeighbouringSocieties } from "../Controllers/societyController.js";
+import {
+  uploadReel,
+  getAllReels,
+  likeReel,
+  addComment,
+  addReply,
+  uploadImage,
+  getSocietyImages,
+} from "../Controllers/galleryController.js";
 
 // first register
 router.post("/register", registerResident);
@@ -82,10 +91,20 @@ router.post("/events/:eventId/rsvp", verifyUser, rsvpToEvent);
 router.post("/events/:eventId/comment", verifyUser, commentOnEvent);
 
 // Neighbours
-
 router.get("/homes/neighbours", verifyUser, getNeighbourHomes);
 
 // societies
+router.get("/society/:id/neighbours/", verifyUser, getNeighbouringSocieties);
 
-router.get("/society/:id/neighbours/", verifyUser, getNeighbouringSocieties)
+
+// Reels
+router.post("/gallery/reels", verifyUser, upload.single("video"), uploadReel);
+router.get("/gallery/reels", verifyUser, getAllReels);
+router.put("/gallery/reels/:reelId/like", verifyUser, likeReel);
+router.post("/gallery/reels/:reelId/comment", verifyUser, addComment);
+router.post("/gallery/reels/:reelId/comment/:commentIndex/reply", verifyUser, addReply);
+
+// Images
+router.post("/gallery/image", verifyUser, upload.single("image"), uploadImage);
+router.get("/gallery/image", verifyUser, getSocietyImages);
 export default router;

@@ -226,6 +226,7 @@ const UserEngagementPage = () => {
       </Grid>
 
       {/* Graph: Screen Time vs House Numbers */}
+      
       <Card
         sx={{
           borderRadius: 3,
@@ -234,6 +235,7 @@ const UserEngagementPage = () => {
           p: 2,
         }}
       >
+        
         <Typography
           variant="h6"
           fontWeight="600"

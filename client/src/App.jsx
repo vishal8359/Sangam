@@ -6,16 +6,20 @@ import ResidentLogin from "./pages/ResidentLogin";
 import AdminLogin from "./pages/AdminLogin";
 import Register from "./pages/Register";
 import HomePage from "./pages/Initial";
+import Products from "./pages/Products"
 import UploadReelPage from "./pages/Gallery/uploadReelPage";
 import ScrollReelsPage from "./pages/Gallery/scrollReelsPage";
 import UploadImagePage from "./pages/Gallery/uploadImagePage";
 import ImagesGalleryPage from "./pages/Gallery/imagesPage";
+import ChatsPage from "./pages/Chats";
+
 const App = () => {
   return (
     <div className="text-default min-h-screen text-gray-700 bg-white">
       <Toaster />
       <Routes>
         <Route path="/" element={<HomePage/>}/>
+        <Route path="/my-society/chats" element={<ChatsPage/>}/>
         <Route path="/resident-login" element={<ResidentLogin/>} />
         <Route path="admin-login" element={<AdminLogin/>}/>
         <Route path="register" element={<Register/>} />
@@ -24,6 +28,7 @@ const App = () => {
         <Route path="/gallery/reels" element={<ScrollReelsPage />} />
         <Route path="/gallery/upload-image" element={<UploadImagePage />} />
         <Route path="/gallery/images" element={<ImagesGalleryPage />} />
+        <Route path="/reports/products" element={<Products/>} />
       </Routes>
     </div>
   );

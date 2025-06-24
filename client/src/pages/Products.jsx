@@ -17,6 +17,7 @@ import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import ProductIcon from "../assets/Product_Icon.png";
 import Product_Bg from "../assets/products_bg.png";
+import { useNavigate } from "react-router-dom";
 const SocietyProductsPage = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -40,6 +41,7 @@ const SocietyProductsPage = () => {
   const [price, setPrice] = useState("");
   const [quantity, setQuantity] = useState("");
   const [description, setDescription] = useState("");
+  const navigate = useNavigate();
 
   // Handle image upload, limit preview size to 80x80
   const handleImageChange = (e) => {
@@ -524,7 +526,7 @@ const SocietyProductsPage = () => {
 
           <Button
             variant="contained"
-            onClick={addProduct}
+            onClick={() => navigate('/my-society/ads')}
             sx={{
               mt: 0,
               maxWidth: isMobile ? "100%" : 200,

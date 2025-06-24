@@ -7,7 +7,6 @@ import { useTheme } from "@mui/material/styles";
 
 import Box from "@mui/material/Box";
 import DashboardIcon from "@mui/icons-material/Dashboard";
-import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import DescriptionIcon from "@mui/icons-material/Description";
 import LayersIcon from "@mui/icons-material/Layers";
@@ -30,6 +29,8 @@ import MilitaryTechIcon from "@mui/icons-material/MilitaryTech";
 import HealthAndSafetyIcon from "@mui/icons-material/HealthAndSafety";
 import Diversity3Icon from "@mui/icons-material/Diversity3";
 import SocietyLogo from "./logo";
+import StorefrontIcon from "@mui/icons-material/Storefront";
+import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import Switch from "@mui/material/Switch";
 import SangamLogo from "./sangamLogo";
 import MySociety from "../pages/MySociety";
@@ -51,6 +52,7 @@ import IntegrationPage from "../pages/Integration";
 import UploadReelPage from "../pages/Gallery/uploadReelPage";
 import ScrollReelsPage from "../pages/Gallery/scrollReelsPage";
 import UploadImagePage from "../pages/Gallery/uploadImagePage";
+import YourProductsPage from "../pages/UserProducts";
 
 const NAVIGATION = [
   {
@@ -132,6 +134,11 @@ const NAVIGATION = [
         segment: "user_engagement",
         title: "User Engagement",
         icon: <ShowChartIcon />,
+      },
+      {
+        segment: "user_products",
+        title: "Your Products",
+        icon: <ShoppingCartIcon />,
       },
       {
         segment: "top_contributors",
@@ -299,8 +306,6 @@ export default function DashboardLayoutBasic(props) {
         return <ChatsPage />;
       case "/my-society/polls":
         return <PollsPage />;
-      case "/my-society/ads":
-        return <ProductsPage />;
       case "/my-society/complaints":
         return <ComplaintForm />;
       case "/my-society/events":
@@ -321,6 +326,10 @@ export default function DashboardLayoutBasic(props) {
         return <UploadImagePage />;
       case "/reports/user_engagement":
         return <UserEngagementPage />;
+      case "/reports/user_products":
+        return <YourProductsPage />;
+      case "/reports/products":
+        return <ProductsPage/>;
       case "/reports/top_contributors":
         return <TopContributorsPage />;
       case "/reports/Society_health_score":

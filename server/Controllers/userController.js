@@ -20,6 +20,7 @@ export const registerResident = async (req, res) => {
       password,
       confirm_password,
       electricity_bill_no,
+      avatar
     } = req.body;
 
     // Validate required fields
@@ -58,6 +59,7 @@ export const registerResident = async (req, res) => {
       electricity_bill_no,
       otp,
       otpExpiry,
+      avatar,
     });
 
     console.log(
@@ -125,6 +127,7 @@ export const verifyOtp = async (req, res) => {
       is_approved: true,
       is_verified: true,
       roles: [],
+      avatar: pendingData.avatar || "",
     });
 
     home.residents.push(newUser._id);
@@ -181,6 +184,7 @@ export const loginUser = async (req, res) => {
         role: user.role,
         is_approved: user.is_approved,
         user_id: user.user_id,
+        avatar: user.avatar,
       },
     });
   } catch (err) {

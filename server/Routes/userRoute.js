@@ -19,6 +19,8 @@ import { submitComplaint, getComplaintsBySociety, deleteComplaint } from "../Con
 import { createEvent, getAllEvents, cancelEvent, rsvpToEvent, commentOnEvent } from "../Controllers/eventController.js";
 import {getNeighbourHomes} from "../Controllers/getNeighbourHomes.js";
 import { getNeighbouringSocieties } from "../Controllers/societyController.js";
+import { getReelEngagement } from "../Controllers/reelEngagementController.js";
+
 import {
   uploadReel,
   getAllReels,
@@ -103,8 +105,10 @@ router.get("/gallery/reels", verifyUser, getAllReels);
 router.put("/gallery/reels/:reelId/like", verifyUser, likeReel);
 router.post("/gallery/reels/:reelId/comment", verifyUser, addComment);
 router.post("/gallery/reels/:reelId/comment/:commentIndex/reply", verifyUser, addReply);
+router.get("/gallery/reels/engagement", verifyUser, getReelEngagement);
 
 // Images
 router.post("/gallery/image", verifyUser, upload.single("image"), uploadImage);
 router.get("/gallery/image", verifyUser, getSocietyImages);
+
 export default router;

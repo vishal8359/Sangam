@@ -22,7 +22,7 @@ export default function SocietyGalleryPage() {
 
   const sections = [
     {
-      title: "Upload Reel",
+      title: "Reels Engagement",
       description: "Post your reels with tags and descriptions",
       icon: (
         <VideoLibraryIcon sx={{ fontSize: 50, color: theme.palette.primary.main }} />

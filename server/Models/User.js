@@ -14,6 +14,7 @@ const userSchema = new mongoose.Schema(
     phone_no: { type: String, required: true, trim: true },
     address: { type: String, required: true },
     password: { type: String, required: true },
+    avatar: { type: String, default: "" },
     home_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Home",
@@ -46,6 +47,7 @@ const userSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Society",
     },
+    followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 
     is_approved: { type: Boolean, default: true },
     otp: String,

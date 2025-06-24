@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
+
 import {
   Box,
   Typography,
@@ -26,11 +27,17 @@ export default function SocietyBuzz() {
   const [tab, setTab] = useState(0);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState(dummyMessages);
-
+  const bottomRef = useRef(null);
   const isDark = theme.palette.mode === "dark";
   const tabColor = isDark ? "#f5f5f5" : "inherit";
   const currentGroup = tab > 0 ? dummyGroups[tab - 1] : null;
 
+
+  useEffect(() => {
+  if (bottomRef.current) {
+    bottomRef.current.scrollIntoView({ behavior: "smooth" });
+  }
+}, [messages]);
   const handleSend = () => {
     if (message.trim()) {
       const newMessage =
@@ -261,6 +268,7 @@ export default function SocietyBuzz() {
                 </Box>
               );
             })}
+            <div ref={bottomRef} />
           </Box>
         </Box>
 

@@ -1,12 +1,15 @@
+// context/AppContext.js
 import { useTheme } from "@emotion/react";
 import { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
-// Create context
 export const AppContext = createContext();
 
-// Provider component
 export const AppContextProvider = ({ children }) => {
+  const navigate = useNavigate();
+  const theme = useTheme();
+
   const [userId, setUserId] = useState(null);
   const [houseId, setHouseId] = useState("");
   const [societyId, setSocietyId] = useState("");
@@ -15,25 +18,25 @@ export const AppContextProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const theme = useTheme();
-  const navigate = useNavigate();
-  const [themeMode, setThemeMode] = useState("light"); // "light" or "dark"
+  const [themeMode, setThemeMode] = useState("light");
+  const [user, setUser] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [cartItems, setCartItems] = useState({});
+  const [cartCount, setCartCount] = useState(0);
+  const [firstCartId, setFirstCartId] = useState(null);
+  const currency = "₹";
 
-  const toggleTheme = () => {
-    setThemeMode((prev) => (prev === "light" ? "dark" : "light"));
-  };
-
-  // Load data from localStorage on mount
+  // Load from localStorage
   useEffect(() => {
-    const storedData = JSON.parse(localStorage.getItem("sangam-user"));
+    const stored = JSON.parse(localStorage.getItem("sangam-user"));
     const savedTheme = localStorage.getItem("theme-mode");
 
-    if (storedData) {
-      setUserId(storedData.userId || null);
-      setHouseId(storedData.houseId || "");
-      setSocietyId(storedData.societyId || "");
-      setUserRole(storedData.userRole || "");
-      setUserProfile(storedData.userProfile || null);
+    if (stored) {
+      setUserId(stored.userId || null);
+      setHouseId(stored.houseId || "");
+      setSocietyId(stored.societyId || "");
+      setUserRole(stored.userRole || "");
+      setUserProfile(stored.userProfile || null);
       setIsAuthenticated(true);
     }
 
@@ -45,19 +48,35 @@ export const AppContextProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const { data } = await axios.get("/api/products");
+        if (data.success) setProducts(data.products);
+      } catch (err) {
+        console.error("Fetch products error:", err.message);
+      }
+    };
+    fetchProducts();
+  }, []);
+
+  // Theme persistence
+  useEffect(() => {
     localStorage.setItem("theme-mode", themeMode);
   }, [themeMode]);
 
+  const toggleTheme = () => {
+    setThemeMode((prev) => (prev === "light" ? "dark" : "light"));
+  };
+
+  // Auth handlers
   const login = (data) => {
     const { userId, houseId, societyId, userRole, userProfile } = data;
-
     setUserId(userId);
     setHouseId(houseId);
     setSocietyId(societyId);
     setUserRole(userRole);
     setUserProfile(userProfile || null);
     setIsAuthenticated(true);
-
     localStorage.setItem("sangam-user", JSON.stringify(data));
   };
 
@@ -68,8 +87,40 @@ export const AppContextProvider = ({ children }) => {
     setUserRole("");
     setUserProfile(null);
     setIsAuthenticated(false);
-
     localStorage.removeItem("sangam-user");
+  };
+
+  // Cart logic
+  const updateCartItem = (productId, quantity) => {
+    setCartItems((prev) => {
+      const updated = { ...prev };
+      if (quantity > 0) {
+        updated[productId] = quantity;
+      } else {
+        delete updated[productId];
+      }
+      const ids = Object.keys(updated);
+      setFirstCartId(ids.length > 0 ? ids[0] : null);
+      setCartCount(Object.values(updated).reduce((a, b) => a + b, 0));
+      return updated;
+    });
+  };
+
+  const removeFromCart = (productId) => {
+    setCartItems((prev) => {
+      const updated = { ...prev };
+      delete updated[productId];
+      return updated;
+    });
+  };
+
+  const getCartCount = () => Object.values(cartItems).reduce((acc, qty) => acc + qty, 0);
+
+  const getCartAmount = () => {
+    return Object.keys(cartItems).reduce((total, id) => {
+      const product = products.find((p) => p._id === id);
+      return total + (product?.offerPrice || 0) * cartItems[id];
+    }, 0);
   };
 
   const value = {
@@ -86,7 +137,6 @@ export const AppContextProvider = ({ children }) => {
 
     // theme
     theme,
-    navigate,
     themeMode,
     toggleTheme,
     isDark: themeMode === "dark",
@@ -95,6 +145,25 @@ export const AppContextProvider = ({ children }) => {
       text: themeMode === "dark" ? "#ffffff" : "#000000",
       primary: themeMode === "dark" ? "#90caf9" : "#1976d2",
     },
+
+    // user data
+    user,
+    setUser,
+    products,
+    setProducts,
+    cartItems,
+    setCartItems,
+    updateCartItem,
+    removeFromCart,
+    getCartCount,
+    getCartAmount,
+    cartCount,
+    setCartCount,
+    firstCartId,
+    setFirstCartId,
+    currency,
+    navigate,
+    axios,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

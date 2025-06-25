@@ -5,6 +5,7 @@ import { createTheme, styled } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
 
+
 import Box from "@mui/material/Box";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import BarChartIcon from "@mui/icons-material/BarChart";
@@ -53,7 +54,8 @@ import UploadReelPage from "../pages/Gallery/uploadReelPage";
 import ScrollReelsPage from "../pages/Gallery/scrollReelsPage";
 import UploadImagePage from "../pages/Gallery/uploadImagePage";
 import YourProductsPage from "../pages/UserProducts";
-
+import Products from "../pages/NewProd";
+import CartPage from "../pages/cartPage";
 const NAVIGATION = [
   {
     kind: "header",
@@ -164,32 +166,41 @@ const NAVIGATION = [
   },
 ];
 
+
 function useDemoRouter(initialPath = "/") {
-  const [location, setLocation] = React.useState(() => {
-    const url = new URL(`http://localhost${initialPath}`);
-    return {
-      pathname: url.pathname,
-      searchParams: new URLSearchParams(url.search),
-    };
+  const [pathname, setPathname] = React.useState(() => {
+    const current = window.location.pathname || initialPath;
+    window.history.replaceState({}, "", current);
+    return current;
   });
 
   const navigate = React.useCallback((path) => {
-    const url = new URL(`http://localhost${path}`);
-    setLocation({
-      pathname: url.pathname,
-      searchParams: new URLSearchParams(url.search),
-    });
+    const newPath = String(path);
+    window.history.pushState({}, "", newPath); // updates the URL in the browser
+    setPathname(newPath);
   }, []);
 
-  return React.useMemo(
-    () => ({
-      pathname: location.pathname,
-      searchParams: location.searchParams,
+  React.useEffect(() => {
+    const handlePopState = () => {
+      setPathname(window.location.pathname);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, []);
+
+  return React.useMemo(() => {
+    return {
+      pathname,
+      searchParams: new URLSearchParams(window.location.search),
       navigate,
-    }),
-    [location, navigate]
-  );
+    };
+  }, [pathname, navigate]);
 }
+
+
 
 export default function DashboardLayoutBasic(props) {
   const { window } = props;
@@ -199,8 +210,10 @@ export default function DashboardLayoutBasic(props) {
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
 
+
   const router = useDemoRouter("/");
   const demoWindow = window ? window() : undefined;
+
 
   const demoTheme = React.useMemo(
     () =>
@@ -278,6 +291,7 @@ export default function DashboardLayoutBasic(props) {
             },
           },
 
+
           MuiListItemText: {
             styleOverrides: {
               primary: {
@@ -306,6 +320,8 @@ export default function DashboardLayoutBasic(props) {
         return <ChatsPage />;
       case "/my-society/polls":
         return <PollsPage />;
+      case "/my-society/ads":
+        return <Products/>;
       case "/my-society/complaints":
         return <ComplaintForm />;
       case "/my-society/events":
@@ -337,16 +353,22 @@ export default function DashboardLayoutBasic(props) {
       case "/integrations":
         return <IntegrationPage />;
       default:
+        if (/^\/my-society\/ads\/[^/]+\/cart$/.test(pathname)) {
+        return <CartPage />;
+      }
         return <div>Page Not Found</div>;
     }
   }
 
+
   const toggleMode = () =>
     setMode((prev) => (prev === "light" ? "dark" : "light"));
+
 
   const goToMySociety = () => {
     router.navigate("/my-society");
   };
+
 
   // Create a custom moon-style switch
   const MoonSwitch = styled(Switch)(({ theme }) => ({
@@ -362,6 +384,7 @@ export default function DashboardLayoutBasic(props) {
         color: "#fff",
         "& + .MuiSwitch-track": {
           backgroundColor: "white",
+
 
           opacity: 1,
           border: 0,
@@ -392,6 +415,7 @@ export default function DashboardLayoutBasic(props) {
       content: '"🌙"',
     },
 
+
     "& .MuiSwitch-track": {
       borderRadius: 20 / 2,
       backgroundColor: "#ccc",
@@ -401,6 +425,7 @@ export default function DashboardLayoutBasic(props) {
       }),
     },
   }));
+
 
   React.useEffect(() => {
     const collapseButton = document.querySelector(
@@ -421,6 +446,7 @@ export default function DashboardLayoutBasic(props) {
       // collapseButton.style.display = "inline-flex";
     }
   }, [isDesktop]);
+
 
   return (
     <>
@@ -453,6 +479,7 @@ export default function DashboardLayoutBasic(props) {
           <MoonSwitch checked={mode === "dark"} onChange={toggleMode} />
         </div>
 
+
         <DashboardLayout>
           <PageContainer
             sx={{
@@ -473,3 +500,6 @@ export default function DashboardLayoutBasic(props) {
     </>
   );
 }
+
+
+

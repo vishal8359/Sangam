@@ -12,6 +12,7 @@ import ScrollReelsPage from "./pages/Gallery/scrollReelsPage";
 import UploadImagePage from "./pages/Gallery/uploadImagePage";
 import ImagesGalleryPage from "./pages/Gallery/imagesPage";
 import ChatsPage from "./pages/Chats";
+import CartPage from "./pages/cartPage";
 
 const App = () => {
   return (
@@ -19,7 +20,7 @@ const App = () => {
       <Toaster />
       <Routes>
         <Route path="/" element={<HomePage/>}/>
-        <Route path="/my-society/chats" element={<ChatsPage/>}/>
+        {/* <Route path="/my-society/chats" element={<ChatsPage/>}/> */}
         <Route path="/resident-login" element={<ResidentLogin/>} />
         <Route path="admin-login" element={<AdminLogin/>}/>
         <Route path="register" element={<Register/>} />
@@ -29,6 +30,7 @@ const App = () => {
         <Route path="/gallery/upload-image" element={<UploadImagePage />} />
         <Route path="/gallery/images" element={<ImagesGalleryPage />} />
         <Route path="/reports/products" element={<Products/>} />
+        <Route path="/my-society/ads/cart" element={<CartPage/>}/>
       </Routes>
     </div>
   );

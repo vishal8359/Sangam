@@ -14,6 +14,7 @@ import ImagesGalleryPage from "./pages/Gallery/imagesPage";
 import ChatsPage from "./pages/Chats";
 import CartPage from "./pages/cartPage";
 import ProductDetailPage from "./pages/ProductDetailPage";
+import AddAddress from "./pages/AddAddress";
 
 const App = () => {
   return (
@@ -33,6 +34,7 @@ const App = () => {
         <Route path="/reports/products" element={<Products/>} />
         <Route path="/my-society/ads/cart" element={<CartPage/>}/>
         <Route path='/my-society/ads/:product_id/product_detail' element={<ProductDetailPage/>}/>
+        <Route path="/my-society/ads/add-address" element={<AddAddress/>} />
       </Routes>
     </div>
   );

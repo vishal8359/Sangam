@@ -142,7 +142,7 @@ const CartPage = () => {
               sx={{
                 p: 2,
                 mb: 0,
-                width: isMobile? 350 : 290,
+                width: isMobile ? 350 : 290,
                 height: 150,
                 display: "flex",
                 flexDirection: "column",
@@ -171,7 +171,7 @@ const CartPage = () => {
                     onClick={() =>
                       navigate(`/my-society/ads/${product._id}/product_detail`)
                     }
-                    sx={{cursor: "pointer"}}
+                    sx={{ cursor: "pointer" }}
                   >
                     {product.name}
                   </Typography>
@@ -255,10 +255,10 @@ const CartPage = () => {
 
         <Button
           size="small"
-          onClick={() => setShowAddress(!showAddress)}
+          onClick={() => navigate("/my-society/ads/add-address")}
           sx={{ mb: 2 }}
         >
-          {showAddress ? "Hide Addresses" : "Change Address"}
+          Change Address
         </Button>
 
         {showAddress &&

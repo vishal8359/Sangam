@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 import toast from "react-hot-toast";
 import { useAppContext } from "../context/AppContext";
+import { useMediaQuery, useTheme } from "@mui/material";
 
 const CartPage = () => {
   const navigate = useNavigate();
@@ -27,6 +28,9 @@ const CartPage = () => {
     setCartItems,
     currency,
   } = useAppContext();
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [cartArray, setCartArray] = useState([]);
   const [addresses, setAddresses] = useState([]);
@@ -132,89 +136,104 @@ const CartPage = () => {
         </Typography>
 
         <div className="flex flex-row flex-wrap gap-5">
-            {cartArray.map((product, index) => (
-          <Paper
-            key={index}
-            sx={{
-              p: 2,
-              mb: 0,
-              width: 290,
-              display: "flex",
-              flexDirection: "column",
-              gap: 1,
-            }}
-          >
-            <Box display="flex" gap={2}>
-              <img
-                src={product.image[0]}
-                alt={product.name}
-                width={80}
-                height={80}
-                style={{ objectFit: "cover", borderRadius: 4 }}
-              />
-              <Box flex={1}>
-                <Typography variant="subtitle1" fontWeight={600}>
-                  {product.name}
-                </Typography>
-                <Typography color="text.secondary" fontSize="0.85rem" mb={0.5}>
+          {cartArray.map((product, index) => (
+            <Paper
+              key={index}
+              sx={{
+                p: 2,
+                mb: 0,
+                width: isMobile? 350 : 290,
+                height: 150,
+                display: "flex",
+                flexDirection: "column",
+                gap: 1,
+              }}
+            >
+              <Box display="flex" gap={2}>
+                <img
+                  onClick={() =>
+                    navigate(`/my-society/ads/${product._id}/product_detail`)
+                  }
+                  src={product.image[0]}
+                  alt={product.name}
+                  width={isMobile ? 40 : 40}
+                  height={40}
+                  style={{
+                    objectFit: "cover",
+                    borderRadius: 4,
+                    cursor: "pointer",
+                  }}
+                />
+                <Box flex={1}>
+                  <Typography
+                    variant="subtitle1"
+                    fontWeight={600}
+                    onClick={() =>
+                      navigate(`/my-society/ads/${product._id}/product_detail`)
+                    }
+                    sx={{cursor: "pointer"}}
+                  >
+                    {product.name}
+                  </Typography>
+                  {/* <Typography color="text.secondary" fontSize="0.85rem" mb={0.5}>
                   {product.description || "No description available"}
-                </Typography>
-                <Typography fontSize="0.8rem" color="text.secondary">
+                </Typography> */}
+                  {/* <Typography fontSize="0.8rem" color="text.secondary">
                   Seller: <strong>{product.sellerName || "Unknown"}</strong>
                 </Typography>
                 <Typography fontSize="0.75rem" color="text.secondary" mb={1}>
                   Address: {product.sellerAddress || "N/A"}
-                </Typography>
-                <Typography>
-                  Quantity:
-                  <Select
-                    value={product.quantity}
-                    size="small"
-                    onChange={(e) =>
-                      updateCartItem(product._id, Number(e.target.value))
-                    }
-                    sx={{ ml: 1 }}
-                  >
-                    {Array(product.quantity > 9 ? product.quantity : 9)
-                      .fill("")
-                      .map((_, i) => (
-                        <MenuItem key={i} value={i + 1}>
-                          {i + 1}
-                        </MenuItem>
-                      ))}
-                  </Select>
-                </Typography>
+                </Typography> */}
+                  <Typography>
+                    Quantity:
+                    <Select
+                      value={product.quantity}
+                      size="small"
+                      onChange={(e) =>
+                        updateCartItem(product._id, Number(e.target.value))
+                      }
+                      sx={{ ml: 1 }}
+                    >
+                      {Array(product.quantity > 9 ? product.quantity : 9)
+                        .fill("")
+                        .map((_, i) => (
+                          <MenuItem key={i} value={i + 1}>
+                            {i + 1}
+                          </MenuItem>
+                        ))}
+                    </Select>
+                  </Typography>
+                </Box>
               </Box>
-            </Box>
 
-            {/* Bottom section: price and remove button */}
-            <Box
-              mt={2}
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
-            >
-              <Typography variant="subtitle2" fontWeight={600}>
-                {currency}
-                {(product.offerPrice * product.quantity).toFixed(2)}
-              </Typography>
-              <Button
-                variant="outlined"
-                color="error"
-                size="small"
-                onClick={() => removeFromCart(product._id)}
+              {/* Bottom section: price and remove button */}
+              <Box
+                mt={2}
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
               >
-                Remove
-              </Button>
-            </Box>
-          </Paper>
-        ))}
+                <Typography variant="subtitle2" fontWeight={600}>
+                  {currency}
+                  {(product.offerPrice * product.quantity).toFixed(2)}
+                </Typography>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  size="small"
+                  onClick={() => removeFromCart(product._id)}
+                >
+                  Remove
+                </Button>
+              </Box>
+            </Paper>
+          ))}
         </div>
 
         <Button
           variant="text"
           color="primary"
-          sx={{mt:2}}
+          sx={{ mt: 2 }}
           onClick={() => navigate("/my-society/ads")}
         >
           Continue Shopping
@@ -222,7 +241,7 @@ const CartPage = () => {
       </Box>
 
       {/* Summary */}
-      <Box flex={1} component={Paper} p={3} sx={{width:300}}>
+      <Box flex={1} component={Paper} p={3} sx={{ width: 300 }}>
         <Typography variant="h6" mb={2}>
           Order Summary
         </Typography>

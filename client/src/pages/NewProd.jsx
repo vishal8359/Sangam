@@ -17,49 +17,8 @@ import NewReleasesIcon from "@mui/icons-material/NewReleases";
 import { keyframes } from "@emotion/react";
 import { useAppContext } from "../context/AppContext";
 
-import lamp from "../assets/lamp.jpg";
-import vase from "../assets/vase.jpg";
-import painting from "../assets/wall_painting.jpg";
 import prod2 from "../assets/prod2_bg.jpg";
-
-const dummyProducts = [
-  {
-    _id: "1",
-    name: "Handmade Vase",
-    price: 699,
-    offerPrice: 499,
-    image: [vase],
-    category: "Decor",
-    rating: 4.3,
-    reviews: 4,
-    sellerName: "Rita Arts",
-    sellerAddress: "101, Maple Lane, Pune",
-  },
-  {
-    _id: "2",
-    name: "Wall Painting",
-    price: 999,
-    offerPrice: 799,
-    image: [painting],
-    category: "Decor",
-    rating: 4.1,
-    reviews: 4,
-    sellerName: "Kala Studio",
-    sellerAddress: "Sector 12, Noida",
-  },
-  {
-    _id: "3",
-    name: "Wooden Lamp",
-    price: 1499,
-    offerPrice: 1299,
-    image: [lamp],
-    category: "Lighting",
-    rating: 4.5,
-    reviews: 4,
-    sellerName: "WoodWorks",
-    sellerAddress: "MG Road, Bengaluru",
-  },
-];
+import { dummyProducts } from "../assets/local.js";
 
 const Products = () => {
   const navigate = useNavigate();
@@ -160,13 +119,7 @@ const Products = () => {
 
       {getCartCount() > 0 && firstCartId && (
         <Box
-          onClick={() =>
-            navigate(`/my-society/ads/cart`, {
-              state: {
-                product: products.find((p) => p._id === firstCartId),
-              },
-            })
-          }
+          onClick={() => navigate(`/my-society/ads/cart`)}
           sx={{
             position: "fixed",
             top: 75,
@@ -214,6 +167,11 @@ const Products = () => {
             }}
           >
             <Box
+              onClick={() =>
+                navigate(`/my-society/ads/${product._id}/product_detail`, {
+                  state: { product },
+                })
+              }
               component="img"
               src={product.image[0]}
               alt={product.name}
@@ -222,6 +180,7 @@ const Products = () => {
                 width: "100%",
                 objectFit: "contain",
                 mb: isMobile ? 1 : 2,
+                cursor: "pointer",
               }}
             />
 
@@ -265,13 +224,12 @@ const Products = () => {
               justifyContent="center"
               gap={1}
             >
-              <Typography color="success.main">
-                ₹{product.offerPrice}
-              </Typography>
+              <Typography color="#1976d2">₹{product.offerPrice}</Typography>
               <Typography
                 sx={{
                   textDecoration: "line-through",
-                  color: theme.palette.text.secondary,
+                  color: "#bbdefb",
+                  fontWeight: 10,
                 }}
               >
                 ₹{product.price}
@@ -284,16 +242,16 @@ const Products = () => {
                   display="flex"
                   alignItems="center"
                   justifyContent="center"
-                  border={`1px solid ${theme.palette.success.main}`}
+                  border={`1px solid #1976d2`}
                   borderRadius={2}
                   width={120}
                   height={40}
-                  bgcolor={theme.palette.success.light}
+                  bgcolor="#e3f2fd"
                 >
                   <IconButton
                     onClick={() => handleQtyChange(product._id, -1)}
                     size="small"
-                    sx={{ color: theme.palette.success.dark }}
+                    sx={{ color: "#1976d2" }}
                   >
                     –
                   </IconButton>
@@ -303,7 +261,7 @@ const Products = () => {
                   <IconButton
                     onClick={() => handleQtyChange(product._id, 1)}
                     size="small"
-                    sx={{ color: theme.palette.success.dark }}
+                    sx={{ color: "#1976d2" }}
                   >
                     +
                   </IconButton>
@@ -311,10 +269,23 @@ const Products = () => {
               ) : (
                 <Button
                   variant="outlined"
-                  color="success"
                   startIcon={<FaShoppingCart />}
                   onClick={() => handleQtyChange(product._id, 1)}
-                  sx={{ minWidth: 120 }}
+                  sx={{
+                    minWidth: 100,
+                    color: "#1976d2",
+                    borderColor: "#1976d2",
+                    "&:hover": {
+                      color: "#1976d2",
+                      borderColor: "#1976d2",
+                      backgroundColor: "#e3f2fd",
+                    },
+                    "&:active": {
+                      color: "#1976d2",
+                      borderColor: "#1976d2",
+                      backgroundColor: "#bbdefb",
+                    },
+                  }}
                 >
                   Add
                 </Button>

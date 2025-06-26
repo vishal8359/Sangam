@@ -13,6 +13,7 @@ import UploadImagePage from "./pages/Gallery/uploadImagePage";
 import ImagesGalleryPage from "./pages/Gallery/imagesPage";
 import ChatsPage from "./pages/Chats";
 import CartPage from "./pages/cartPage";
+import ProductDetailPage from "./pages/ProductDetailPage";
 
 const App = () => {
   return (
@@ -31,6 +32,7 @@ const App = () => {
         <Route path="/gallery/images" element={<ImagesGalleryPage />} />
         <Route path="/reports/products" element={<Products/>} />
         <Route path="/my-society/ads/cart" element={<CartPage/>}/>
+        <Route path='/my-society/ads/:product_id/product_detail' element={<ProductDetailPage/>}/>
       </Routes>
     </div>
   );

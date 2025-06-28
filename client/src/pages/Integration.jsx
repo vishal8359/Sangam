@@ -67,12 +67,12 @@ export default function IntegrationPage() {
   return (
     <Box
       p={{ xs: 2, md: 4 }}
-      maxWidth="1200px"
+      maxWidth="100%"
       mx="auto"
       sx={{
         bgcolor: isDark ? "#121212" : "#fafafa",
-        minHeight: "100vh",
-        mb: 5,
+        maxHeight: "100%",
+        mb: 0,
       }}
     >
       {/* Header */}

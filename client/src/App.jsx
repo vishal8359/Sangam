@@ -15,6 +15,10 @@ import ChatsPage from "./pages/Chats";
 import CartPage from "./pages/cartPage";
 import ProductDetailPage from "./pages/ProductDetailPage";
 import AddAddress from "./pages/AddAddress";
+import UserProfileCard from "./pages/UserProfile";
+import InviteMembersPage from "./pages/SendInvitePage";
+import ViewInvitations from "./pages/ViewInvitationPage";
+import CreateSociety from "./pages/CreateSoc";
 
 const App = () => {
   return (
@@ -24,8 +28,9 @@ const App = () => {
         <Route path="/" element={<HomePage/>}/>
         {/* <Route path="/my-society/chats" element={<ChatsPage/>}/> */}
         <Route path="/resident-login" element={<ResidentLogin/>} />
-        <Route path="admin-login" element={<AdminLogin/>}/>
-        <Route path="register" element={<Register/>} />
+        <Route path="/admin-login" element={<AdminLogin/>}/>
+        <Route path="/create-society" element={<CreateSociety/>}/>
+        <Route path="/register" element={<Register/>} />
         <Route path="/*" element={<DashboardLayoutBasic />} />
         <Route path="/gallery/upload-reel" element={<UploadReelPage />} />
         <Route path="/gallery/reels" element={<ScrollReelsPage />} />
@@ -35,6 +40,9 @@ const App = () => {
         <Route path="/my-society/ads/cart" element={<CartPage/>}/>
         <Route path='/my-society/ads/:product_id/product_detail' element={<ProductDetailPage/>}/>
         <Route path="/my-society/ads/add-address" element={<AddAddress/>} />
+        {/* <Route path="/user" element={<UserProfileCard/>}/> */}
+        <Route path="/my-society/events/send_invites" element={<InviteMembersPage />} />
+        <Route path="/my-society/events/view_invitations" element={<ViewInvitations />} />
       </Routes>
     </div>
   );

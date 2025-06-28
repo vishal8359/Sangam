@@ -16,75 +16,87 @@ import {
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import SendIcon from "@mui/icons-material/Send";
-import chats_bg from "../assets/chats_bg.jpg"
-
-const dummyChats = [
-  {
-    id: 1,
-    name: "Rohit Sharma",
-    avatar: "🧑‍🦱",
-    messages: [
-      { text: "Hey!", sender: "Rohit Sharma" },
-      { text: "Are you coming to the meeting?", sender: "Rohit Sharma" },
-    ],
-  },
-  {
-    id: 2,
-    name: "Sneha Roy",
-    avatar: "👩‍💼",
-    messages: [
-      { text: "Hi there!", sender: "Sneha Roy" },
-      { text: "Don’t forget the society party.", sender: "Sneha Roy" },
-    ],
-  },
-  {
-    id: 3,
-    name: "Security Guard",
-    avatar: "🛡️",
-    messages: [
-      { text: "Entry done for Zomato at 8:32 PM", sender: "Security Guard" },
-    ],
-  },
-];
+import chats_bg from "../assets/chats_bg.jpg";
+import { useAppContext } from "../context/AppContext";
 
 export default function ChatsPage() {
-  const [chats, setChats] = useState(dummyChats);
+  const { societyId, userId, userProfile, axios } = useAppContext();
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const messagesEndRef = useRef(null);
+
+  const [members, setMembers] = useState([]);
+  const [chats, setChats] = useState({}); // { memberId: [{ sender, text }] }
   const [selectedChatId, setSelectedChatId] = useState(null);
   const [newMessage, setNewMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const selectedChat = chats.find((chat) => chat.id === selectedChatId);
-  const messagesEndRef = useRef(null);
+  const selectedChat = selectedChatId ? chats[selectedChatId] || [] : [];
 
-  const handleSend = () => {
-    if (newMessage.trim() && selectedChatId !== null) {
-      setChats((prevChats) =>
-        prevChats.map((chat) =>
-          chat.id === selectedChatId
-            ? {
-                ...chat,
-                messages: [
-                  ...chat.messages,
-                  { text: newMessage, sender: "You" },
-                ],
-              }
-            : chat
-        )
-      );
-      setNewMessage("");
+  const handleSend = async () => {
+    if (!newMessage.trim() || !selectedChatId) return;
+
+    const message = {
+      sender: userId,
+      text: newMessage,
+      receiver: selectedChatId,
+    };
+
+    setChats((prev) => ({
+      ...prev,
+      [selectedChatId]: [...(prev[selectedChatId] || []), { ...message }],
+    }));
+
+    setNewMessage("");
+
+    try {
+      await axios.post("/api/chats/send", message);
+    } catch (err) {
+      console.error("Send message error:", err);
     }
   };
 
-  const handleBack = () => {
-    setSelectedChatId(null);
-  };
+  const handleBack = () => setSelectedChatId(null);
+
+  useEffect(() => {
+    const fetchMembers = async () => {
+      try {
+        const { data } = await axios.get(`/api/users/society/${societyId}`);
+        if (data.success) {
+          const filtered = data.users.filter((u) => u._id !== userId);
+          setMembers(filtered);
+        }
+      } catch (err) {
+        console.error("Error loading members:", err);
+      }
+    };
+
+    const fetchChats = async () => {
+      try {
+        const { data } = await axios.get("/api/chats/me");
+        if (data.success) {
+          const grouped = {};
+          data.messages.forEach((msg) => {
+            const otherId = msg.sender === userId ? msg.receiver : msg.sender;
+            if (!grouped[otherId]) grouped[otherId] = [];
+            grouped[otherId].push(msg);
+          });
+          setChats(grouped);
+        }
+      } catch (err) {
+        console.error("Fetch chats error:", err);
+      }
+    };
+
+    fetchMembers();
+    fetchChats();
+  }, [societyId, userId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [selectedChat?.messages]);
-  const isDark = theme.palette.mode === "dark";
+  }, [selectedChat]);
+
   return (
     <Box
       display="flex"
@@ -118,21 +130,18 @@ export default function ChatsPage() {
             left: 0,
             width: "100vw",
             height: "150vh",
-            backgroundColor: "rgba(100, 10, 10, 0.1)", // slightly darker dim
+            backgroundColor: "rgba(100, 10, 10, 0.1)",
             zIndex: -1,
           },
         }),
       }}
     >
-      {/* Sidebar */}
       {(!isMobile || !selectedChatId) && (
         <Box
           width={isMobile ? "100%" : "30%"}
           borderRight={isMobile ? "none" : `1px solid ${theme.palette.divider}`}
-          bgcolor={theme.palette.background.paper}
-          sx={{
-            color: theme.palette.mode === "dark" ? "#f5f5ff" : "",
-          }}
+          bgcolor={isDark ? "#272727" : "#f5f5f5"}
+          sx={{ color: isDark ? "#f5f5ff" : "" }}
         >
           <Typography variant="h6" px={2.5} py={1.5} fontWeight={700}>
             Conversations
@@ -150,22 +159,22 @@ export default function ChatsPage() {
           </Box>
 
           <List>
-            {chats
-              .filter((chat) =>
-                chat.name.toLowerCase().includes(searchTerm.toLowerCase())
+            {members
+              .filter((m) =>
+                m.name.toLowerCase().includes(searchTerm.toLowerCase())
               )
-              .map((chat) => (
+              .map((member) => (
                 <ListItem
                   button
-                  key={chat.id}
-                  selected={selectedChatId === chat.id}
-                  onClick={() => setSelectedChatId(chat.id)}
+                  key={member._id}
+                  selected={selectedChatId === member._id}
+                  onClick={() => setSelectedChatId(member._id)}
                   sx={{
                     cursor: "pointer",
                     borderRadius: 2,
                     mb: 1,
                     bgcolor:
-                      selectedChatId === chat.id
+                      selectedChatId === member._id
                         ? theme.palette.action.selected
                         : "transparent",
                     "&:hover": {
@@ -174,16 +183,17 @@ export default function ChatsPage() {
                   }}
                 >
                   <ListItemAvatar>
-                    <Avatar>{chat.avatar}</Avatar>
+                    <Avatar src={member.avatar || undefined}>
+                      {member.name[0]}
+                    </Avatar>
                   </ListItemAvatar>
-                  <ListItemText primary={chat.name} />
+                  <ListItemText primary={member.name} />
                 </ListItem>
               ))}
           </List>
         </Box>
       )}
 
-      {/* Chat Area */}
       {(!isMobile || selectedChatId !== null) && (
         <Box
           flex={1}
@@ -191,31 +201,25 @@ export default function ChatsPage() {
           display="flex"
           flexDirection="column"
           bgcolor={theme.palette.background.default}
-          sx={{
-            flex: 1,
-            minWidth: 0,
-            color: theme.palette.mode === "dark" ? "#f5f5ff" : "",
-          }}
+          sx={{ flex: 1, minWidth: 0, color: isDark ? "#f5f5ff" : "" }}
         >
-          {/* Mobile back button */}
-          {isMobile && selectedChat && (
+          {isMobile && selectedChatId && (
             <Box display="flex" alignItems="center" mb={2}>
               <IconButton onClick={handleBack} sx={{ mr: 1 }}>
                 <ArrowBackIcon />
               </IconButton>
               <Typography variant="h6" fontWeight={600}>
-                {selectedChat.name}
+                {members.find((m) => m._id === selectedChatId)?.name || "Chat"}
               </Typography>
             </Box>
           )}
 
-          {!isMobile && selectedChat && (
+          {!isMobile && selectedChatId && (
             <Typography variant="h6" fontWeight={600} mb={2}>
-              {selectedChat.name}
+              {members.find((m) => m._id === selectedChatId)?.name || "Chat"}
             </Typography>
           )}
 
-          {/* Messages */}
           <Paper
             elevation={2}
             sx={{
@@ -224,17 +228,14 @@ export default function ChatsPage() {
               mb: 2,
               overflowY: "auto",
               overflowX: "auto",
-              backgroundColor:
-                theme.palette.mode === "light" ? "#fdfdfd" : "#1e1e1e",
+              backgroundColor: isDark ? "#1e1e1e" : "#fdfdfd",
               borderRadius: 2,
-              scrollbarWidth: "none", // For Firefox
-              "&::-webkit-scrollbar": {
-                display: "none", // For Chrome, Safari, Edge
-              },
+              scrollbarWidth: "none",
+              "&::-webkit-scrollbar": { display: "none" },
             }}
           >
-            {selectedChat?.messages.map((msg, idx) => {
-              const isYou = msg.sender === "You";
+            {selectedChat.map((msg, idx) => {
+              const isYou = msg.sender === userId;
               return (
                 <Box
                   key={idx}
@@ -249,7 +250,7 @@ export default function ChatsPage() {
                     borderRadius={2}
                     bgcolor={isYou ? "#f5f5f5" : "#000"}
                     sx={{
-                      color: isYou ? "#000" : "#f5f5ff", // Fix text visibility
+                      color: isYou ? "#000" : "#f5f5ff",
                       wordBreak: "break-word",
                     }}
                   >
@@ -258,11 +259,9 @@ export default function ChatsPage() {
                 </Box>
               );
             })}
-
             <div ref={messagesEndRef} />
           </Paper>
 
-          {/* Input */}
           <Box display="flex" gap={1}>
             <TextField
               fullWidth
@@ -279,9 +278,7 @@ export default function ChatsPage() {
               sx={{
                 backgroundColor: theme.palette.primary.main,
                 color: theme.palette.primary.contrastText,
-                "&:hover": {
-                  backgroundColor: theme.palette.primary.dark,
-                },
+                "&:hover": { backgroundColor: theme.palette.primary.dark },
               }}
             >
               <SendIcon />

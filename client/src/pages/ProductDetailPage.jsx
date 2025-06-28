@@ -147,6 +147,13 @@ const ProductDetailPage = () => {
               (inclusive of all taxes)
             </Typography>
           </Box>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            Seller: <strong>{product.sellerName || "N/A"}</strong>
+          </Typography>
+
+          <Typography variant="body2" color="text.secondary">
+            Address: <strong>{product.sellerAddress || "Not Provided"}</strong>
+          </Typography>
 
           <Typography mt={3} variant="subtitle1">
             About Product:

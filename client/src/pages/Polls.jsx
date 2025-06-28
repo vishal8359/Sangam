@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import {
   Container,
   Typography,
@@ -26,14 +26,15 @@ import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import { samplePolls } from "../assets/local.js";
 import poll_bg from "../assets/poll_bg.jpg";
 import Poll_icon from "../assets/Poll_icon.png";
+import { AppContext } from "../context/AppContext";
 
 const PollsPage = () => {
   const [polls, setPolls] = useState(samplePolls);
   const [houseNumbers, setHouseNumbers] = useState({});
-
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const { userRole } = useContext(AppContext);
 
   const handleVote = (pollId, optionIndex) => {
     const poll = polls.find((p) => p.id === pollId);
@@ -109,28 +110,42 @@ const PollsPage = () => {
             left: 0,
             width: "100vw",
             height: "150vh",
-            backgroundColor: "rgba(100, 10, 10, 0.1)", // slightly darker dim
+            backgroundColor: "rgba(100, 10, 10, 0.1)",
             zIndex: -1,
           },
         }),
       }}
     >
       <Box
-        component="h4"
-        sx={{
-          fontWeight: "bold",
-          display: "flex",
-          alignItems: "center",
-          ml: 4,
-          fontSize: "2rem",
-        }}
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        ml={4}
+        mr={4}
+        mt={4}
+        mb={2}
       >
-        <img
-          className="w-15 h-15 rounded-2xl mr-2 mt-6"
-          src={Poll_icon}
-          alt="Poll Icon"
-        />
-        <div className="mt-5">Society Polls</div>
+        <Box display="flex" alignItems="center">
+          <img
+            className="w-15 h-15 rounded-2xl mr-2"
+            src={Poll_icon}
+            alt="Poll Icon"
+          />
+          <Typography component="h4" variant="h5" fontWeight="bold">
+            Society Polls
+          </Typography>
+        </Box>
+
+        {userRole === "admin" && (
+          <Button
+            variant="contained"
+            color="primary"
+            sx={{ borderRadius: 2 }}
+            onClick={() => alert("Open Create Poll Dialog")}
+          >
+            Create Poll
+          </Button>
+        )}
       </Box>
 
       {polls.map((poll) => {
@@ -142,7 +157,7 @@ const PollsPage = () => {
         const currentHouseNumber = houseNumbers[poll.id] || "";
 
         return (
-          <Paper key={poll.id} elevation={4} sx={{ p: 2, m: 1, mb:3 }}>
+          <Paper key={poll.id} elevation={4} sx={{ p: 2, m: 1, mb: 3 }}>
             <Box display="flex" alignItems="center" mb={2}>
               <Avatar
                 src={poll.logo}
@@ -159,6 +174,7 @@ const PollsPage = () => {
                   <IconButton
                     onClick={() => toggleLock(poll.id)}
                     color={poll.locked ? "error" : "success"}
+                    disabled={userRole !== "admin"}
                   >
                     {poll.locked ? <LockIcon /> : <LockOpenIcon />}
                   </IconButton>
@@ -167,13 +183,10 @@ const PollsPage = () => {
             </Box>
 
             <Typography variant="subtitle2" mb={2} color="text.secondary">
-              Voting type:{" "}
-              {poll.type === "single"
-                ? "One vote per house"
-                : "Multiple votes per house allowed"}
+              Voting type: {poll.type === "single" ? "One vote per house" : "Multiple votes per house allowed"}
             </Typography>
 
-            {poll.type === "single" && (
+            {poll.type === "single" && userRole !== "admin" && (
               <Box mb={2}>
                 <TextField
                   label="Enter your House Number"
@@ -256,21 +269,23 @@ const PollsPage = () => {
                       </TableCell>
 
                       <TableCell align="center">
-                        <Button
-                          variant="contained"
-                          size="small"
-                          disabled={
-                            poll.locked ||
-                            (poll.type === "single" &&
-                              (poll.votedHouses.has(
-                                currentHouseNumber.trim()
-                              ) ||
-                                !currentHouseNumber.trim()))
-                          }
-                          onClick={() => handleVote(poll.id, i)}
-                        >
-                          Vote
-                        </Button>
+                        {userRole !== "admin" && (
+                          <Button
+                            variant="contained"
+                            size="small"
+                            disabled={
+                              poll.locked ||
+                              (poll.type === "single" &&
+                                (poll.votedHouses.has(
+                                  currentHouseNumber.trim()
+                                ) ||
+                                  !currentHouseNumber.trim()))
+                            }
+                            onClick={() => handleVote(poll.id, i)}
+                          >
+                            Vote
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   );

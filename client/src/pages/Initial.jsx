@@ -40,9 +40,15 @@ export default function HomePage() {
           </button>
           <button
             onClick={() => navigate('/admin-login')}
-            className="w-full py-2 px-4 bg-green-600 text-white font-medium rounded-xl hover:bg-green-700 transition duration-300 cursor-pointer"
+            className="w-full py-2 px-4 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition duration-300 cursor-pointer"
           >
             Admin Login
+          </button>
+          <button
+            onClick={() => navigate('/create-society')}
+            className="w-full py-2 px-4 bg-green-600 text-white font-medium rounded-xl hover:bg-green-700 transition duration-300 cursor-pointer"
+          >
+            Create New Society
           </button>
         </div>
       </motion.div>

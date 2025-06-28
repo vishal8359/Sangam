@@ -13,7 +13,9 @@ import {
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import cleanUp from "../assets/CleanUp.jpg";
 import bbq from "../assets/bbq.jpeg";
-import Events_Bg from "../assets/Events_Bg.jpg"
+import Events_Bg from "../assets/Events_Bg.jpg";
+import { useNavigate } from "react-router-dom";
+
 const initialEvents = [
   {
     id: 1,
@@ -50,23 +52,21 @@ export default function EventPage() {
     imgFile: null,
     imgPreview: null,
     isNeighbour: false,
+    description: "",
   });
 
-  // isMobile state to detect mobile screen width
+  const navigate = useNavigate();
+
   const [isMobile, setIsMobile] = useState(window.innerWidth < 600);
 
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 600);
     };
-
     window.addEventListener("resize", handleResize);
-
-    // Cleanup on unmount
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Input change handler
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     setForm((prev) => ({
@@ -75,7 +75,6 @@ export default function EventPage() {
     }));
   };
 
-  // Image upload handler
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -91,7 +90,6 @@ export default function EventPage() {
     reader.readAsDataURL(file);
   };
 
-  // Form submit handler
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -124,6 +122,7 @@ export default function EventPage() {
       place: form.place.trim(),
       img: form.imgPreview || "https://source.unsplash.com/400x200/?event",
       isNeighbour: form.isNeighbour,
+      description: form.description.trim(),
     };
 
     setEvents((prev) => [newEvent, ...prev]);
@@ -137,10 +136,10 @@ export default function EventPage() {
       imgFile: null,
       imgPreview: null,
       isNeighbour: false,
+      description: "",
     });
   };
 
-  // Filter upcoming events only
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const upcomingEvents = events.filter((ev) => new Date(ev.date) > today);
@@ -175,14 +174,13 @@ export default function EventPage() {
             left: 0,
             width: "100vw",
             height: "150vh",
-            backgroundColor: "rgba(100, 10, 10, 0.1)", // dark overlay
+            backgroundColor: "rgba(100, 10, 10, 0.1)",
             zIndex: -1,
           },
         }),
       }}
     >
-      {/* Header */}
-      <Box display="flex" alignItems="center" mb={1} gap={1} px={4} py={3}>
+      <Box display="flex" alignItems="center" mb={1} gap={1} px={4} py={3} flexWrap="wrap">
         <EventAvailableIcon color="primary" fontSize="large" />
         <Box
           component="h4"
@@ -196,7 +194,6 @@ export default function EventPage() {
         >
           Upcoming Events
         </Box>
-
         <Paper
           elevation={3}
           sx={{
@@ -208,12 +205,18 @@ export default function EventPage() {
             userSelect: "none",
           }}
         >
-          {upcomingEvents.length}{" "}
-          {upcomingEvents.length === 1 ? "Event" : "Events"}
+          {upcomingEvents.length} {upcomingEvents.length === 1 ? "Event" : "Events"}
         </Paper>
+        <Button
+          variant="outlined"
+          size="small"
+          sx={{ ml: 2, mt: isMobile ? 1 : 0 }}
+          onClick={() => navigate("/my-society/events/view_invitations")}
+        >
+          View Invitations
+        </Button>
       </Box>
 
-      {/* Events List */}
       <Box
         sx={{
           paddingLeft: 4,
@@ -225,10 +228,7 @@ export default function EventPage() {
         mb={6}
       >
         {upcomingEvents.length === 0 && (
-          <Typography
-            color="text.secondary"
-            sx={{ width: "100%", textAlign: "center" }}
-          >
+          <Typography color="text.secondary" sx={{ width: "100%", textAlign: "center" }}>
             No upcoming events found.
           </Typography>
         )}
@@ -264,23 +264,13 @@ export default function EventPage() {
               <Typography variant="h6" fontWeight="bold" mb={0.5} noWrap>
                 {ev.name}
               </Typography>
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                mb={0.5}
-                noWrap
-              >
+              <Typography variant="body2" color="text.secondary" mb={0.5} noWrap>
                 Organizer: {ev.organizer}
               </Typography>
               <Typography variant="body2" color="text.secondary" mb={0.5}>
                 Date: {new Date(ev.date).toLocaleDateString()} at {ev.time}
               </Typography>
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                mb={0.5}
-                noWrap
-              >
+              <Typography variant="body2" color="text.secondary" mb={0.5} noWrap>
                 Place: {ev.place}
               </Typography>
               <Typography
@@ -295,7 +285,6 @@ export default function EventPage() {
         ))}
       </Box>
 
-      {/* Form Section */}
       <Paper
         elevation={4}
         sx={{
@@ -330,12 +319,8 @@ export default function EventPage() {
             InputLabelProps={{
               sx: {
                 color: theme.palette.mode === "dark" ? "grey" : undefined,
-                "&.Mui-focused": {
-                  color: theme.palette.mode === "dark" ? "#f5f5f5" : undefined,
-                },
-                "&.MuiInputLabel-shrink": {
-                  color: theme.palette.mode === "dark" ? "#f5f5f5" : undefined,
-                },
+                "&.Mui-focused": { color: theme.palette.mode === "dark" ? "#f5f5f5" : undefined },
+                "&.MuiInputLabel-shrink": { color: theme.palette.mode === "dark" ? "#f5f5f5" : undefined },
               },
             }}
           />
@@ -349,12 +334,8 @@ export default function EventPage() {
             InputLabelProps={{
               sx: {
                 color: theme.palette.mode === "dark" ? "grey" : undefined,
-                "&.Mui-focused": {
-                  color: theme.palette.mode === "dark" ? "#f5f5f5" : undefined,
-                },
-                "&.MuiInputLabel-shrink": {
-                  color: theme.palette.mode === "dark" ? "#f5f5f5" : undefined,
-                },
+                "&.Mui-focused": { color: theme.palette.mode === "dark" ? "#f5f5f5" : undefined },
+                "&.MuiInputLabel-shrink": { color: theme.palette.mode === "dark" ? "#f5f5f5" : undefined },
               },
             }}
           />
@@ -389,12 +370,24 @@ export default function EventPage() {
             InputLabelProps={{
               sx: {
                 color: theme.palette.mode === "dark" ? "grey" : undefined,
-                "&.Mui-focused": {
-                  color: theme.palette.mode === "dark" ? "#f5f5f5" : undefined,
-                },
-                "&.MuiInputLabel-shrink": {
-                  color: theme.palette.mode === "dark" ? "#f5f5f5" : undefined,
-                },
+                "&.Mui-focused": { color: theme.palette.mode === "dark" ? "#f5f5f5" : undefined },
+                "&.MuiInputLabel-shrink": { color: theme.palette.mode === "dark" ? "#f5f5f5" : undefined },
+              },
+            }}
+          />
+          <TextField
+            label="Event Description (optional)"
+            name="description"
+            value={form.description}
+            onChange={handleInputChange}
+            multiline
+            rows={3}
+            fullWidth
+            InputLabelProps={{
+              sx: {
+                color: theme.palette.mode === "dark" ? "grey" : undefined,
+                "&.Mui-focused": { color: theme.palette.mode === "dark" ? "#f5f5f5" : undefined },
+                "&.MuiInputLabel-shrink": { color: theme.palette.mode === "dark" ? "#f5f5f5" : undefined },
               },
             }}
           />
@@ -417,6 +410,14 @@ export default function EventPage() {
                 sx={{ height: 80, borderRadius: 2 }}
               />
             )}
+            <Button
+              variant="outlined"
+              size="medium"
+              sx={{ width: "30%" }}
+              onClick={() => navigate("/my-society/events/send_invites")}
+            >
+              Send Invitation
+            </Button>
           </Box>
 
           <FormControlLabel
@@ -428,8 +429,7 @@ export default function EventPage() {
                 sx={{
                   color: theme.palette.mode === "dark" ? "#f5f5f5" : undefined,
                   "&.Mui-checked": {
-                    color:
-                      theme.palette.mode === "dark" ? "#f5f5f5" : undefined,
+                    color: theme.palette.mode === "dark" ? "#f5f5f5" : undefined,
                   },
                 }}
               />

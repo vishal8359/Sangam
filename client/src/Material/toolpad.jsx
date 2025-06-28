@@ -5,7 +5,6 @@ import { createTheme, styled } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
 
-
 import Box from "@mui/material/Box";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import BarChartIcon from "@mui/icons-material/BarChart";
@@ -56,6 +55,9 @@ import UploadImagePage from "../pages/Gallery/uploadImagePage";
 import YourProductsPage from "../pages/UserProducts";
 import Products from "../pages/NewProd";
 import CartPage from "../pages/cartPage";
+import user_avatar from "../assets/user_avatar.png";
+import UserProfileCard from "../pages/UserProfile";
+
 const NAVIGATION = [
   {
     kind: "header",
@@ -166,7 +168,6 @@ const NAVIGATION = [
   },
 ];
 
-
 function useDemoRouter(initialPath = "/") {
   const [pathname, setPathname] = React.useState(() => {
     const current = window.location.pathname || initialPath;
@@ -176,7 +177,7 @@ function useDemoRouter(initialPath = "/") {
 
   const navigate = React.useCallback((path) => {
     const newPath = String(path);
-    window.history.pushState({}, "", newPath); // updates the URL in the browser
+    window.history.pushState({}, "", newPath); 
     setPathname(newPath);
   }, []);
 
@@ -200,8 +201,6 @@ function useDemoRouter(initialPath = "/") {
   }, [pathname, navigate]);
 }
 
-
-
 export default function DashboardLayoutBasic(props) {
   const { window } = props;
   const [mode, setMode] = React.useState(
@@ -209,11 +208,10 @@ export default function DashboardLayoutBasic(props) {
   );
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
-
-
+  
   const router = useDemoRouter("/");
   const demoWindow = window ? window() : undefined;
-
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const demoTheme = React.useMemo(
     () =>
@@ -224,7 +222,7 @@ export default function DashboardLayoutBasic(props) {
         palette: {
           mode,
           primary: {
-            main: "#212121",
+            main: "#272727",
             dark: "grey",
           },
           text: {
@@ -232,10 +230,30 @@ export default function DashboardLayoutBasic(props) {
             secondary: "#757575",
           },
           background: {
-            default: mode === "light" ? "#E5E5E5" : "#121212",
+            default: mode === "light" ? "#E5E5E5" : "#272727",
           },
         },
         components: {
+          MuiListSubheader: {
+            styleOverrides: {
+              root: {
+                backgroundColor: "transparent",
+                color: mode === "dark" ? "#E0E0E0" : "#424242",
+                fontWeight: 600,
+                fontSize: "0.85rem",
+                textTransform: "uppercase",
+                letterSpacing: "0.10rem",
+              },
+            },
+          },
+          MuiDrawer: {
+            styleOverrides: {
+              paper: {
+                backgroundColor: mode === "dark" ? "#272727" : "#fff",
+                color: mode === "dark" ? "#fff" : "#000",
+              },
+            },
+          },
           MuiTypography: {
             styleOverrides: {
               root: {
@@ -256,7 +274,7 @@ export default function DashboardLayoutBasic(props) {
           MuiAppBar: {
             styleOverrides: {
               root: {
-                backgroundColor: mode === "light" ? "#e8e8e8" : "#121212",
+                backgroundColor: mode === "light" ? "#e8e8e8" : "#272727",
                 color: mode === "light" ? "#E5E5E5" : "#fff",
                 boxShadow: "none",
                 borderBottom:
@@ -291,7 +309,6 @@ export default function DashboardLayoutBasic(props) {
             },
           },
 
-
           MuiListItemText: {
             styleOverrides: {
               primary: {
@@ -321,7 +338,7 @@ export default function DashboardLayoutBasic(props) {
       case "/my-society/polls":
         return <PollsPage />;
       case "/my-society/ads":
-        return <Products/>;
+        return <Products />;
       case "/my-society/complaints":
         return <ComplaintForm />;
       case "/my-society/events":
@@ -345,30 +362,32 @@ export default function DashboardLayoutBasic(props) {
       case "/reports/user_products":
         return <YourProductsPage />;
       case "/reports/products":
-        return <ProductsPage/>;
+        return <ProductsPage />;
       case "/reports/top_contributors":
         return <TopContributorsPage />;
       case "/reports/Society_health_score":
         return <SocietyHealthScore />;
       case "/integrations":
         return <IntegrationPage />;
+      case "/user":
+        return <UserProfileCard/>
       default:
         if (/^\/my-society\/ads\/[^/]+\/cart$/.test(pathname)) {
-        return <CartPage />;
-      }
+          return <CartPage />;
+        }
         return <div>Page Not Found</div>;
     }
   }
 
-
   const toggleMode = () =>
     setMode((prev) => (prev === "light" ? "dark" : "light"));
-
 
   const goToMySociety = () => {
     router.navigate("/my-society");
   };
-
+  const goToUser = () => {
+    router.navigate("/user");
+  }
 
   // Create a custom moon-style switch
   const MoonSwitch = styled(Switch)(({ theme }) => ({
@@ -384,7 +403,6 @@ export default function DashboardLayoutBasic(props) {
         color: "#fff",
         "& + .MuiSwitch-track": {
           backgroundColor: "white",
-
 
           opacity: 1,
           border: 0,
@@ -415,7 +433,6 @@ export default function DashboardLayoutBasic(props) {
       content: '"🌙"',
     },
 
-
     "& .MuiSwitch-track": {
       borderRadius: 20 / 2,
       backgroundColor: "#ccc",
@@ -425,7 +442,6 @@ export default function DashboardLayoutBasic(props) {
       }),
     },
   }));
-
 
   React.useEffect(() => {
     const collapseButton = document.querySelector(
@@ -447,7 +463,6 @@ export default function DashboardLayoutBasic(props) {
     }
   }, [isDesktop]);
 
-
   return (
     <>
       <AppProvider
@@ -456,10 +471,12 @@ export default function DashboardLayoutBasic(props) {
         theme={demoTheme}
         window={demoWindow}
         branding={{
-          title: (
+          title: !isMobile ? (
             <span className="mt-1.5">
               <SangamLogo />
             </span>
+          ) : (
+            ""
           ),
           logo: (
             <div
@@ -475,19 +492,37 @@ export default function DashboardLayoutBasic(props) {
           ),
         }}
       >
-        <div style={{ position: "absolute", top: 10, right: 8, zIndex: 1500 }}>
+        <div
+          style={{
+            position: "absolute",
+            top: isMobile? 4 : 6,
+            right: 10,
+            zIndex: 1500,
+            display: "flex",
+            alignItems: "center",
+            gap: 15,
+          }}
+        >
+          {/* Avatar on the left */}
+          <img
+            onClick={goToUser}
+            src={user_avatar}
+            alt="User Avatar"
+            style={{
+              width: 50,
+              height: 50,
+              borderRadius: "50%",
+              objectFit: "cover",
+              cursor: "pointer",
+            }}
+          />
+
+          {/* MoonSwitch on the right */}
           <MoonSwitch checked={mode === "dark"} onChange={toggleMode} />
         </div>
 
-
         <DashboardLayout>
-          <PageContainer
-            sx={{
-              padding: 0,
-              margin: 0,
-              width: "100%",
-            }}
-          >
+          <PageContainer sx={{ padding: 0, margin: 0, width: "100%" }}>
             {console.log(router.pathname)}
             {router.pathname ? (
               renderPage(router.pathname)
@@ -500,6 +535,3 @@ export default function DashboardLayoutBasic(props) {
     </>
   );
 }
-
-
-

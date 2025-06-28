@@ -10,6 +10,7 @@ export const AppContextProvider = ({ children }) => {
   const navigate = useNavigate();
   const theme = useTheme();
 
+  // Auth and user info
   const [userId, setUserId] = useState(null);
   const [houseId, setHouseId] = useState("");
   const [societyId, setSocietyId] = useState("");
@@ -18,15 +19,28 @@ export const AppContextProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Theme
   const [themeMode, setThemeMode] = useState("light");
+
+  // General user and data
   const [user, setUser] = useState(null);
+
+  // Marketplace
   const [products, setProducts] = useState([]);
   const [cartItems, setCartItems] = useState({});
   const [cartCount, setCartCount] = useState(0);
   const [firstCartId, setFirstCartId] = useState(null);
   const currency = "₹";
 
-  // Load from localStorage
+  // Events
+  const [events, setEvents] = useState([]);
+  const [invitations, setInvitations] = useState([]);
+
+  // Members
+  const [members, setMembers] = useState([]);
+  const [buzzGroups, setBuzzGroups] = useState([]);
+  const [complaints, setComplaints] = useState([]);
+
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("sangam-user"));
     const savedTheme = localStorage.getItem("theme-mode");
@@ -40,12 +54,13 @@ export const AppContextProvider = ({ children }) => {
       setIsAuthenticated(true);
     }
 
-    if (savedTheme) {
-      setThemeMode(savedTheme);
-    }
-
+    if (savedTheme) setThemeMode(savedTheme);
     setLoading(false);
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem("theme-mode", themeMode);
+  }, [themeMode]);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -59,16 +74,10 @@ export const AppContextProvider = ({ children }) => {
     fetchProducts();
   }, []);
 
-  // Theme persistence
-  useEffect(() => {
-    localStorage.setItem("theme-mode", themeMode);
-  }, [themeMode]);
-
   const toggleTheme = () => {
     setThemeMode((prev) => (prev === "light" ? "dark" : "light"));
   };
 
-  // Auth handlers
   const login = (data) => {
     const { userId, houseId, societyId, userRole, userProfile } = data;
     setUserId(userId);
@@ -94,11 +103,9 @@ export const AppContextProvider = ({ children }) => {
   const updateCartItem = (productId, quantity) => {
     setCartItems((prev) => {
       const updated = { ...prev };
-      if (quantity > 0) {
-        updated[productId] = quantity;
-      } else {
-        delete updated[productId];
-      }
+      if (quantity > 0) updated[productId] = quantity;
+      else delete updated[productId];
+
       const ids = Object.keys(updated);
       setFirstCartId(ids.length > 0 ? ids[0] : null);
       setCartCount(Object.values(updated).reduce((a, b) => a + b, 0));
@@ -149,6 +156,8 @@ export const AppContextProvider = ({ children }) => {
     // user data
     user,
     setUser,
+
+    // products and cart
     products,
     setProducts,
     cartItems,
@@ -162,6 +171,20 @@ export const AppContextProvider = ({ children }) => {
     firstCartId,
     setFirstCartId,
     currency,
+
+    // society features
+    members,
+    setMembers,
+    buzzGroups,
+    setBuzzGroups,
+    complaints,
+    setComplaints,
+    events,
+    setEvents,
+    invitations,
+    setInvitations,
+
+    // utils
     navigate,
     axios,
   };

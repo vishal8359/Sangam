@@ -29,12 +29,13 @@ import Poll_icon from "../assets/Poll_icon.png";
 import { AppContext } from "../context/AppContext";
 
 const PollsPage = () => {
-  const [polls, setPolls] = useState(samplePolls);
+  const { polls, setPolls, userRole, navigate } = useContext(AppContext);
+
   const [houseNumbers, setHouseNumbers] = useState({});
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const { userRole } = useContext(AppContext);
+
 
   const handleVote = (pollId, optionIndex) => {
     const poll = polls.find((p) => p.id === pollId);
@@ -121,6 +122,7 @@ const PollsPage = () => {
         justifyContent="space-between"
         alignItems="center"
         ml={4}
+        pt={3}
         mr={4}
         mt={4}
         mb={2}
@@ -141,7 +143,7 @@ const PollsPage = () => {
             variant="contained"
             color="primary"
             sx={{ borderRadius: 2 }}
-            onClick={() => alert("Open Create Poll Dialog")}
+            onClick={() => navigate('/my-society/polls/create')}
           >
             Create Poll
           </Button>

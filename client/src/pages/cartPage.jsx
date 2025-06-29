@@ -27,14 +27,16 @@ const CartPage = () => {
     user,
     setCartItems,
     currency,
+    addresses,
+    setAddresses,
+    selectedAddress,
+    setSelectedAddress,
   } = useAppContext();
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [cartArray, setCartArray] = useState([]);
-  const [addresses, setAddresses] = useState([]);
-  const [selectedAddress, setSelectedAddress] = useState(null);
   const [paymentOption, setPaymentOption] = useState("COD");
   const [showAddress, setShowAddress] = useState(false);
 
@@ -50,23 +52,19 @@ const CartPage = () => {
     setCartArray(tempArray);
   };
 
-  const getUserAddress = async () => {
-    try {
-      const { data } = await axios.get("/api/address/get");
-      if (data.success) {
-        setAddresses(data.addresses);
-        if (data.addresses.length > 0) {
-          setSelectedAddress(data.addresses[0]);
-        }
-      } else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      toast.error(error.message);
-    }
-  };
+ const getUserAddress = async () => {
+  const stored = JSON.parse(localStorage.getItem("mock-addresses") || "[]");
+
+  if (stored.length > 0) {
+    setAddresses(stored);
+    setSelectedAddress(stored[0]);
+  }
+};
+
+
 
   const placeOrder = async () => {
+    
     try {
       if (!selectedAddress) return toast.error("Please select an address");
 
@@ -106,8 +104,10 @@ const CartPage = () => {
   }, [products, cartItems]);
 
   useEffect(() => {
-    if (user) getUserAddress();
-  }, [user]);
+    if (user && addresses.length === 0) {
+      getUserAddress();
+    }
+  }, [user, addresses.length]);
 
   if (!cartArray.length) {
     return (

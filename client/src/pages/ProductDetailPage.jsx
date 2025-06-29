@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import { Box, Typography, Button, Paper, Grid, useTheme } from "@mui/material";
-import { FaStar, FaRegStar } from "react-icons/fa";
+import { FaStar, FaRegStar, FaShoppingCart } from "react-icons/fa";
 import { useMediaQuery } from "@mui/material";
 import { IconButton } from "@mui/material";
-import { FaShoppingCart } from "react-icons/fa";
+import FloatingCartIcon from "../components/FloatingCartIcon"; // ✅ Added
 
 const ProductDetailPage = () => {
   const { product_id } = useParams();
@@ -20,6 +20,7 @@ const ProductDetailPage = () => {
     firstCartId,
     setFirstCartId,
   } = useAppContext();
+
   const isMobile = useMediaQuery("(max-width:600px)");
 
   const [product, setProduct] = useState(null);
@@ -48,7 +49,6 @@ const ProductDetailPage = () => {
     if (newQty > 0 && !firstCartId) setFirstCartId(productId);
     if (newQty === 0 && productId === firstCartId) setFirstCartId(null);
 
-    // Show "Added" only for main product
     if (productId === product._id && delta > 0) {
       setAdded(true);
       setTimeout(() => setAdded(false), 1500);
@@ -60,15 +60,10 @@ const ProductDetailPage = () => {
   }
 
   return (
-    <Box px={isMobile ? 4 : 10} py={5}>
+    <Box px={isMobile ? 4 : 10} py={5} position="relative">
       <Typography mb={2} sx={{ color: "#1976d2" }}>
         <Link to="/my-society">Home</Link> /{" "}
-        <Link to="/my-society/ads">Products</Link>
-        {/* /{" "} */}
-        {/* <Link to={`/products/${product.category.toLowerCase()}`}>
-          {product.category}
-        </Link>{" "} */}
-        / {product.name}
+        <Link to="/my-society/ads">Products</Link> / {product.name}
       </Typography>
 
       <Grid container spacing={4}>
@@ -147,6 +142,7 @@ const ProductDetailPage = () => {
               (inclusive of all taxes)
             </Typography>
           </Box>
+
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
             Seller: <strong>{product.sellerName || "N/A"}</strong>
           </Typography>
@@ -198,11 +194,10 @@ const ProductDetailPage = () => {
           >
             <Button
               variant="outlined"
-              onClick={() => handleQtyChange(1)}
+              onClick={() => handleQtyChange(product._id, 1)}
               fullWidth
               sx={{
                 borderColor: "#e8e8e8",
-                // color: "#000",
                 "&:hover": {
                   borderColor: "#bbb",
                   backgroundColor: "#f3f3f3",
@@ -263,9 +258,6 @@ const ProductDetailPage = () => {
                     height: 140,
                     objectFit: "contain",
                     cursor: "pointer",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
                   }}
                 />
                 <Typography fontWeight={600} mt={1}>
@@ -290,146 +282,79 @@ const ProductDetailPage = () => {
                   </Typography>
                 </Box>
 
-                {isMobile ? (
-                  // --- Mobile Layout ---
-                  <Box mt="auto" pt={2}>
+                <Box mt="auto" pt={2} display="flex" justifyContent="space-between">
+                  <Button
+                    variant="text"
+                    size="small"
+                    onClick={() =>
+                      navigate(`/my-society/ads/${prod._id}/product_detail`, {
+                        state: { product: prod },
+                      })
+                    }
+                  >
+                    View
+                  </Button>
+
+                  {cartItems[prod._id] ? (
                     <Box
                       display="flex"
-                      justifyContent="flex-end"
                       alignItems="center"
+                      border={`1px solid ${theme.palette.success.main}`}
+                      borderRadius={2}
+                      height={40}
+                      bgcolor="#e3f2fd"
                     >
-                      {cartItems[prod._id] ? (
-                        <Box
-                          display="flex"
-                          alignItems="center"
-                          border={`1px solid ${theme.palette.success.main}`}
-                          borderRadius={2}
-                          height={40}
-                          bgcolor="#e3f2fd"
-                        >
-                          <IconButton
-                            onClick={() => handleQtyChange(prod._id, -1)}
-                            size="small"
-                            sx={{ color: theme.palette.success.dark }}
-                          >
-                            –
-                          </IconButton>
-                          <Typography sx={{ mx: 1.5, fontWeight: 500 }}>
-                            {cartItems[prod._id]}
-                          </Typography>
-                          <IconButton
-                            onClick={() => handleQtyChange(prod._id, 1)}
-                            size="small"
-                            sx={{ color: theme.palette.success.dark }}
-                          >
-                            +
-                          </IconButton>
-                        </Box>
-                      ) : (
-                        <Button
-                          variant="outlined"
-                          startIcon={<FaShoppingCart />}
-                          onClick={() => handleQtyChange(prod._id, 1)}
-                          sx={{
-                            minWidth: 100,
-                            color: "#1976d2",
-                            borderColor: "#1976d2",
-                            "&:hover": {
-                              color: "#1976d2",
-                              borderColor: "#1976d2",
-                              backgroundColor: "#e3f2fd", // Optional light background on hover
-                            },
-                            "&:active": {
-                              color: "#1976d2",
-                              borderColor: "#1976d2",
-                              backgroundColor: "#bbdefb", // Optional slightly darker on active
-                            },
-                          }}
-                        >
-                          Add
-                        </Button>
-                      )}
-                    </Box>
-                  </Box>
-                ) : (
-                  // --- Desktop Layout ---
-                  <Box
-                    pt={2}
-                    mt={2}
-                    display="flex"
-                    justifyContent="space-between"
-                    alignItems="center"
-                  >
-                    <Button
-                      variant="text"
-                      size="small"
-                      onClick={() =>
-                        navigate(`/my-society/ads/${prod._id}/product_detail`, {
-                          state: { product: prod },
-                        })
-                      }
-                    >
-                      View
-                    </Button>
-
-                    {cartItems[prod._id] ? (
-                      <Box
-                        display="flex"
-                        alignItems="center"
-                        border={`1px solid ${theme.palette.success.main}`}
-                        borderRadius={2}
-                        height={40}
-                        bgcolor="#e3f2fd"
+                      <IconButton
+                        onClick={() => handleQtyChange(prod._id, -1)}
+                        size="small"
+                        sx={{ color: theme.palette.success.dark }}
                       >
-                        <IconButton
-                          onClick={() => handleQtyChange(prod._id, -1)}
-                          size="small"
-                          sx={{ color: theme.palette.success.dark }}
-                        >
-                          –
-                        </IconButton>
-                        <Typography sx={{ mx: 1.5, fontWeight: 500 }}>
-                          {cartItems[prod._id]}
-                        </Typography>
-                        <IconButton
-                          onClick={() => handleQtyChange(prod._id, 1)}
-                          size="small"
-                          sx={{ color: theme.palette.success.dark }}
-                        >
-                          +
-                        </IconButton>
-                      </Box>
-                    ) : (
-                      <Button
-                        variant="outlined"
-                        startIcon={<FaShoppingCart />}
+                        –
+                      </IconButton>
+                      <Typography sx={{ mx: 1.5, fontWeight: 500 }}>
+                        {cartItems[prod._id]}
+                      </Typography>
+                      <IconButton
                         onClick={() => handleQtyChange(prod._id, 1)}
-                        sx={{
-                          minWidth: 100,
+                        size="small"
+                        sx={{ color: theme.palette.success.dark }}
+                      >
+                        +
+                      </IconButton>
+                    </Box>
+                  ) : (
+                    <Button
+                      variant="outlined"
+                      startIcon={<FaShoppingCart />}
+                      onClick={() => handleQtyChange(prod._id, 1)}
+                      sx={{
+                        minWidth: 100,
+                        color: "#1976d2",
+                        borderColor: "#1976d2",
+                        "&:hover": {
                           color: "#1976d2",
                           borderColor: "#1976d2",
-                          "&:hover": {
-                            color: "#1976d2",
-                            borderColor: "#1976d2",
-                            backgroundColor: "#e3f2fd", // Optional light background on hover
-                          },
-                          "&:active": {
-                            color: "#1976d2",
-                            borderColor: "#1976d2",
-                            backgroundColor: "#bbdefb", // Optional slightly darker on active
-                          },
-                        }}
-                      >
-                        Add
-                      </Button>
-                    )}
-                  </Box>
-                )}
+                          backgroundColor: "#e3f2fd",
+                        },
+                        "&:active": {
+                          color: "#1976d2",
+                          borderColor: "#1976d2",
+                          backgroundColor: "#bbdefb",
+                        },
+                      }}
+                    >
+                      Add
+                    </Button>
+                  )}
+                </Box>
               </Paper>
             </Grid>
           ))}
         </Grid>
       </Box>
+
+      {/* Floating Cart Icon globally shown */}
+      <FloatingCartIcon/>
     </Box>
   );
 };

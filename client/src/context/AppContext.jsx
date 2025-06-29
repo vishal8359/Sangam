@@ -3,7 +3,7 @@ import { useTheme } from "@emotion/react";
 import { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-
+import { samplePolls } from "../assets/local.js";
 export const AppContext = createContext();
 
 export const AppContextProvider = ({ children }) => {
@@ -41,6 +41,12 @@ export const AppContextProvider = ({ children }) => {
   const [buzzGroups, setBuzzGroups] = useState([]);
   const [complaints, setComplaints] = useState([]);
 
+  //polls
+  const [polls, setPolls] = useState(samplePolls);
+
+  //Address
+  const [addresses, setAddresses] = useState([]);
+  const [selectedAddress, setSelectedAddress] = useState(null);
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("sangam-user"));
     const savedTheme = localStorage.getItem("theme-mode");
@@ -121,7 +127,8 @@ export const AppContextProvider = ({ children }) => {
     });
   };
 
-  const getCartCount = () => Object.values(cartItems).reduce((acc, qty) => acc + qty, 0);
+  const getCartCount = () =>
+    Object.values(cartItems).reduce((acc, qty) => acc + qty, 0);
 
   const getCartAmount = () => {
     return Object.keys(cartItems).reduce((total, id) => {
@@ -183,6 +190,16 @@ export const AppContextProvider = ({ children }) => {
     setEvents,
     invitations,
     setInvitations,
+
+    //polls
+    polls,
+    setPolls,
+
+    //address
+    addresses,
+    setAddresses,
+    selectedAddress,
+    setSelectedAddress,
 
     // utils
     navigate,

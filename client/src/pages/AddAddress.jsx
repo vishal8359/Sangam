@@ -14,7 +14,8 @@ import {
 import AddressImage from "../assets/add_adress.svg";
 
 const AddAddress = () => {
-  const { axios, user, navigate } = useAppContext();
+  const { axios, user, navigate, setAddresses, setSelectedAddress } =
+    useAppContext();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -37,16 +38,28 @@ const AddAddress = () => {
 
   const onSubmitHandler = async (e) => {
     e.preventDefault();
+
     try {
-      const { data } = await axios.post("/api/address/add", { address });
-      if (data.success) {
-        toast.success(data.message);
-        navigate("/cart");
-      } else {
-        toast.error(data.message);
-      }
+      const newAddress = {
+        ...address,
+        _id: Date.now().toString(),
+      };
+
+      // Update state
+      setAddresses((prev) => {
+        const updated = [...prev, newAddress];
+        // Save to localStorage
+        localStorage.setItem("mock-addresses", JSON.stringify(updated));
+        return updated;
+      });
+
+      // Set selected address
+      setSelectedAddress(newAddress);
+
+      toast.success("Address saved successfully!");
+      navigate("/my-society/ads/cart");
     } catch (error) {
-      toast.error(error?.response?.data?.message || error.message);
+      toast.error("Failed to save address.");
     }
   };
 
@@ -73,7 +86,7 @@ const AddAddress = () => {
         sx={{
           borderRadius: 3,
           p: { xs: 3, md: 5 },
-          width:  isMobile? "100vw" : "45vw",
+          width: isMobile ? "100vw" : "45vw",
           mr: 3,
         }}
       >

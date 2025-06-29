@@ -19,6 +19,8 @@ import UserProfileCard from "./pages/UserProfile";
 import InviteMembersPage from "./pages/SendInvitePage";
 import ViewInvitations from "./pages/ViewInvitationPage";
 import CreateSociety from "./pages/CreateSoc";
+import CreatePollPage from "./pages/createPollPage";
+import SubmitComplaint from "./pages/RegisterComplaint";
 
 const App = () => {
   return (
@@ -43,6 +45,8 @@ const App = () => {
         {/* <Route path="/user" element={<UserProfileCard/>}/> */}
         <Route path="/my-society/events/send_invites" element={<InviteMembersPage />} />
         <Route path="/my-society/events/view_invitations" element={<ViewInvitations />} />
+        <Route path="/my-society/polls/create" element={<CreatePollPage/>}/>
+        <Route path="/my-society/complaints/new" element={<SubmitComplaint/>}/>
       </Routes>
     </div>
   );

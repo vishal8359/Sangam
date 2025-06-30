@@ -13,7 +13,7 @@ import VideoLibraryIcon from "@mui/icons-material/VideoLibrary";
 import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
 import ImageIcon from "@mui/icons-material/Image";
 import { keyframes } from "@emotion/react";
-import gallery_bg from "../assets/gallery_bg.jpg";
+import gallery_bg from "../../assets/gallery_bg.jpg";
 
 export default function SocietyGalleryPage() {
   const navigate = useNavigate();

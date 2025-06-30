@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
+import toast from "react-hot-toast";
 
 export default function ResidentLogin() {
   const [societyId, setSocietyId] = useState("");
@@ -19,7 +20,8 @@ export default function ResidentLogin() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
 
-  const {navigate} = useAppContext();
+  const { setUserRole } = useAppContext(); // access context
+  const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -42,7 +44,10 @@ export default function ResidentLogin() {
 
     console.log("Logging in with:", loginData);
 
-    // Simulate successful login and navigate
+    // Simulate successful login
+    setUserRole("resident");
+    toast.success("User login successfully");
+
     navigate("/my-society");
   };
 
@@ -138,11 +143,7 @@ export default function ResidentLogin() {
             Login
           </Button>
 
-          <Typography
-            variant="body2"
-            textAlign="center"
-            mt={2}
-          >
+          <Typography variant="body2" textAlign="center" mt={2}>
             New User?{" "}
             <Link
               href="#"

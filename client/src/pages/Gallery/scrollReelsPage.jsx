@@ -1,4 +1,5 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
+
 import {
   Box,
   Typography,
@@ -18,6 +19,7 @@ import ShareIcon from "@mui/icons-material/Share";
 import CommentIcon from "@mui/icons-material/Comment";
 import DownloadIcon from "@mui/icons-material/Download";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
+import { useAppContext } from "../../context/AppContext";
 
 import dummyReel from "../../assets/dummy2.mp4";
 
@@ -43,11 +45,14 @@ const initialReels = [
 ];
 
 export default function ScrollReelsPage() {
-  const [reels, setReels] = useState(initialReels);
   const [commentModal, setCommentModal] = useState({
     open: false,
     reelId: null,
   });
+  const { userReels } = useAppContext();
+  const [reels, setReels] = useState(userReels || []);
+
+
   const [newComment, setNewComment] = useState("");
   const [replyInput, setReplyInput] = useState({ index: null, text: "" });
   const videoRefs = useRef({});
@@ -119,6 +124,14 @@ export default function ScrollReelsPage() {
     setReplyInput({ index: null, text: "" });
   };
 
+  useEffect(() => {
+  console.log("userReels from context:", userReels);
+  if (Array.isArray(userReels)) {
+    setReels(userReels);
+  }
+}, [userReels]);
+
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -131,11 +144,11 @@ export default function ScrollReelsPage() {
           key={reel.id}
           sx={{
             mb: 0,
-            borderRadius: isMobile?0 : 4,
+            borderRadius: isMobile ? 0 : 4,
             overflow: "hidden",
             position: "relative",
             bgcolor: "black",
-            width:isMobile ? "100vw": "420",
+            width: isMobile ? "100vw" : "420",
             maxWidth: 420,
             mx: "auto",
             height: "100vh",

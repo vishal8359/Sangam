@@ -23,10 +23,10 @@ import LockIcon from "@mui/icons-material/Lock";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
 import HowToVoteIcon from "@mui/icons-material/HowToVote";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
-import { samplePolls } from "../assets/local.js";
-import poll_bg from "../assets/poll_bg.jpg";
-import Poll_icon from "../assets/Poll_icon.png";
-import { AppContext } from "../context/AppContext";
+import { samplePolls } from "../../assets/local.js";
+import poll_bg from "../../assets/poll_bg.jpg";
+import Poll_icon from "../../assets/Poll_icon.png";
+import { AppContext } from "../../context/AppContext.jsx";
 
 const PollsPage = () => {
   const { polls, setPolls, userRole, navigate } = useContext(AppContext);

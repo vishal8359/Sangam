@@ -4,6 +4,10 @@ import { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { samplePolls } from "../assets/local.js";
+
+axios.defaults.withCredentials = true;
+axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL;
+
 export const AppContext = createContext();
 
 export const AppContextProvider = ({ children }) => {
@@ -18,6 +22,8 @@ export const AppContextProvider = ({ children }) => {
   const [userProfile, setUserProfile] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  // Reels
+  const [userReels, setUserReels] = useState([]);
 
   // Theme
   const [themeMode, setThemeMode] = useState("light");
@@ -30,7 +36,7 @@ export const AppContextProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState({});
   const [cartCount, setCartCount] = useState(0);
   const [firstCartId, setFirstCartId] = useState(null);
-  const currency = "₹";
+  const currency = import.meta.env.VITE_CURRENCY;
 
   // Events
   const [events, setEvents] = useState([]);
@@ -47,6 +53,37 @@ export const AppContextProvider = ({ children }) => {
   //Address
   const [addresses, setAddresses] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState(null);
+
+  // Notices
+  const [notices, setNotices] = useState([]);
+
+  // Gallery Images (visible only to society members)
+  const [galleryImages, setGalleryImages] = useState(() => {
+    const saved = localStorage.getItem("gallery-images");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem("gallery-images", JSON.stringify(galleryImages));
+  }, [galleryImages]);
+
+  const addGalleryImage = (image) => {
+    setGalleryImages((prev) => [image, ...prev]);
+  };
+
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem("notices")) || [];
+    setNotices(stored);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("notices", JSON.stringify(notices));
+  }, [notices]);
+
+  const addNotice = (newNotice) => {
+    setNotices((prev) => [newNotice, ...prev]);
+  };
+
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("sangam-user"));
     const savedTheme = localStorage.getItem("theme-mode");
@@ -164,6 +201,11 @@ export const AppContextProvider = ({ children }) => {
     user,
     setUser,
 
+    // gallery
+    galleryImages,
+    setGalleryImages,
+    addGalleryImage,
+
     // products and cart
     products,
     setProducts,
@@ -190,10 +232,17 @@ export const AppContextProvider = ({ children }) => {
     setEvents,
     invitations,
     setInvitations,
+    userReels,
+    setUserReels,
 
     //polls
     polls,
     setPolls,
+
+    // notices
+    notices,
+    setNotices,
+    addNotice,
 
     //address
     addresses,

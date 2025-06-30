@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import { UploadFile } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import Complaint_Bg from "../assets/Complaint_Bg.jpg";
+import Complaint_Bg from "../../assets/Complaint_Bg.jpg";
 
 const complaintTypes = [
   "Water Leakage",

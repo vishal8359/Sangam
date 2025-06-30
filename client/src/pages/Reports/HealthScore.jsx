@@ -20,7 +20,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-import { SEVERE_CONDITIONS } from "../assets/local.js";
+import { SEVERE_CONDITIONS } from "../../assets/local.js";
 
 const initialPerson = {
   name: "",

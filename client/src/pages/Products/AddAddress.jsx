@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useAppContext } from "../context/AppContext";
+import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
 import {
   Box,
@@ -11,7 +11,7 @@ import {
   Paper,
   useMediaQuery,
 } from "@mui/material";
-import AddressImage from "../assets/add_adress.svg";
+import AddressImage from "../../assets/add_adress.svg";
 
 const AddAddress = () => {
   const { axios, user, navigate, setAddresses, setSelectedAddress } =

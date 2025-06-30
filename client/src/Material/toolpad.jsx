@@ -36,25 +36,25 @@ import SangamLogo from "./sangamLogo";
 import MySociety from "../pages/MySociety";
 import Typography from "@mui/material/Typography";
 import appLogo from "../assets/appLogo.png";
-import ChatsPage from "../pages/Chats";
-import PollsPage from "../pages/Polls";
-import ProductsPage from "../pages/Products";
-import ComplaintForm from "../pages/complaints";
-import NoticesPage from "../pages/Notices";
-import EventPage from "../pages/Events";
-import SocietyBuzz from "../pages/Buzz";
-import NeighboursPage from "../pages/Neighbours";
-import SocietyGalleryPage from "../pages/Gallery";
-import UserEngagementPage from "../pages/UserEngagement";
-import TopContributorsPage from "../pages/TopContributors";
-import SocietyHealthScore from "../pages/HealthScore";
-import IntegrationPage from "../pages/Integration";
+import ChatsPage from "../pages/Chats/Chats";
+import PollsPage from "../pages/Polls/Polls";
+import ProductsPage from "../pages/Reports/Products.jsx";
+import ComplaintForm from "../pages/Complaints/Complaints.jsx"
+import NoticesPage from "../pages/Notices/Notices.jsx";
+import EventPage from "../pages/Events/Events.jsx";
+import SocietyBuzz from "../pages/Buzz/Buzz";
+import NeighboursPage from "../pages/Neighbours/Neighbours.jsx";
+import SocietyGalleryPage from "../pages/Gallery/Gallery.jsx";
+import UserEngagementPage from "../pages/Reports/UserEngagement.jsx";
+import TopContributorsPage from "../pages/Reports/TopContributors.jsx";
+import SocietyHealthScore from "../pages/Reports/HealthScore.jsx";
+import IntegrationPage from "../pages/Integration/Integration.jsx";
 import UploadReelPage from "../pages/Gallery/uploadReelPage";
 import ScrollReelsPage from "../pages/Gallery/scrollReelsPage";
 import UploadImagePage from "../pages/Gallery/uploadImagePage";
-import YourProductsPage from "../pages/UserProducts";
-import Products from "../pages/NewProd";
-import CartPage from "../pages/cartPage";
+import YourProductsPage from "../pages/Reports/UserProducts.jsx";
+import Products from "../pages/Products/NewProd";
+import CartPage from "../pages/Products/cartPage";
 import user_avatar from "../assets/user_avatar.png";
 import UserProfileCard from "../pages/UserProfile";
 
@@ -154,11 +154,11 @@ const NAVIGATION = [
         title: "Society Health Score",
         icon: <HealthAndSafetyIcon />,
       },
-      {
-        segment: "age_groups",
-        title: "Age Groups",
-        icon: <Diversity3Icon />,
-      },
+      // {
+      //   segment: "age_groups",
+      //   title: "Age Groups",
+      //   icon: <Diversity3Icon />,
+      // },
     ],
   },
   {
@@ -372,9 +372,7 @@ export default function DashboardLayoutBasic(props) {
       case "/user":
         return <UserProfileCard/>
       default:
-        if (/^\/my-society\/ads\/[^/]+\/cart$/.test(pathname)) {
-          return <CartPage />;
-        }
+        
         return <div>Page Not Found</div>;
     }
   }

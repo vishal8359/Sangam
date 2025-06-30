@@ -13,7 +13,8 @@ import {
   Avatar,
 } from "@mui/material";
 import { AddCircle, RemoveCircle } from "@mui/icons-material";
-import { useAppContext } from "../context/AppContext";
+import { useAppContext } from "../../context/AppContext";
+
 
 const CreatePollPage = () => {
   const { colors, setPolls, navigate } = useAppContext();

@@ -21,6 +21,8 @@ import {
   RadialBarChart,
   RadialBar,
 } from "recharts";
+import { useAppContext } from "../../context/AppContext";
+import { toast } from "react-hot-toast";
 
 const dummyStats = {
   totalViews: 32500,
@@ -43,6 +45,7 @@ const UploadReelPage = () => {
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState("");
   const [file, setFile] = useState(null);
+  const { userProfile, userReels, setUserReels } = useAppContext();
 
   const handleTagAdd = () => {
     if (tagInput.trim() && !tags.includes(tagInput.trim())) {
@@ -78,9 +81,35 @@ const UploadReelPage = () => {
     );
   };
 
-  const handleSubmit = () => {
-    console.log("Uploading Reel", file, tags);
-    setTimeout(() => navigate("/gallery"), 300);
+  const handleSubmit = async () => {
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("video", file);
+    formData.append("tags", JSON.stringify(tags));
+    formData.append("description", desc);
+    formData.append("user_name", userProfile?.name || "Anonymous");
+    formData.append("user_img", userProfile?.img || "/user_photo.jpg");
+
+    try {
+      toast.loading("Uploading reel...", { id: "upload" });
+
+      const response = await axios.post("/api/reels", formData);
+      const savedReel = response.data;
+
+      if (!savedReel || !savedReel.videoUrl) {
+        throw new Error("Invalid reel data returned from server");
+      }
+
+      // Update context so gallery reflects it immediately
+      setUserReels((prev) => [savedReel, ...prev]);
+
+      toast.success("Reel uploaded successfully!", { id: "upload" });
+      navigate("/gallery");
+    } catch (error) {
+      console.error("Reel upload failed:", error);
+      toast.error("Failed to upload reel", { id: "upload" });
+    }
   };
 
   return (
@@ -124,7 +153,7 @@ const UploadReelPage = () => {
                 nameKey="name"
                 outerRadius={80}
                 fill="#8884d8"
-                labelLine={false} 
+                labelLine={false}
                 label={renderCustomLabel}
               >
                 {dummyStats.viewerTypes.map((entry, index) => (
@@ -316,6 +345,25 @@ const UploadReelPage = () => {
           >
             Upload Reel
           </Button>
+          {userReels.length > 0 && (
+            <Box mt={4}>
+              <Typography variant="h6" fontWeight="bold" mb={2}>
+                My Reels Preview
+              </Typography>
+              <Stack direction="row" spacing={2} flexWrap="wrap">
+                {userReels.map((reel) => (
+                  <video
+                    key={reel.id}
+                    src={reel.videoUrl}
+                    width={120}
+                    height={180}
+                    muted
+                    style={{ borderRadius: 8, objectFit: "cover" }}
+                  />
+                ))}
+              </Stack>
+            </Box>
+          )}
         </Box>
       </Stack>
     </Box>

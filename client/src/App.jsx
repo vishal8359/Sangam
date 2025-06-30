@@ -6,21 +6,24 @@ import ResidentLogin from "./pages/ResidentLogin";
 import AdminLogin from "./pages/AdminLogin";
 import Register from "./pages/Register";
 import HomePage from "./pages/Initial";
-import Products from "./pages/Products"
+import Products from "./pages/Reports/Products"
 import UploadReelPage from "./pages/Gallery/uploadReelPage";
 import ScrollReelsPage from "./pages/Gallery/scrollReelsPage";
 import UploadImagePage from "./pages/Gallery/uploadImagePage";
 import ImagesGalleryPage from "./pages/Gallery/imagesPage";
-import ChatsPage from "./pages/Chats";
-import CartPage from "./pages/cartPage";
-import ProductDetailPage from "./pages/ProductDetailPage";
-import AddAddress from "./pages/AddAddress";
+import ChatsPage from "./pages/Chats/Chats";
+import CartPage from "./pages/Products/cartPage";
+import ProductDetailPage from "./pages/Products/ProductDetailPage";
+import AddAddress from "./pages/Products/AddAddress";
 import UserProfileCard from "./pages/UserProfile";
-import InviteMembersPage from "./pages/SendInvitePage";
-import ViewInvitations from "./pages/ViewInvitationPage";
+import InviteMembersPage from "./pages/Events/SendInvitePage";
+import ViewInvitations from "./pages/Events/ViewInvitationPage";
+
+
+import CreatePollPage from "./pages/Polls/createPollPage";
+import SubmitComplaint from "./pages/Complaints/RegisterComplaint";
+import UploadNoticePage from "./pages/Notices/UploadNotice";
 import CreateSociety from "./pages/CreateSoc";
-import CreatePollPage from "./pages/createPollPage";
-import SubmitComplaint from "./pages/RegisterComplaint";
 
 const App = () => {
   return (
@@ -47,6 +50,7 @@ const App = () => {
         <Route path="/my-society/events/view_invitations" element={<ViewInvitations />} />
         <Route path="/my-society/polls/create" element={<CreatePollPage/>}/>
         <Route path="/my-society/complaints/new" element={<SubmitComplaint/>}/>
+        <Route path="/my-society/notices/new" element={<UploadNoticePage/>}/>
       </Routes>
     </div>
   );

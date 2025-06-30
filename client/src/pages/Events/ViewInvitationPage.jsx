@@ -1,8 +1,8 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { FaStar } from "react-icons/fa";
-import sports_img from "../assets/sports.jpg";
-import ind_img from "../assets/independence.jpeg";
+import sports_img from "../../assets/sports.jpg";
+import ind_img from "../../assets/independence.jpeg";
 
 const invitations = [
   {

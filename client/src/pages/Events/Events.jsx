@@ -11,9 +11,9 @@ import {
   FormControlLabel,
 } from "@mui/material";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
-import cleanUp from "../assets/CleanUp.jpg";
-import bbq from "../assets/bbq.jpeg";
-import Events_Bg from "../assets/Events_Bg.jpg";
+import cleanUp from "../../assets/CleanUp.jpg";
+import bbq from "../../assets/bbq.jpeg";
+import Events_Bg from "../../assets/Events_Bg.jpg";
 import { useNavigate } from "react-router-dom";
 
 const initialEvents = [

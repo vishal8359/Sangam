@@ -7,9 +7,10 @@ import {
   Paper,
 } from "@mui/material";
 import { useAppContext } from "../context/AppContext";
+import toast from "react-hot-toast";
 
 const AdminLogin = () => {
-  const { colors, login, navigate } = useAppContext();
+  const { colors, login, navigate, setUserRole } = useAppContext();
 
   const [formData, setFormData] = useState({
     societyId: "",
@@ -34,7 +35,6 @@ const AdminLogin = () => {
       return;
     }
 
-    // Simulated login validation — Replace with real API call
     if (password !== "admin123") {
       setError("Invalid password. Try 'admin123' for testing.");
       return;
@@ -46,6 +46,7 @@ const AdminLogin = () => {
       email: "admin@society.com",
     };
 
+    // Simulate login
     login({
       societyId,
       userId,
@@ -54,8 +55,10 @@ const AdminLogin = () => {
       userProfile: adminProfile,
     });
 
+    setUserRole("admin");
     setError("");
-    navigate("/my-society"); // or redirect to admin dashboard
+    toast.success("Admin login successful");
+    navigate("/my-society");
   };
 
   return (

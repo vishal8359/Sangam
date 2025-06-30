@@ -15,10 +15,10 @@ import { FaStar, FaRegStar, FaShoppingCart } from "react-icons/fa";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import NewReleasesIcon from "@mui/icons-material/NewReleases";
 import { keyframes } from "@emotion/react";
-import { useAppContext } from "../context/AppContext";
+import { useAppContext } from "../../context/AppContext.jsx";
 
-import prod2 from "../assets/prod2_bg.jpg";
-import { dummyProducts } from "../assets/local.js";
+import prod2 from "../../assets/prod2_bg.jpg";
+import { dummyProducts } from "../../assets/local.js";
 
 const Products = () => {
   const navigate = useNavigate();

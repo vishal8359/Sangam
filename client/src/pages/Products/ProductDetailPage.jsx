@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { useAppContext } from "../context/AppContext";
+import { useAppContext } from "../../context/AppContext";
 import { Box, Typography, Button, Paper, Grid, useTheme } from "@mui/material";
 import { FaStar, FaRegStar, FaShoppingCart } from "react-icons/fa";
 import { useMediaQuery } from "@mui/material";
 import { IconButton } from "@mui/material";
-import FloatingCartIcon from "../components/FloatingCartIcon"; // ✅ Added
+import FloatingCartIcon from "../../components/FloatingCartIcon"; // ✅ Added
 
 const ProductDetailPage = () => {
   const { product_id } = useParams();
@@ -282,7 +282,12 @@ const ProductDetailPage = () => {
                   </Typography>
                 </Box>
 
-                <Box mt="auto" pt={2} display="flex" justifyContent="space-between">
+                <Box
+                  mt="auto"
+                  pt={2}
+                  display="flex"
+                  justifyContent="space-between"
+                >
                   <Button
                     variant="text"
                     size="small"
@@ -354,7 +359,7 @@ const ProductDetailPage = () => {
       </Box>
 
       {/* Floating Cart Icon globally shown */}
-      <FloatingCartIcon/>
+      <FloatingCartIcon />
     </Box>
   );
 };

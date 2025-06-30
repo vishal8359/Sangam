@@ -22,9 +22,9 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
-import soaps from "../assets/soaps.jpg";
-import pickels from "../assets/pickels.jpg";
-import honey from "../assets/honey.jpeg";
+import soaps from "../../assets/soaps.jpg";
+import pickels from "../../assets/pickels.jpg";
+import honey from "../../assets/honey.jpeg";
 
 const sampleProducts = [
   {

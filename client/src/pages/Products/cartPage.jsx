@@ -10,7 +10,7 @@ import {
   Paper,
 } from "@mui/material";
 import toast from "react-hot-toast";
-import { useAppContext } from "../context/AppContext";
+import { useAppContext } from "../../context/AppContext";
 import { useMediaQuery, useTheme } from "@mui/material";
 
 const CartPage = () => {

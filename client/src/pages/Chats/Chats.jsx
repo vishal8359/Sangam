@@ -16,8 +16,8 @@ import {
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import SendIcon from "@mui/icons-material/Send";
-import chats_bg from "../assets/chats_bg.jpg";
-import { useAppContext } from "../context/AppContext";
+import chats_bg from "../../assets/chats_bg.jpg";
+import { useAppContext } from "../../context/AppContext";
 
 export default function ChatsPage() {
   const { societyId, userId, userProfile, axios } = useAppContext();

@@ -33,7 +33,7 @@ import StorefrontIcon from "@mui/icons-material/Storefront";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import Switch from "@mui/material/Switch";
 import SangamLogo from "./sangamLogo";
-import MySociety from "../pages/MySociety";
+import MySociety from "../pages/Society/MySociety.jsx";
 import Typography from "@mui/material/Typography";
 import appLogo from "../assets/appLogo.png";
 import ChatsPage from "../pages/Chats/Chats";
@@ -56,7 +56,7 @@ import YourProductsPage from "../pages/Reports/UserProducts.jsx";
 import Products from "../pages/Products/NewProd";
 import CartPage from "../pages/Products/cartPage";
 import user_avatar from "../assets/user_avatar.png";
-import UserProfileCard from "../pages/UserProfile";
+import UserProfileCard from "../pages/Society/UserProfile.jsx";
 
 const NAVIGATION = [
   {

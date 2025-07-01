@@ -20,7 +20,7 @@ import {
 export default function UserProfileCard() {
   const theme = useTheme();
 
-  // ✅ Make user stateful
+  // Make user stateful
   const [user, setUser] = useState({
     user_img: "https://i.pravatar.cc/150?img=32",
     user_name: "Aarav Mehta",
@@ -32,7 +32,7 @@ export default function UserProfileCard() {
     home_id: "D1/403_8359",
   });
 
-  // ✅ Update user_img in state
+  // Update user_img in state
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {

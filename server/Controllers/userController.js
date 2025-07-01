@@ -7,25 +7,26 @@ import JoinRequest from "../Models/JoinRequest.js";
 import Home from "../Models/Home.js";
 import sendSMS from "../Utils/smsService.js";
 import { extractSortOrder } from "./getNeighbourHomes.js";
-// For example only — replace with actual DB model if you store electricity bills separately
+import mongoose from "mongoose";
+
 const pendingRegistrations = new Map();
 
+// Register without society_id
 export const registerResident = async (req, res) => {
   try {
     const {
-      name,
+      user_name,
       email,
       phone_no,
       address,
       password,
       confirm_password,
       electricity_bill_no,
-      avatar
+      avatar,
     } = req.body;
 
-    // Validate required fields
     if (
-      !name ||
+      !user_name ||
       !email ||
       !phone_no ||
       !address ||
@@ -40,7 +41,6 @@ export const registerResident = async (req, res) => {
       return res.status(400).json({ message: "Passwords do not match" });
     }
 
-    // Check if user already exists
     const existingUser = await User.findOne({ $or: [{ email }, { phone_no }] });
     if (existingUser) {
       return res
@@ -52,7 +52,7 @@ export const registerResident = async (req, res) => {
     const otpExpiry = Date.now() + 5 * 60 * 1000;
 
     pendingRegistrations.set(phone_no, {
-      name,
+      user_name,
       email,
       address,
       password,
@@ -62,24 +62,19 @@ export const registerResident = async (req, res) => {
       avatar,
     });
 
-    console.log(
-      "⚠️ Registration initiated. Awaiting OTP verification:",
-      phone_no
-    );
     await sendSMS(
       phone_no,
-      `🔐 Your OTP for Society registration is: ${otp}. Valid for 5 minutes.`
+      `🔐 Your OTP for society registration is: ${otp}. Valid for 5 minutes.`
     );
 
-    return res.status(200).json({
-      message: "OTP sent for verification",
-    });
+    return res.status(200).json({ message: "OTP sent for verification" });
   } catch (error) {
-    console.error("Registration Error:", error);
+    console.error("❌ Registration Error:", error);
     return res.status(500).json({ message: "Server error" });
   }
 };
 
+// OTP Verification (No society linked yet)
 export const verifyOtp = async (req, res) => {
   const { phone_no, otp } = req.body;
 
@@ -90,26 +85,24 @@ export const verifyOtp = async (req, res) => {
       return res.status(400).json({ message: "No pending registration found" });
     }
 
-    // if (pendingData.otp !== otp || Date.now() > pendingData.otpExpiry) {
-    //   return res.status(400).json({ message: "Invalid or expired OTP" });
-    // }
+    if (pendingData.otp !== otp || Date.now() > pendingData.otpExpiry) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(pendingData.password, 10);
-
-    // Check or create Home
     const [houseNumber, ...rest] = pendingData.address.split(",");
     const street = rest.join(",").trim();
+
     let home = await Home.findOne({
       electricity_bill_no: pendingData.electricity_bill_no,
-      street: street,
+      street,
       houseNumber: houseNumber.trim(),
     });
 
     if (!home) {
       home = await Home.create({
         electricity_bill_no: pendingData.electricity_bill_no,
-        street: street,
+        street,
         houseNumber: houseNumber.trim(),
         houseSortOrder: extractSortOrder(houseNumber),
         residents: [],
@@ -118,14 +111,14 @@ export const verifyOtp = async (req, res) => {
 
     const newUser = await User.create({
       user_id: uuidv4(),
-      name: pendingData.name,
+      name: pendingData.user_name,
       email: pendingData.email,
       phone_no,
       address: pendingData.address,
       password: hashedPassword,
       home_id: home._id,
-      is_approved: true,
       is_verified: true,
+      is_approved: false,
       roles: [],
       avatar: pendingData.avatar || "",
     });
@@ -134,112 +127,201 @@ export const verifyOtp = async (req, res) => {
     await home.save();
 
     pendingRegistrations.delete(phone_no);
+
     await sendSMS(
       phone_no,
-      `✅ Registration complete! Dear ${newUser.name}, this is your User ID: ${newUser.user_id} \n and Home ID: ${home._id}\nWelcome to the society app.`
+      `✅ Registration complete! Hello ${newUser.name}, your User ID is: ${newUser.user_id} \nHome ID: ${home._id}\nPlease login with your Society ID to complete joining.`
     );
+
     res.status(201).json({
-      message: "Phone verified and user registered successfully",
+      message: "User created. Login with your Society ID to request joining.",
       user_id: newUser.user_id,
       home_id: home._id,
     });
   } catch (err) {
-    console.error("OTP Verification Error:", err);
+    console.error("❌ OTP Verification Error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
 
+// Login with society_id and user_id (also triggers joinRequest if needed)
 export const loginUser = async (req, res) => {
-  const { email, password } = req.body;
+  const { user_id, password, society_id } = req.body;
 
-  if (!email || !password)
-    return res.status(400).json({ message: "Email and password required" });
+  if (!user_id || !password || !society_id) {
+    return res.status(400).json({
+      success: false,
+      message: "User ID, Society ID, and Password are required.",
+    });
+  }
 
   try {
-    const user = await User.findOne({ email });
-
-    if (!user) return res.status(400).json({ message: "Invalid credentials" });
-
-    if (!user.is_approved) {
-      return res.status(403).json({ message: "Waiting for admin approval" });
+    const user = await User.findOne({ user_id });
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid credentials.",
+      });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid credentials.",
+      });
+    }
 
-    if (!isMatch)
-      return res.status(400).json({ message: "Invalid credentials" });
+    const society = await Society.findById(society_id);
+    if (!society) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid Society ID.",
+      });
+    }
 
+    // ✅ ADD THIS LOGIC *AFTER* credentials are validated:
+    const hasRole = user.roles.some(
+      (r) => r.role === "resident" && r.society_id.toString() === society_id
+    );
+
+    // ✅ PENDING USERS
+    if (!hasRole || !user.is_approved) {
+      const existing = await JoinRequest.findOne({
+        user_id: user._id,
+        society_id,
+        status: { $in: ["pending", "approved"] },
+      });
+
+      if (!existing) {
+        await JoinRequest.create({
+          user_id: user._id,
+          society_id,
+          status: "pending",
+          requested_at: new Date(),
+        });
+      }
+
+      return res.status(403).json({
+        success: false,
+        message: "Join request sent for approval.",
+      });
+    }
+
+    // ✅ Approved user: allow login
     const token = jwt.sign(
-      { id: user._id, role: user.role },
+      { id: user._id, role: "resident" },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
-    res.status(200).json({
-      message: "Login successful",
+    return res.status(200).json({
+      success: true,
+      message: "Login successful.",
       token,
       user: {
         name: user.name,
         email: user.email,
-        role: user.role,
-        is_approved: user.is_approved,
+        role: "resident",
         user_id: user.user_id,
         avatar: user.avatar,
       },
     });
   } catch (err) {
     console.error("Login Error:", err);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({
+      success: false,
+      message: "Server error.",
+    });
   }
 };
 
+
 // POST : /api/society/create
-
 export const createSociety = async (req, res) => {
-  const { name, location } = req.body;
-  const userId = req.user._id;
-
   try {
-    // Validate location
-    if (
-      !location ||
-      location.type !== "Polygon" ||
-      !Array.isArray(location.coordinates)
-    ) {
-      return res.status(400).json({
-        message: "Invalid location format. Must be GeoJSON Polygon.",
+    const { name, house, contact, email, password, location } = req.body;
+
+    if (!name || !house || !contact || !password || !location) {
+      return res.status(400).json({ message: "All fields are required." });
+    }
+
+    let user = await User.findOne({ phone_no: contact });
+    let isNewUser = false;
+
+    const [houseNumber, ...rest] = house.split(",");
+    const street = rest.join(",").trim();
+
+    // Create Home first
+    const newHome = await Home.create({
+      electricity_bill_no: "N/A-" + uuidv4().split("-")[0],
+      houseNumber: houseNumber.trim(),
+      street,
+      houseSortOrder: extractSortOrder(houseNumber),
+      residents: [], // Add user later
+    });
+
+    if (!user) {
+      // Create user with home_id assigned
+      const hashedPassword = await bcrypt.hash(password, 10);
+      user = new User({
+        user_id: uuidv4().split("-")[0],
+        name,
+        email,
+        phone_no: contact,
+        password: hashedPassword,
+        address: house,
+        is_approved: true,
+        is_verified: true,
+        roles: [],
+        home_id: newHome._id,
       });
-    }
-    if (
-      location.type === "Polygon" &&
-      location.coordinates.length &&
-      location.coordinates[0][0] !==
-        location.coordinates[0][location.coordinates[0].length - 1]
-    ) {
-      location.coordinates[0].push(location.coordinates[0][0]); 
+
+      await user.save();
+      isNewUser = true;
+    } else {
+      // Existing user: assign new home_id
+      user.home_id = newHome._id;
+      await user.save();
     }
 
-    const society = await Society.create({
-      name,
+    // Add user to the home
+    newHome.residents.push(user._id);
+    await newHome.save();
+
+    // Create Society
+    const newSociety = await Society.create({
+      name: `${name}'s Society`,
       location,
-      created_by: userId,
-      residents: [userId],
+      created_by: user._id,
+      residents: [user._id],
     });
 
-    await User.findByIdAndUpdate(userId, {
-      $push: {
-        roles: {
-          society_id: society._id,
-          role: "admin",
-        },
-      },
-      created_society: society._id,
-    });
+    // Assign admin role
+    user.roles.push({ society_id: newSociety._id, role: "admin" });
+    user.created_society = newSociety._id;
+    await user.save();
 
-    res.status(201).json({ message: "Society created", society });
-  } catch (error) {
-    console.error("Error creating society:", error);
-    res.status(500).json({ message: "Server error" });
+    await sendSMS(
+      contact,
+      `🎉 Society Created!
+Admin: ${user.name}
+🆔 User ID: ${user.user_id}
+🏠 Home ID: ${newHome._id}
+🔑 Use your password to login.`
+    );
+
+    return res.status(201).json({
+      message: "Society created successfully.",
+      society_id: newSociety._id,
+      user_id: user.user_id,
+      home_id: newHome._id,
+    });
+  } catch (err) {
+    console.error("❌ Society creation error:", err);
+    return res
+      .status(500)
+      .json({ message: "Server error during society creation" });
   }
 };
 
@@ -249,7 +331,18 @@ export const requestJoinSociety = async (req, res) => {
     const userId = req.user._id;
     const societyId = req.params.id;
 
-    // Check if a pending or approved request already exists
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(societyId)) {
+      return res.status(400).json({ message: "Invalid society ID." });
+    }
+
+    // Check if society exists
+    const society = await Society.findById(societyId);
+    if (!society) {
+      return res.status(404).json({ message: "Society not found." });
+    }
+
+    // Check for duplicate pending/approved request
     const existing = await JoinRequest.findOne({
       user_id: userId,
       society_id: societyId,
@@ -263,7 +356,7 @@ export const requestJoinSociety = async (req, res) => {
       });
     }
 
-    // Create new request
+    // Create request
     const request = await JoinRequest.create({
       user_id: userId,
       society_id: societyId,
@@ -273,7 +366,7 @@ export const requestJoinSociety = async (req, res) => {
 
     res.status(201).json({ message: "Join request sent", request });
   } catch (err) {
-    console.error("Join request error:", err);
+    console.error("❌ Join request error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };

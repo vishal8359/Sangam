@@ -1,4 +1,4 @@
-import MySociety from "../pages/MySociety";
+import MySociety from "../pages/Society/MySociety";
 import lamp from "../assets/prodImages/lamp.jpg"
 import lamp2 from "../assets/prodImages/lamp2.jpg"
 import lamp3 from "../assets/prodImages/lamp3.jpg"

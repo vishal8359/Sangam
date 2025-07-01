@@ -9,8 +9,8 @@ import {
   Link,
 } from "@mui/material";
 import { Link as RouterLink } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
-import { useAppContext } from "../context/AppContext";
+import { useAppContext } from "../../context/AppContext";
+import toast from "react-hot-toast";
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -21,83 +21,79 @@ export default function Register() {
     electricity_bill_no: "",
     password: "",
     confirm_password: "",
-    society_id: "",
+    avatar: "",
   });
 
   const [error, setError] = useState(null);
-  const { navigate } = useAppContext();
+  const { axios, navigate } = useAppContext();
   const theme = useTheme();
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const generateRandomId = (prefix = "ID") => {
-    return `${prefix}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const {
-      user_name,
-      email,
-      phone_no,
-      address,
-      electricity_bill_no,
-      password,
-      confirm_password,
-      society_id,
-    } = formData;
+    const requiredFields = [
+      "user_name",
+      "email",
+      "phone_no",
+      "address",
+      "electricity_bill_no",
+      "password",
+      "confirm_password",
+    ];
 
-    if (
-      !user_name ||
-      !email ||
-      !phone_no ||
-      !address ||
-      !electricity_bill_no ||
-      !password ||
-      !confirm_password ||
-      !society_id
-    ) {
-      setError("All fields are required.");
+    const anyEmpty = requiredFields.some(
+      (key) => !formData[key] || formData[key].trim() === ""
+    );
+
+    if (anyEmpty) {
+      setError("All fields except avatar are required.");
       return;
     }
 
-    if (password !== confirm_password) {
+    if (formData.password !== formData.confirm_password) {
       setError("Passwords do not match.");
       return;
     }
 
-    setError(null);
+    try {
+      const { data } = await axios.post("/api/users/register", {
+        user_name: formData.user_name.trim(),
+        email: formData.email.trim(),
+        phone_no: formData.phone_no.trim(),
+        address: formData.address.trim(),
+        electricity_bill_no: formData.electricity_bill_no.trim(),
+        password: formData.password.trim(),
+        confirm_password: formData.confirm_password.trim(),
+        avatar: formData.avatar?.trim() || "",
+      });
 
-    const user_id = generateRandomId("USER");
-    const home_id = generateRandomId("HOME");
+      localStorage.setItem("otp_phone", formData.phone_no.trim());
+      toast.success(data.message || "Registration submitted. Awaiting OTP.");
+      setError(null);
 
-    const registrationPayload = {
-      ...formData,
-      user_id,
-      home_id,
-    };
+      setFormData({
+        user_name: "",
+        email: "",
+        phone_no: "",
+        address: "",
+        electricity_bill_no: "",
+        password: "",
+        confirm_password: "",
+        avatar: "",
+      });
 
-    console.log("New Registration:", registrationPayload);
-
-    alert(
-      "Registration request submitted. Your user ID will be created once approved."
-    );
-
-    setFormData({
-      user_name: "",
-      email: "",
-      phone_no: "",
-      address: "",
-      electricity_bill_no: "",
-      password: "",
-      confirm_password: "",
-      society_id: "",
-    });
-
-    navigate("/");
+      navigate("/verify-otp");
+    } catch (err) {
+      const message =
+        err?.response?.data?.message || "Registration failed.";
+      toast.error(message);
+      setError(message);
+    }
   };
 
   return (
@@ -111,7 +107,6 @@ export default function Register() {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        overflow: "auto",
         px: 2,
       }}
     >
@@ -125,10 +120,7 @@ export default function Register() {
           maxHeight: "95vh",
           overflowY: "auto",
           boxShadow: theme.shadows[10],
-          scrollbarWidth: "none", // Firefox
-          "&::-webkit-scrollbar": {
-            display: "none",
-          },
+          "&::-webkit-scrollbar": { display: "none" },
         }}
       >
         <Typography
@@ -145,33 +137,28 @@ export default function Register() {
           {[
             { label: "Full Name", name: "user_name" },
             { label: "Email", name: "email", type: "email" },
-            {
-              label: "Phone Number",
-              name: "phone_no",
-              type: "tel",
-              placeholder: "10-digit number",
-            },
+            { label: "Phone Number", name: "phone_no", type: "tel" },
             { label: "Address", name: "address", multiline: true, rows: 2 },
-            {
-              label: "Electricity Bill Number",
-              name: "electricity_bill_no",
-              helperText: "Used to verify the house",
-            },
-            { label: "Society ID", name: "society_id" },
+            { label: "Electricity Bill Number", name: "electricity_bill_no" },
+            { label: "Avatar (optional)", name: "avatar" },
             { label: "Password", name: "password", type: "password" },
             {
               label: "Confirm Password",
               name: "confirm_password",
               type: "password",
             },
-          ].map((field, index) => (
+          ].map((field) => (
             <TextField
-              key={index}
+              key={field.name}
               fullWidth
               margin="normal"
-              required
+              required={field.name !== "avatar"}
               variant="outlined"
-              {...field}
+              label={field.label}
+              name={field.name}
+              type={field.type || "text"}
+              multiline={field.multiline || false}
+              rows={field.rows || 1}
               value={formData[field.name]}
               onChange={handleChange}
             />

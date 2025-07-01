@@ -22,6 +22,9 @@ export const AppContextProvider = ({ children }) => {
   const [userProfile, setUserProfile] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [societyDetails, setSocietyDetails] = useState(null);
+  const [token, setToken] = useState("");
+
   // Reels
   const [userReels, setUserReels] = useState([]);
 
@@ -86,14 +89,16 @@ export const AppContextProvider = ({ children }) => {
 
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("sangam-user"));
+    const savedToken = localStorage.getItem("token"); // ✅ this is required!
     const savedTheme = localStorage.getItem("theme-mode");
 
-    if (stored) {
+    if (stored && savedToken) {
       setUserId(stored.userId || null);
       setHouseId(stored.houseId || "");
       setSocietyId(stored.societyId || "");
       setUserRole(stored.userRole || "");
       setUserProfile(stored.userProfile || null);
+      setToken(savedToken); // ✅ restore token correctly
       setIsAuthenticated(true);
     }
 
@@ -117,19 +122,39 @@ export const AppContextProvider = ({ children }) => {
     fetchProducts();
   }, []);
 
+  useEffect(() => {
+    const fetchSociety = async () => {
+      if (!societyId) return;
+      try {
+        const res = await axios.get(`/api/users/society/${societyId}/details`);
+        setSocietyDetails(res.data.society);
+      } catch (err) {
+        console.error("Failed to fetch society:", err.message);
+      }
+    };
+    fetchSociety();
+  }, [societyId]);
+
   const toggleTheme = () => {
     setThemeMode((prev) => (prev === "light" ? "dark" : "light"));
   };
 
   const login = (data) => {
-    const { userId, houseId, societyId, userRole, userProfile } = data;
+    const { userId, houseId, societyId, userRole, userProfile, token } = data;
+
     setUserId(userId);
     setHouseId(houseId);
     setSocietyId(societyId);
     setUserRole(userRole);
     setUserProfile(userProfile || null);
     setIsAuthenticated(true);
-    localStorage.setItem("sangam-user", JSON.stringify(data));
+    setToken(token);
+
+    localStorage.setItem("token", token);
+    localStorage.setItem(
+      "sangam-user",
+      JSON.stringify({ userId, houseId, societyId, userRole, userProfile })
+    );
   };
 
   const logout = () => {
@@ -139,7 +164,9 @@ export const AppContextProvider = ({ children }) => {
     setUserRole("");
     setUserProfile(null);
     setIsAuthenticated(false);
+    setToken("");
     localStorage.removeItem("sangam-user");
+    localStorage.removeItem("token");
   };
 
   // Cart logic
@@ -180,11 +207,16 @@ export const AppContextProvider = ({ children }) => {
     houseId,
     societyId,
     userRole,
+    setUserRole,
     userProfile,
     isAuthenticated,
     loading,
     login,
     logout,
+    societyDetails,
+    setSocietyDetails,
+    token,
+    setToken,
 
     // theme
     theme,

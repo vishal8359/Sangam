@@ -18,7 +18,7 @@ import { createProduct, getActiveProducts, deleteProduct } from "../Controllers/
 import { submitComplaint, getComplaintsBySociety, deleteComplaint } from "../Controllers/complaintController.js";
 import { createEvent, getAllEvents, cancelEvent, rsvpToEvent, commentOnEvent } from "../Controllers/eventController.js";
 import {getNeighbourHomes} from "../Controllers/getNeighbourHomes.js";
-import { getNeighbouringSocieties } from "../Controllers/societyController.js";
+import { getNeighbouringSocieties, getSocietyById } from "../Controllers/societyController.js";
 import { getReelEngagement } from "../Controllers/reelEngagementController.js";
 
 import {
@@ -38,10 +38,10 @@ router.post("/verify-otp", verifyOtp);
 // login
 router.post("/login", loginUser);
 
-router.post("/society/create", verifyUser, createSociety);
+router.post("/society/create", createSociety);
 
 router.post("/society/:id/join", verifyUser, requestJoinSociety);
-
+router.get("/society/:id/details", verifyUser, getSocietyById);
 // Polls
 router.get("/polls/:societyId", verifyUser, getPollsBySociety);
 router.post("/polls/:pollId/vote", verifyUser, voteInPoll);

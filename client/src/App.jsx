@@ -1,10 +1,10 @@
 import { Toaster } from "react-hot-toast";
 import { Routes, Route } from "react-router-dom"; // ✅ Added import
 import DashboardLayoutBasic from "./Material/toolpad";
-import MySociety from "./pages/MySociety";
-import ResidentLogin from "./pages/ResidentLogin";
-import AdminLogin from "./pages/AdminLogin";
-import Register from "./pages/Register";
+import MySociety from "./pages/Society/MySociety";
+import ResidentLogin from "./pages/Auth/ResidentLogin";
+import AdminLogin from "./pages/Auth/AdminLogin";
+import Register from "./pages/Auth/Register";
 import HomePage from "./pages/Initial";
 import Products from "./pages/Reports/Products"
 import UploadReelPage from "./pages/Gallery/uploadReelPage";
@@ -15,7 +15,7 @@ import ChatsPage from "./pages/Chats/Chats";
 import CartPage from "./pages/Products/cartPage";
 import ProductDetailPage from "./pages/Products/ProductDetailPage";
 import AddAddress from "./pages/Products/AddAddress";
-import UserProfileCard from "./pages/UserProfile";
+import UserProfileCard from "./pages/Society/UserProfile";
 import InviteMembersPage from "./pages/Events/SendInvitePage";
 import ViewInvitations from "./pages/Events/ViewInvitationPage";
 
@@ -23,7 +23,9 @@ import ViewInvitations from "./pages/Events/ViewInvitationPage";
 import CreatePollPage from "./pages/Polls/createPollPage";
 import SubmitComplaint from "./pages/Complaints/RegisterComplaint";
 import UploadNoticePage from "./pages/Notices/UploadNotice";
-import CreateSociety from "./pages/CreateSoc";
+import CreateSociety from "./pages/Society/CreateSoc";
+import VerifyOtp from "./pages/Auth/VerifyOTP";
+import ApprovalPanel from "./pages/Society/AprrovalPanel";
 
 const App = () => {
   return (
@@ -51,6 +53,8 @@ const App = () => {
         <Route path="/my-society/polls/create" element={<CreatePollPage/>}/>
         <Route path="/my-society/complaints/new" element={<SubmitComplaint/>}/>
         <Route path="/my-society/notices/new" element={<UploadNoticePage/>}/>
+        <Route path="/verify-otp" element={<VerifyOtp/>}/>
+        <Route path="my-society/admin/panel" element={<ApprovalPanel />} />
       </Routes>
     </div>
   );

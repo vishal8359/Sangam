@@ -14,6 +14,7 @@ import {
 import { UploadFile } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import Complaint_Bg from "../../assets/Complaint_Bg.jpg";
+import { useAppContext } from "../../context/AppContext";
 
 const complaintTypes = [
   "Water Leakage",
@@ -30,6 +31,7 @@ const SubmitComplaint = () => {
   const isDark = theme.palette.mode === "dark";
   const inputBg = isDark ? "#2c2c2c" : "#fafafa";
   const textColor = isDark ? "#e0e0e0" : "#222";
+  const { token, axios } = useAppContext();
 
   const [form, setForm] = useState({
     name: "",
@@ -48,29 +50,37 @@ const SubmitComplaint = () => {
     setForm({ ...form, file: e.target.files[0] });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const complaints = JSON.parse(localStorage.getItem("complaints")) || [];
-    const newComplaint = {
-      ...form,
-      id: Date.now(),
-      reply: "",
-    };
-    localStorage.setItem(
-      "complaints",
-      JSON.stringify([newComplaint, ...complaints])
-    );
+    const formData = new FormData();
+    formData.append("complaint_type", form.type);
+    formData.append("description", form.description);
+    formData.append("house_no", form.flat);
+    if (form.file) formData.append("file", form.file);
 
-    setForm({
-      name: "",
-      flat: "",
-      type: "",
-      description: "",
-      file: null,
-    });
+    try {
+      const res = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/users/complaints/submit`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+          withCredentials: true,
+        }
+      );
 
-    navigate("/my-society/complaints");
+      alert("✅ Complaint submitted!");
+      navigate("/my-society/complaints");
+    } catch (err) {
+      console.error(
+        "❌ Complaint submission failed:",
+        err.response?.data || err.message
+      );
+      alert("Failed to submit complaint.");
+    }
   };
 
   return (
@@ -122,7 +132,9 @@ const SubmitComplaint = () => {
               onChange={handleChange}
               required
               margin="normal"
-              InputProps={{ sx: { backgroundColor: inputBg, color: textColor } }}
+              InputProps={{
+                sx: { backgroundColor: inputBg, color: textColor },
+              }}
               InputLabelProps={{ sx: { color: isDark ? "white" : "#555" } }}
             />
             <TextField
@@ -133,7 +145,9 @@ const SubmitComplaint = () => {
               onChange={handleChange}
               required
               margin="normal"
-              InputProps={{ sx: { backgroundColor: inputBg, color: textColor } }}
+              InputProps={{
+                sx: { backgroundColor: inputBg, color: textColor },
+              }}
               InputLabelProps={{ sx: { color: isDark ? "white" : "#555" } }}
             />
             <TextField
@@ -145,7 +159,9 @@ const SubmitComplaint = () => {
               onChange={handleChange}
               required
               margin="normal"
-              InputProps={{ sx: { backgroundColor: inputBg, color: textColor } }}
+              InputProps={{
+                sx: { backgroundColor: inputBg, color: textColor },
+              }}
               InputLabelProps={{ sx: { color: isDark ? "white" : "#555" } }}
             >
               {complaintTypes.map((type, i) => (
@@ -164,7 +180,9 @@ const SubmitComplaint = () => {
               multiline
               rows={4}
               margin="normal"
-              InputProps={{ sx: { backgroundColor: inputBg, color: textColor } }}
+              InputProps={{
+                sx: { backgroundColor: inputBg, color: textColor },
+              }}
               InputLabelProps={{ sx: { color: isDark ? "white" : "#555" } }}
             />
             <Button

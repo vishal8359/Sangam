@@ -33,9 +33,11 @@ export const createPoll = async (req, res) => {
     // Create the poll
     const poll = await Poll.create({
       question: question.trim(),
+      type: req.body.type || "single",
+      logo: req.body.logo || "",
       options: formattedOptions.map((text) => ({ text })),
       created_by: req.user._id,
-      society_id: society_id || req.user.joined_society, // fallback if society_id is not provided in body
+      society_id: society_id || req.user.joined_society,
       expires_at,
     });
 
@@ -53,7 +55,10 @@ export const getPollsBySociety = async (req, res) => {
   try {
     const societyId = req.params.societyId || req.user.joined_society;
 
-    const polls = await Poll.find({ society_id: societyId }).populate("created_by", "name");
+    const polls = await Poll.find({ society_id: societyId }).populate(
+      "created_by",
+      "name"
+    );
 
     res.status(200).json(polls);
   } catch (err) {
@@ -83,12 +88,16 @@ export const voteInPoll = async (req, res) => {
     }
 
     // Prevent duplicate voting
+    const isSingleVote = poll.type === "single";
+
     const alreadyVoted = poll.options.some((opt) =>
       opt.votes.some((voterId) => voterId.toString() === userId.toString())
     );
 
-    if (alreadyVoted) {
-      return res.status(400).json({ message: "You have already voted" });
+    if (isSingleVote && alreadyVoted) {
+      return res
+        .status(400)
+        .json({ message: "You have already voted in this poll" });
     }
 
     // Register vote
@@ -101,7 +110,6 @@ export const voteInPoll = async (req, res) => {
     res.status(500).json({ message: "Server error during voting" });
   }
 };
-
 
 export const getPollResults = async (req, res) => {
   try {
@@ -124,3 +132,20 @@ export const getPollResults = async (req, res) => {
     res.status(500).json({ message: "Server error while fetching results" });
   }
 };
+
+export const togglePollLock = async (req, res) => {
+  const { pollId } = req.params;
+  try {
+    const poll = await Poll.findById(pollId);
+    if (!poll) return res.status(404).json({ message: "Poll not found" });
+
+    poll.locked = !poll.locked;
+    await poll.save();
+
+    res.status(200).json({ message: "Poll lock toggled", poll });
+  } catch (err) {
+    console.error("Toggle lock error:", err);
+    res.status(500).json({ message: "Server error while toggling lock" });
+  }
+};
+

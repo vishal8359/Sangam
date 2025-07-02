@@ -9,7 +9,7 @@ const optionSchema = new mongoose.Schema({
   votes: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "user",
+      ref: "User", // Ensure model name is capitalized
     },
   ],
 });
@@ -20,6 +20,16 @@ const pollSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+    },
+    type: {
+      type: String,
+      enum: ["single", "multiple"],
+      default: "single",
+      required: true,
+    },
+    logo: {
+      type: String, // base64 or image URL
+      default: "",
     },
     options: {
       type: [optionSchema],
@@ -33,9 +43,14 @@ const pollSchema = new mongoose.Schema(
       ref: "Society",
       required: true,
     },
+    locked: {
+      type: Boolean,
+      default: false,
+    },
+
     created_by: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "user",
+      ref: "User",
       required: true,
     },
     expires_at: {

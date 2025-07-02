@@ -1,12 +1,45 @@
-import React from 'react';
-import { society } from '../../assets/local.js';
+import React, { useEffect, useState } from 'react';
 import societyBg from '../../assets/societyBg.jpg';
 import MySocietyImg from '../../assets/mySocietyImg.jpg';
 import society_icon from '../../assets/society_icon.png';
 import { useAppContext } from '../../context/AppContext.jsx';
+import axios from 'axios';
 
 const MySociety = () => {
-  const { navigate, userRole } = useAppContext(); // get userRole from context
+  const { navigate, userRole, token, societyId } = useAppContext();
+  const [society, setSociety] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSociety = async () => {
+      try {
+        const { data } = await axios.get(`/api/users/society/${societyId}/details`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setSociety(data.society);
+      } catch (err) {
+        console.error('Failed to fetch society:', err.response?.data || err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (token && societyId) {
+      fetchSociety();
+    } else {
+      setLoading(false);
+    }
+  }, [token, societyId]);
+
+  if (loading) {
+    return <div className="text-center mt-10 text-lg font-medium">Loading...</div>;
+  }
+
+  if (!society) {
+    return <div className="text-center mt-10 text-red-500 font-medium">Society data not found.</div>;
+  }
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-gray-100">
@@ -41,30 +74,26 @@ const MySociety = () => {
           </div>
           <div className="flex justify-between border-b pb-2">
             <span className="text-gray-600 font-medium">Society ID:</span>
-            <span>{society.id}</span>
+            <span>{society._id}</span>
           </div>
           <div className="flex justify-between border-b pb-2">
             <span className="text-gray-600 font-medium">Address:</span>
-            <span>{society.address}</span>
-          </div>
-          <div className="flex justify-between border-b pb-2">
-            <span className="text-gray-600 font-medium">Members Joined:</span>
-            <span>{society.members}</span>
+            <span>{society.created_by?.address || "N/A"}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-600 font-medium">Admin:</span>
-            <span>{society.admin}</span>
+            <span>{society.created_by?.name || "N/A"}</span>
           </div>
         </div>
 
         {/* Buttons */}
         <div className="mt-6 flex flex-col items-center space-y-4">
-          {/* Conditionally show approval panel button */}
           {userRole === 'admin' && (
             <button
               onClick={() => navigate('/my-society/admin/panel')}
               style={{
                 backgroundColor: 'var(--color-primary)',
+                cursor: 'pointer',
               }}
               onMouseOver={(e) =>
                 (e.currentTarget.style.backgroundColor = 'var(--color-primary-dull)')
@@ -78,10 +107,12 @@ const MySociety = () => {
             </button>
           )}
 
-          {/* Leave Society Button */}
           <button
             onClick={() => navigate('/')}
-            style={{ backgroundColor: 'var(--color-primary)' }}
+            style={{
+              backgroundColor: 'var(--color-primary)',
+              cursor: 'pointer',
+            }}
             onMouseOver={(e) =>
               (e.currentTarget.style.backgroundColor = 'var(--color-primary-dull)')
             }

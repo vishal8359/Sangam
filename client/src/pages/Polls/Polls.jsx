@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import {
   Container,
   Typography,
@@ -29,57 +29,98 @@ import Poll_icon from "../../assets/Poll_icon.png";
 import { AppContext } from "../../context/AppContext.jsx";
 
 const PollsPage = () => {
-  const { polls, setPolls, userRole, navigate } = useContext(AppContext);
+  const { polls, setPolls, userRole, societyId, navigate, axios, token } =
+    useContext(AppContext);
 
   const [houseNumbers, setHouseNumbers] = useState({});
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
+  useEffect(() => {
+    const fetchPolls = async () => {
+      try {
+        const { data } = await axios.get(
+          `/api/${userRole === "admin" ? "admin" : "users"}/polls/${societyId}`
+        );
+        const mapped = data.map((poll) => ({
+          id: poll._id,
+          question: poll.question,
+          type: poll.type,
+          logo: poll.logo || Poll_icon,
+          locked: poll.locked,
+          options: poll.options.map((opt) => ({
+            name: opt.text,
+            votes: opt.votes.length,
+          })),
+          votedHouses: new Set(),
+        }));
+        setPolls(mapped);
+      } catch (err) {
+        console.error(
+          "Failed to fetch polls:",
+          err.response?.data || err.message
+        );
+      }
+    };
 
-  const handleVote = (pollId, optionIndex) => {
+    if (societyId) fetchPolls();
+  }, [societyId, userRole, axios]);
+
+  const handleVote = async (pollId, optionIndex) => {
     const poll = polls.find((p) => p.id === pollId);
+    const isSingleVote = poll?.type === "single";
+
     const houseNumber = houseNumbers[pollId]?.trim();
 
-    if (poll.type === "single" && !houseNumber) {
+    if (isSingleVote && !houseNumber) {
       alert("Please enter your House Number before voting.");
       return;
     }
 
-    setPolls((prev) =>
-      prev.map((poll) => {
-        if (poll.id !== pollId) return poll;
-        if (poll.locked) return poll;
+    try {
+      const res = await axios.post(`/api/users/polls/${pollId}/vote`, {
+        optionIndex,
+      });
 
-        if (poll.type === "single" && poll.votedHouses.has(houseNumber)) {
-          alert("Your house has already voted in this poll.");
-          return poll;
-        }
+      const updated = res.data.poll;
 
-        const updatedOptions = poll.options.map((opt, idx) =>
-          idx === optionIndex ? { ...opt, votes: opt.votes + 1 } : opt
-        );
+      const mappedPoll = {
+        id: updated._id,
+        question: updated.question,
+        type: updated.type,
+        logo: updated.logo || Poll_icon,
+        locked: updated.locked,
+        options: updated.options.map((opt) => ({
+          name: opt.text,
+          votes: opt.votes.length,
+        })),
+        votedHouses: new Set([
+          ...(poll?.votedHouses || []),
+          ...(isSingleVote ? [houseNumber] : []),
+        ]),
+      };
 
-        const updatedVotedHouses =
-          poll.type === "single"
-            ? new Set(poll.votedHouses).add(houseNumber)
-            : poll.votedHouses;
-
-        return {
-          ...poll,
-          options: updatedOptions,
-          votedHouses: updatedVotedHouses,
-        };
-      })
-    );
+      setPolls((prev) => prev.map((p) => (p.id === pollId ? mappedPoll : p)));
+    } catch (err) {
+      alert(err.response?.data?.message || "Error submitting vote");
+    }
   };
 
-  const toggleLock = (id) => {
-    setPolls((prev) =>
-      prev.map((poll) =>
-        poll.id === id ? { ...poll, locked: !poll.locked } : poll
-      )
-    );
+  const toggleLock = async (pollId) => {
+    try {
+      const { data } = await axios.patch(`/api/admin/polls/${pollId}/lock`);
+      setPolls((prev) =>
+        prev.map((poll) =>
+          poll.id === pollId ? { ...poll, locked: data.poll.locked } : poll
+        )
+      );
+    } catch (err) {
+      console.error(
+        "Failed to toggle lock:",
+        err.response?.data || err.message
+      );
+    }
   };
 
   return (
@@ -143,7 +184,7 @@ const PollsPage = () => {
             variant="contained"
             color="primary"
             sx={{ borderRadius: 2 }}
-            onClick={() => navigate('/my-society/polls/create')}
+            onClick={() => navigate("/my-society/polls/create")}
           >
             Create Poll
           </Button>
@@ -173,19 +214,24 @@ const PollsPage = () => {
                 <Tooltip
                   title={poll.locked ? "Votes are locked" : "Votes are open"}
                 >
-                  <IconButton
-                    onClick={() => toggleLock(poll.id)}
-                    color={poll.locked ? "error" : "success"}
-                    disabled={userRole !== "admin"}
-                  >
-                    {poll.locked ? <LockIcon /> : <LockOpenIcon />}
-                  </IconButton>
+                  <span>
+                    <IconButton
+                      onClick={() => toggleLock(poll.id)}
+                      color={poll.locked ? "error" : "success"}
+                      disabled={userRole !== "admin"}
+                    >
+                      {poll.locked ? <LockIcon /> : <LockOpenIcon />}
+                    </IconButton>
+                  </span>
                 </Tooltip>
               </Box>
             </Box>
 
             <Typography variant="subtitle2" mb={2} color="text.secondary">
-              Voting type: {poll.type === "single" ? "One vote per house" : "Multiple votes per house allowed"}
+              Voting type:{" "}
+              {poll.type === "single"
+                ? "One vote per house"
+                : "Multiple votes per house allowed"}
             </Typography>
 
             {poll.type === "single" && userRole !== "admin" && (

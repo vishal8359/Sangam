@@ -48,10 +48,9 @@ export const AppContextProvider = ({ children }) => {
   // Members
   const [members, setMembers] = useState([]);
   const [buzzGroups, setBuzzGroups] = useState([]);
-  const [complaints, setComplaints] = useState([]);
 
   //polls
-  const [polls, setPolls] = useState(samplePolls);
+  const [polls, setPolls] = useState([]);
 
   //Address
   const [addresses, setAddresses] = useState([]);
@@ -88,9 +87,9 @@ export const AppContextProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("sangam-user"));
-    const savedToken = localStorage.getItem("token"); // ✅ this is required!
-    const savedTheme = localStorage.getItem("theme-mode");
+    const stored = JSON.parse(sessionStorage.getItem("sangam-user"));
+    const savedToken = sessionStorage.getItem("token");
+    const savedTheme = localStorage.getItem("theme-mode"); // keep theme in localStorage
 
     if (stored && savedToken) {
       setUserId(stored.userId || null);
@@ -98,7 +97,7 @@ export const AppContextProvider = ({ children }) => {
       setSocietyId(stored.societyId || "");
       setUserRole(stored.userRole || "");
       setUserProfile(stored.userProfile || null);
-      setToken(savedToken); // ✅ restore token correctly
+      setToken(savedToken);
       setIsAuthenticated(true);
     }
 
@@ -109,31 +108,84 @@ export const AppContextProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem("theme-mode", themeMode);
   }, [themeMode]);
-
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const { data } = await axios.get("/api/products");
-        if (data.success) setProducts(data.products);
-      } catch (err) {
-        console.error("Fetch products error:", err.message);
-      }
-    };
-    fetchProducts();
-  }, []);
+    console.log("✅ Setting token in axios:", token);
+    if (token) {
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    } else {
+      delete axios.defaults.headers.common["Authorization"];
+    }
+  }, [token]);
+
+  // useEffect(() => {
+  //   const fetchProducts = async () => {
+  //     try {
+  //       const { data } = await axios.get("/api/products");
+  //       if (data.success) setProducts(data.products);
+  //     } catch (err) {
+  //       console.error("Fetch products error:", err.message);
+  //     }
+  //   };
+  //   fetchProducts();
+  // }, []);
 
   useEffect(() => {
     const fetchSociety = async () => {
-      if (!societyId) return;
+      if (!societyId || !token) return; // ensure token exists
       try {
-        const res = await axios.get(`/api/users/society/${societyId}/details`);
+        const res = await axios.get(`/api/users/society/${societyId}/details`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         setSocietyDetails(res.data.society);
       } catch (err) {
-        console.error("Failed to fetch society:", err.message);
+        console.error(
+          "Failed to fetch society:",
+          err.response?.data || err.message
+        );
       }
     };
     fetchSociety();
-  }, [societyId]);
+  }, [societyId, token]);
+  useEffect(() => {
+    const fetchPolls = async () => {
+      if (!societyId || !token) return;
+
+      try {
+        const { data } = await axios.get(
+          `/api/${userRole === "admin" ? "admin" : "users"}/polls/${societyId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const mapped = data.map((poll) => ({
+          id: poll._id,
+          question: poll.question,
+          type: poll.type || "single",
+          logo: poll.logo || "/path/to/default/icon.png",
+          locked: poll.locked,
+          options: poll.options.map((opt) => ({
+            name: opt.text,
+            votes: opt.votes.length,
+          })),
+          votedHouses: new Set(), // optional: support voting history later
+        }));
+
+        setPolls(mapped);
+      } catch (err) {
+        console.error(
+          "❌ Failed to fetch polls:",
+          err.response?.data || err.message
+        );
+      }
+    };
+
+    fetchPolls();
+  }, [societyId, token, userRole]);
 
   const toggleTheme = () => {
     setThemeMode((prev) => (prev === "light" ? "dark" : "light"));
@@ -149,9 +201,11 @@ export const AppContextProvider = ({ children }) => {
     setUserProfile(userProfile || null);
     setIsAuthenticated(true);
     setToken(token);
+    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-    localStorage.setItem("token", token);
-    localStorage.setItem(
+    // ✅ Use sessionStorage instead of localStorage
+    sessionStorage.setItem("token", token);
+    sessionStorage.setItem(
       "sangam-user",
       JSON.stringify({ userId, houseId, societyId, userRole, userProfile })
     );
@@ -165,8 +219,32 @@ export const AppContextProvider = ({ children }) => {
     setUserProfile(null);
     setIsAuthenticated(false);
     setToken("");
-    localStorage.removeItem("sangam-user");
-    localStorage.removeItem("token");
+    sessionStorage.removeItem("sangam-user");
+    sessionStorage.removeItem("token");
+  };
+
+  const fetchComplaints = async () => {
+    if (!societyId || !token) return [];
+    try {
+      const endpoint =
+        userRole === "admin"
+          ? `/api/admin/complaints/${societyId}` // ✅ corrected path
+          : `/api/users/complaints/society/${societyId}`;
+
+      const { data } = await axios.get(endpoint, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      return data;
+    } catch (err) {
+      console.error(
+        "❌ Failed to fetch complaints:",
+        err.response?.data || err.message
+      );
+      return [];
+    }
   };
 
   // Cart logic
@@ -217,7 +295,7 @@ export const AppContextProvider = ({ children }) => {
     setSocietyDetails,
     token,
     setToken,
-
+    fetchComplaints,
     // theme
     theme,
     themeMode,
@@ -258,8 +336,6 @@ export const AppContextProvider = ({ children }) => {
     setMembers,
     buzzGroups,
     setBuzzGroups,
-    complaints,
-    setComplaints,
     events,
     setEvents,
     invitations,

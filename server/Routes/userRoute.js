@@ -7,7 +7,7 @@ import {
   verifyOtp,
 } from "../Controllers/userController.js";
 
-import { verifyUser } from "../Middlewares/authMiddleware.js";
+import { verifyUser, verifyUserOrAdmin } from "../Middlewares/authMiddleware.js";
 import { getPollsBySociety, voteInPoll } from "../Controllers/pollController.js";
 import { getNoticesBySociety } from "../Controllers/noticeController.js";
 import { getGroupsBySociety, getGroupDetails, postInGroup } from "../Controllers/buzzController.js";
@@ -41,7 +41,7 @@ router.post("/login", loginUser);
 router.post("/society/create", createSociety);
 
 router.post("/society/:id/join", verifyUser, requestJoinSociety);
-router.get("/society/:id/details", verifyUser, getSocietyById);
+router.get("/society/:id/details", verifyUserOrAdmin, getSocietyById);
 // Polls
 router.get("/polls/:societyId", verifyUser, getPollsBySociety);
 router.post("/polls/:pollId/vote", verifyUser, voteInPoll);

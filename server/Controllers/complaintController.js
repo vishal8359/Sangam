@@ -83,7 +83,7 @@ export const getComplaintsBySociety = async (req, res) => {
     const complaints = await Complaint.find({ society_id: societyId })
       .populate({
         path: "user",
-        model: "user",
+        model: "User", // ✅ Fix here
         select: "name email",
       })
       .sort({ createdAt: -1 });
@@ -102,9 +102,10 @@ export const resolveComplaint = async (req, res) => {
 
     const complaint = await Complaint.findById(complaintId).populate({
       path: "user",
-      model: "user",
+      model: "User", // ✅ Fix here
       select: "name email",
     });
+
     if (!complaint) {
       return res.status(404).json({ message: "Complaint not found" });
     }
@@ -137,36 +138,19 @@ export const resolveComplaint = async (req, res) => {
 };
 
 export const deleteComplaint = async (req, res) => {
+  const { complaintId } = req.params;
   try {
-    const { complaintId } = req.params;
-    const userId = req.user._id;
-
-    const complaint = await Complaint.findById(complaintId);
-
-    if (!complaint) {
-      return res.status(404).json({ message: "Complaint not found" });
-    }
-
-    // Ensure only the user who created the complaint can delete it
-    if (complaint.user.toString() !== userId.toString()) {
-      return res.status(403).json({ message: "Unauthorized" });
-    }
-
-    // Delete file from Cloudinary if it exists
-    if (complaint.file_id) {
-      await cloudinary.uploader.destroy(complaint.file_id, {
-        resource_type: "image",
-      });
-    }
-
-    await complaint.deleteOne();
+    const complaint = await Complaint.findByIdAndDelete(complaintId);
+    if (!complaint) return res.status(404).json({ message: "Complaint not found" });
 
     res.status(200).json({ message: "Complaint deleted successfully" });
   } catch (err) {
-    console.error("Delete complaint error:", err);
+    console.error("Delete error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
+
+
 
 export const getResolvedComplaints = async (req, res) => {
   try {
@@ -174,14 +158,14 @@ export const getResolvedComplaints = async (req, res) => {
 
     const complaints = await Complaint.find({
       society_id: societyId,
-      status: "Resolved"
+      status: "Resolved",
     })
-    .populate({
-      path: "user",
-      model: "user",
-      select: "name email",
-    })
-    .sort({ updatedAt: -1 });
+      .populate({
+        path: "user",
+        model: "User", // ✅ Fix here
+        select: "name email",
+      })
+      .sort({ updatedAt: -1 });
 
     res.status(200).json(complaints);
   } catch (err) {

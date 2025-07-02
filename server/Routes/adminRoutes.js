@@ -1,20 +1,21 @@
 import express from "express";
 import { loginAdmin, approveJoinRequest, rejectJoinRequest } from "../Controllers/adminController.js";
 import { getPendingUsers } from "../Controllers/approveController.js";
-import { verifyAdmin, verifyUser } from "../Middlewares/authMiddleware.js";
-
-import { createPoll, getPollsBySociety, voteInPoll, getPollResults } from "../Controllers/pollController.js";
+import { verifyAdmin, verifyUser, verifyUserOrAdmin } from "../Middlewares/authMiddleware.js";
+import { getSocietyById } from "../Controllers/societyController.js";
+import { createPoll, getPollsBySociety, voteInPoll, getPollResults, togglePollLock } from "../Controllers/pollController.js";
 import { createNotice, getNoticesBySociety } from "../Controllers/noticeController.js";
 import { createGroup, getGroupsBySociety, getGroupDetails, postInGroup } from "../Controllers/buzzController.js";
 import { rejectGroupJoinRequest, approveGroupJoinRequest } from "../Controllers/groupJoinController.js";
 import { deactivateProduct } from "../Controllers/productController.js";
-import { resolveComplaint, getComplaintsBySociety, getResolvedComplaints } from "../Controllers/complaintController.js";
+import { resolveComplaint, getComplaintsBySociety, getResolvedComplaints, deleteComplaint } from "../Controllers/complaintController.js";
 import { getNeighbouringSocieties } from "../Controllers/societyController.js";
 
 const router = express.Router();
 
 // first login admin and generate a token
 router.post("/login", loginAdmin);
+router.get("/society/:id/details", verifyUserOrAdmin, getSocietyById);
 
 // get users who requested to join society
 router.get("/pending", verifyAdmin, getPendingUsers);
@@ -30,6 +31,7 @@ router.post("/polls/create", verifyAdmin, createPoll);
 router.get("/polls/:societyId", verifyAdmin, getPollsBySociety);
 router.post("/polls/vote/:pollId", verifyUser, voteInPoll);
 router.get("/polls/results/:pollId", verifyUser, getPollResults);
+router.patch("/polls/:pollId/lock", verifyAdmin, togglePollLock);
 
 // Notice routes
 router.post("/notices/create", verifyAdmin, createNotice);
@@ -50,6 +52,7 @@ router.put("/products/:productId/deactivate", verifyAdmin, deactivateProduct);
 router.get("/complaints/:societyId", verifyAdmin, getComplaintsBySociety);
 router.put("/complaints/resolve/:complaintId", verifyAdmin, resolveComplaint);
 router.get("/complaints/resolved/:societyId", verifyAdmin, getResolvedComplaints);
+router.delete("/complaints/:complaintId", verifyAdmin, deleteComplaint);
 
 // Societies
 

@@ -21,7 +21,7 @@ export default function ResidentLogin() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const { axios, setUserRole } = useAppContext();
+  const { axios, setUserRole, login } = useAppContext();
   const navigate = useNavigate();
   const theme = useTheme();
 
@@ -58,10 +58,19 @@ export default function ResidentLogin() {
 
       if (data.success) {
         toast.success(data.message || "Login successful");
-        setUserRole("resident");
-        localStorage.setItem("userToken", data.token);
+
+        // ✅ Use context's login method to set token and user info correctly
+        login({
+          token: data.token,
+          userId: data.userId,
+          houseId: data.houseId,
+          societyId: data.societyId,
+          userRole: data.userRole,
+          userProfile: data.userProfile,
+        });
+
         navigate("/my-society");
-        return; // Important to stop execution here
+        return;
       } else {
         console.log("⚠️ Unexpected success:false:", data);
       }

@@ -15,13 +15,12 @@ import {
 import { AddCircle, RemoveCircle } from "@mui/icons-material";
 import { useAppContext } from "../../context/AppContext";
 
-
 const CreatePollPage = () => {
-  const { colors, setPolls, navigate } = useAppContext();
+  const { colors, setPolls, navigate, axios } = useAppContext();
 
   const [pollData, setPollData] = useState({
     question: "",
-    votingType: "one",
+    votingType: "single",
     options: ["", ""],
     logo: "",
   });
@@ -66,9 +65,10 @@ const CreatePollPage = () => {
     reader.readAsDataURL(file);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const { question, options, votingType, logo } = pollData;
 
+    // Basic frontend validation
     if (!question.trim() || options.some((opt) => !opt.trim())) {
       setError("Poll question and all options are required.");
       return;
@@ -79,18 +79,31 @@ const CreatePollPage = () => {
       return;
     }
 
-    const newPoll = {
-      id: Date.now().toString(),
-      question,
-      type: votingType === "one" ? "single" : "multiple",
-      locked: false,
-      votedHouses: [],
-      logo: logo || "/default_poll_logo.png",
-      options: options.map((name) => ({ name, votes: 0 })),
-    };
+    try {
+      const payload = {
+        question: question.trim(),
+        options: options.map((opt) => opt.trim()),
+        type: votingType, //  Add this
+        logo: logo, // (optional)
+        expires_at: null,
+        society_id: JSON.parse(sessionStorage.getItem("sangam-user"))
+          ?.societyId,
+      };
 
-    setPolls((prev) => [newPoll, ...prev]);
-    navigate("/my-society/polls");
+      const token = sessionStorage.getItem("token");
+
+      await axios.post("/api/admin/polls/create", payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      // Optional: Show success toast
+      navigate("/my-society/polls");
+    } catch (err) {
+      console.error("Failed to create poll:", err);
+      setError(err.response?.data?.message || "Something went wrong.");
+    }
   };
 
   return (
@@ -145,7 +158,7 @@ const CreatePollPage = () => {
           sx={{ mb: 3 }}
         >
           <FormControlLabel
-            value="one"
+            value="single"
             control={<Radio />}
             label="One vote per house"
           />
@@ -162,7 +175,12 @@ const CreatePollPage = () => {
           </Typography>
           <Button variant="outlined" component="label">
             Upload Image
-            <input type="file" accept="image/*" hidden onChange={handleImageUpload} />
+            <input
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={handleImageUpload}
+            />
           </Button>
 
           {pollData.logo && (

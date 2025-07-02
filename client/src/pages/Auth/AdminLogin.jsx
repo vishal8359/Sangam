@@ -46,6 +46,7 @@ const AdminLogin = () => {
       localStorage.setItem("adminToken", token);
 
       login({
+        token,
         userId: admin.user_id,
         userRole: "admin",
         societyId: admin.roles[0]?.society_id || "",

@@ -180,12 +180,12 @@ export const loginUser = async (req, res) => {
       });
     }
 
-    // ✅ ADD THIS LOGIC *AFTER* credentials are validated:
+    // ADD THIS LOGIC *AFTER* credentials are validated:
     const hasRole = user.roles.some(
       (r) => r.role === "resident" && r.society_id.toString() === society_id
     );
 
-    // ✅ PENDING USERS
+    // PENDING USERS
     if (!hasRole || !user.is_approved) {
       const existing = await JoinRequest.findOne({
         user_id: user._id,
@@ -208,7 +208,7 @@ export const loginUser = async (req, res) => {
       });
     }
 
-    // ✅ Approved user: allow login
+    // Approved user: allow login
     const token = jwt.sign(
       { id: user._id, role: "resident" },
       process.env.JWT_SECRET,
@@ -219,11 +219,13 @@ export const loginUser = async (req, res) => {
       success: true,
       message: "Login successful.",
       token,
-      user: {
+      userId: user.user_id,
+      houseId: user.home_id?.toString() || "", 
+      societyId: society_id,
+      userRole: "resident",
+      userProfile: {
         name: user.name,
         email: user.email,
-        role: "resident",
-        user_id: user.user_id,
         avatar: user.avatar,
       },
     });
@@ -235,7 +237,6 @@ export const loginUser = async (req, res) => {
     });
   }
 };
-
 
 // POST : /api/society/create
 export const createSociety = async (req, res) => {

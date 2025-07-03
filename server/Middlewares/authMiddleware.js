@@ -5,15 +5,26 @@ import User from "../Models/User.js";
 export const verifyUser = async (req, res, next) => {
   const token = req.headers.authorization?.split(" ")[1];
 
-  if (!token) return res.status(401).json({ msg: "No token, authorization denied" });
+  if (!token) {
+    return res.status(401).json({ msg: "No token, authorization denied" });
+  }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.id);
 
-    if (!user) return res.status(404).json({ msg: "User not found" });
+    if (!user) {
+      return res.status(404).json({ msg: "User not found" });
+    }
 
-    req.user = user;
+    // Attach simplified and enriched user object
+    req.user = {
+      _id: user._id,
+      role: user.role,
+      name: user.name,
+      societyId: user.created_society || user.joined_societies?.[0], // key part
+    };
+
     next();
   } catch (err) {
     console.error("Auth error:", err);

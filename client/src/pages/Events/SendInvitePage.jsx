@@ -1,51 +1,89 @@
 import React, { useEffect, useState } from "react";
-
-const mockMembers = [
-  {
-    _id: "1",
-    name: "Vishal Gupta",
-    address: "Flat 101, A-Wing",
-    avatar: "https://i.pravatar.cc/150?img=1",
-  },
-  {
-    _id: "2",
-    name: "Anjali Sharma",
-    address: "Flat 102, A-Wing",
-    avatar: "https://i.pravatar.cc/150?img=2",
-  },
-  {
-    _id: "3",
-    name: "Rahul Mehra",
-    address: "Flat 203, B-Wing",
-    avatar: "https://i.pravatar.cc/150?img=3",
-  },
-];
+import axios from "axios";
+import { useAppContext } from "../../context/AppContext";
+import { useNavigate, useParams } from "react-router-dom";
 
 const InviteMembersPage = () => {
+  const { token, societyId } = useAppContext();
   const [members, setMembers] = useState([]);
   const [invites, setInvites] = useState({});
+  const [loading, setLoading] = useState(true);
+  const { eventId } = useParams(); 
 
+  const navigate = useNavigate();
   useEffect(() => {
-    setMembers(mockMembers);
-    const initial = {};
-    mockMembers.forEach((m) => (initial[m._id] = false));
-    setInvites(initial);
-  }, []);
+    console.log("👉 invite page got eventId:", eventId);
+  }, [eventId]);
+  useEffect(() => {
+    const fetchMembers = async () => {
+      try {
+        const res = await axios.get("/api/users/members", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        setMembers(res.data || []);
+        const initial = {};
+        (res.data || []).forEach((m) => (initial[m._id] = false));
+        setInvites(initial);
+        setLoading(false);
+      } catch (err) {
+        console.error(
+          "Failed to fetch members:",
+          err.response?.data || err.message
+        );
+        setLoading(false);
+      }
+    };
+
+    if (societyId && token) fetchMembers();
+  }, [societyId, token]);
 
   const handleToggle = (id) => {
     setInvites((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   const handleInviteAll = () => {
-    const areAllInvited = members.every((m) => invites[m._id]);
-
-    const updatedInvites = {};
+    const allInvited = members.every((m) => invites[m._id]);
+    const updated = {};
     members.forEach((m) => {
-      updatedInvites[m._id] = !areAllInvited;
+      updated[m._id] = !allInvited;
     });
-
-    setInvites(updatedInvites);
+    setInvites(updated);
   };
+
+  const handleSendInvites = async () => {
+    const selectedIds = Object.keys(invites).filter((id) => invites[id]);
+    if (selectedIds.length === 0) {
+      alert("Please select at least one member to invite.");
+      return;
+    }
+
+    try {
+      const res = await axios.post(
+        `/api/users/events/invite`,
+        {
+          eventId,
+          invitees: selectedIds,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      alert("Invites sent successfully!");
+      navigate("/my-society/events/view_invitations");
+    } catch (err) {
+      console.error("Invite error:", err.response?.data || err.message);
+      alert("Failed to send invites.");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="p-6 text-center text-lg font-medium">
+        Loading members...
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 py-10 flex flex-col justify-between">
@@ -70,12 +108,15 @@ const InviteMembersPage = () => {
               </tr>
             </thead>
             <tbody className="text-sm text-gray-500">
-              {members.map((member, index) => (
+              {members.map((member) => (
                 <tr key={member._id} className="border-t border-gray-500/20">
                   <td className="md:px-4 pl-2 md:pl-4 py-3 flex items-center space-x-3 truncate">
                     <div className="border border-gray-300 rounded-full overflow-hidden w-12 h-12">
                       <img
-                        src={member.avatar}
+                        src={
+                          member.avatar ||
+                          `https://i.pravatar.cc/150?u=${member._id}`
+                        }
                         alt="Avatar"
                         className="w-full h-full object-cover"
                       />
@@ -101,6 +142,15 @@ const InviteMembersPage = () => {
               ))}
             </tbody>
           </table>
+        </div>
+
+        <div className="mt-6 flex justify-center">
+          <button
+            onClick={handleSendInvites}
+            className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition cursor-pointer"
+          >
+            Send Invites
+          </button>
         </div>
       </div>
     </div>

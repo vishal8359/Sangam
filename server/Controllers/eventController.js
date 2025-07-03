@@ -1,131 +1,125 @@
+import mongoose from "mongoose";
 import Event from "../Models/Event.js";
+import Invitation from "../Models/Invitation.js";
+import User from "../Models/User.js";
 import { uploadToCloudinary } from "../Utils/cloudinaryUpload.js";
-import moment from "moment";
 
-// Create Event
 export const createEvent = async (req, res) => {
   try {
-    const { eventName, organiserName, date, time, place, isNeighbourEvent } = req.body;
     const userId = req.user._id;
+    const societyId = req.user.societyId;
 
-    let imageUrl = "";
-
-    if (req.file) {
-      const result = await uploadToCloudinary(req.file.path);
-      imageUrl = result.secure_url;
-    }
-
-    const newEvent = new Event({
+    const {
       eventName,
       organiserName,
+      description,
       date,
       time,
       place,
-      image: imageUrl,
       isNeighbourEvent,
+    } = req.body;
+
+    let imageUrl = "";
+    if (req.file) {
+      const uploaded = await uploadToCloudinary(req.file.path);
+      console.log("🔹 Cloudinary upload result:", uploaded);
+      imageUrl = uploaded.url;
+    }
+
+    const event = new Event({
+      society: societyId,
+      eventName: eventName?.trim(),
+      organiserName: organiserName?.trim(),
+      description: description?.trim(),
+      date,
+      time,
+      place: place?.trim(),
+      isNeighbourEvent: isNeighbourEvent === "true",
       createdBy: userId,
+      image: imageUrl,
     });
 
-    await newEvent.save();
-
-    res.status(201).json({ message: "Event created successfully", event: newEvent });
+    await event.save();
+    res.status(201).json({ message: "Event created", event });
   } catch (err) {
-    console.error("Error creating event:", err);
-    res.status(500).json({ message: "Internal Server Error" });
+    console.error("Create Event Error:", err);
+    res.status(500).json({ message: "Failed to create event" });
   }
 };
 
-// Cancel Event (marks event as cancelled)
-export const cancelEvent = async (req, res) => {
+export const inviteToEvent = async (req, res) => {
   try {
-    const { eventId } = req.params;
+    const { eventId, invitees } = req.body;
+    const userId = req.user._id;
+    const societyId = req.user.societyId;
 
-    const event = await Event.findById(eventId);
+    if (!eventId || !Array.isArray(invitees)) {
+      return res.status(400).json({ message: "Invalid data" });
+    }
+
+    const event = await Event.findOne({ _id: eventId, society: societyId });
     if (!event) return res.status(404).json({ message: "Event not found" });
 
-    event.cancelled = true;
-    await event.save();
+    const validUsers = await User.find({
+      _id: { $in: invitees },
+      $or: [{ created_society: societyId }, { joined_societies: societyId }],
+    }).select("_id");
 
-    res.status(200).json({ message: "Event cancelled successfully", event });
+    if (validUsers.length !== invitees.length) {
+      return res.status(400).json({ message: "Some users are invalid" });
+    }
+
+    const invitations = invitees.map((uid) => ({
+      event: eventId,
+      invitedUser: uid,
+      invitedBy: userId,
+    }));
+
+    await Invitation.insertMany(invitations);
+    await Event.findByIdAndUpdate(eventId, {
+      $addToSet: { invitedUsers: { $each: invitees } },
+    });
+
+    res.status(201).json({ message: "Invites sent", count: invitees.length });
   } catch (err) {
-    console.error("Error cancelling event:", err);
-    res.status(500).json({ message: "Internal Server Error" });
+    console.error("Invite Error:", err);
+    res.status(500).json({ message: "Failed to send invites" });
   }
 };
 
-// Get Events for Users (non-cancelled, sorted by date)
-export const getAllEvents = async (req, res) => {
+// Controllers/userController.js
+export const getSocietyMembers = async (req, res) => {
   try {
-    const events = await Event.find({ cancelled: false }).sort({ date: 1 });
+    const societyId = req.user.societyId;
+
+    const members = await User.find({
+      $or: [{ created_society: societyId }, { joined_societies: societyId }],
+    }).select("_id name avatar address"); // Add any fields needed in invite UI
+
+    res.status(200).json(members);
+  } catch (err) {
+    console.error("Error fetching society members:", err);
+    res.status(500).json({ message: "Failed to fetch members" });
+  }
+};
+
+export const getEvents = async (req, res) => {
+  try {
+    const societyId = req.user.societyId;
+    const userId = req.user._id;
+
+    if (!societyId || !userId) {
+      return res.status(400).json({ message: "Missing user or society info" });
+    }
+
+    const events = await Event.find({
+      society: new mongoose.Types.ObjectId(societyId),
+      createdBy: new mongoose.Types.ObjectId(userId),
+    });
 
     res.status(200).json({ events });
   } catch (err) {
-    console.error("Error fetching events:", err);
-    res.status(500).json({ message: "Internal Server Error" });
-  }
-};
-
-export const rsvpToEvent = async (req, res) => {
-  try {
-    const { eventId } = req.params;
-    const { status } = req.body;
-    const userId = req.user._id;
-
-    if (!["going", "interested", "not_going"].includes(status)) {
-      return res.status(400).json({ message: "Invalid RSVP status" });
-    }
-
-    const event = await Event.findById(eventId);
-    if (!event) return res.status(404).json({ message: "Event not found" });
-    if (event.cancelled) return res.status(400).json({ message: "Event is cancelled" });
-
-    // Capacity check
-    if (status === "going" && event.capacity > 0) {
-      const goingCount = event.rsvps.filter(r => r.status === "going").length;
-      if (goingCount >= event.capacity) {
-        return res.status(400).json({ message: "Event capacity full" });
-      }
-    }
-
-    // Check if user already RSVP'd
-    const existing = event.rsvps.find(r => r.user.toString() === userId.toString());
-    if (existing) {
-      existing.status = status; // update
-    } else {
-      event.rsvps.push({ user: userId, status });
-    }
-
-    await event.save();
-    res.status(200).json({ message: "RSVP updated", rsvps: event.rsvps });
-  } catch (err) {
-    console.error("Error updating RSVP:", err);
-    res.status(500).json({ message: "Internal Server Error" });
-  }
-};
-
-// Comment on event
-export const commentOnEvent = async (req, res) => {
-  try {
-    const { eventId } = req.params;
-    const { text } = req.body;
-    const userId = req.user._id;
-
-    if (!text || text.trim() === "") {
-      return res.status(400).json({ message: "Comment cannot be empty" });
-    }
-
-    const event = await Event.findById(eventId);
-    if (!event) return res.status(404).json({ message: "Event not found" });
-
-    event.comments.push({
-      user: userId,
-      text,
-    });
-
-    await event.save();
-    res.status(200).json({ message: "Comment added", comments: event.comments });
-  } catch (err) {
-    console.error("Error adding comment:", err);
-    res.status(500).json({ message: "Internal Server Error" });
+    console.error("Get Events Error:", err);
+    res.status(500).json({ message: "Failed to fetch events" });
   }
 };

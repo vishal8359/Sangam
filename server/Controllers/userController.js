@@ -8,7 +8,7 @@ import Home from "../Models/Home.js";
 import sendSMS from "../Utils/smsService.js";
 import { extractSortOrder } from "./getNeighbourHomes.js";
 import mongoose from "mongoose";
-
+import Invitation from "../Models/Invitation.js";
 const pendingRegistrations = new Map();
 
 // Register without society_id
@@ -369,5 +369,35 @@ export const requestJoinSociety = async (req, res) => {
   } catch (err) {
     console.error("❌ Join request error:", err);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+export const getEventInvitations = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const invitations = await Invitation.find({ invitedUser: userId })
+      .populate("event") // populate the event details
+      .populate("invitedBy", "name"); // optional: who invited
+
+    res.status(200).json({ invitations });
+  } catch (err) {
+    console.error("Failed to fetch invitations:", err);
+    res.status(500).json({ message: "Failed to get invitations" });
+  }
+};
+
+export const getCurrentUser = async (req, res) => {
+  try {
+    const user = req.user; // This comes from verifyUser middleware
+    if (!user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    res.status(200).json({ user });
+  } catch (err) {
+    console.error("Get Current User Error:", err);
+    res.status(500).json({ message: "Failed to fetch current user" });
   }
 };

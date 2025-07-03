@@ -10,6 +10,7 @@ import { rejectGroupJoinRequest, approveGroupJoinRequest } from "../Controllers/
 import { deactivateProduct } from "../Controllers/productController.js";
 import { resolveComplaint, getComplaintsBySociety, getResolvedComplaints, deleteComplaint } from "../Controllers/complaintController.js";
 import { getNeighbouringSocieties } from "../Controllers/societyController.js";
+import { getEvents } from "../Controllers/eventController.js";
 
 const router = express.Router();
 
@@ -58,4 +59,6 @@ router.delete("/complaints/:complaintId", verifyAdmin, deleteComplaint);
 
 router.get("/society/:id/neighbours", verifyAdmin, getNeighbouringSocieties);
 
+// events
+router.get("/events", verifyAdmin, getEvents);
 export default router;

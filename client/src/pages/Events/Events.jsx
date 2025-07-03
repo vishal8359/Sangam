@@ -15,34 +15,15 @@ import cleanUp from "../../assets/CleanUp.jpg";
 import bbq from "../../assets/bbq.jpeg";
 import Events_Bg from "../../assets/Events_Bg.jpg";
 import { useNavigate } from "react-router-dom";
-
-const initialEvents = [
-  {
-    id: 1,
-    name: "Community Clean-Up",
-    organizer: "John Doe",
-    date: "2025-06-10",
-    time: "09:00",
-    place: "Central Park",
-    img: cleanUp,
-    isNeighbour: false,
-  },
-  {
-    id: 2,
-    name: "Neighbourhood BBQ Party",
-    organizer: "Jane Smith",
-    date: "2025-06-15",
-    time: "18:00",
-    place: "Maple Street",
-    img: bbq,
-    isNeighbour: true,
-  },
-];
+import { useAppContext } from "../../context/AppContext";
 
 export default function EventPage() {
-  const [events, setEvents] = useState(initialEvents);
+  const [events, setEvents] = useState([]);
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
+  const navigate = useNavigate();
+  const { token, societyId, user, axios } = useAppContext();
+
   const [form, setForm] = useState({
     name: "",
     organizer: "",
@@ -55,8 +36,6 @@ export default function EventPage() {
     description: "",
   });
 
-  const navigate = useNavigate();
-
   const [isMobile, setIsMobile] = useState(window.innerWidth < 600);
 
   useEffect(() => {
@@ -66,6 +45,29 @@ export default function EventPage() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const res = await axios.get("/api/users/events", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const fetchedEvents = res.data.events;
+        fetchedEvents.forEach((ev) => {
+          console.log("🆔 ev.createdBy:", ev.createdBy); // Could be ObjectId or populated object
+          console.log("🔐 user._id:", user?._id); // Should be a string or ObjectId
+          console.log(
+            "Match:",
+            ev.createdBy?.toString() === user?._id?.toString()
+          );
+        });
+        setEvents(res.data.events);
+      } catch (err) {
+        console.error("Failed to load events", err);
+      }
+    };
+    if (token) fetchEvents();
+  }, [token]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -90,59 +92,85 @@ export default function EventPage() {
     reader.readAsDataURL(file);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (
-      !form.name.trim() ||
-      !form.organizer.trim() ||
-      !form.date ||
-      !form.time ||
-      !form.place.trim()
-    ) {
-      alert("Please fill all fields.");
+    const {
+      name,
+      organizer,
+      date,
+      time,
+      place,
+      imgFile,
+      isNeighbour,
+      description,
+    } = form;
+
+    if (!name.trim() || !organizer.trim() || !date || !time || !place.trim()) {
+      alert("Please fill all required fields.");
       return;
     }
 
-    const selectedDate = new Date(form.date);
+    const selectedDate = new Date(date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     if (selectedDate <= today) {
-      alert("Event date must be greater than today's date.");
+      alert("Event date must be in the future.");
       return;
     }
 
-    const newEvent = {
-      id: Date.now(),
-      name: form.name.trim(),
-      organizer: form.organizer.trim(),
-      date: form.date,
-      time: form.time,
-      place: form.place.trim(),
-      img: form.imgPreview || "https://source.unsplash.com/400x200/?event",
-      isNeighbour: form.isNeighbour,
-      description: form.description.trim(),
-    };
+    try {
+      const formData = new FormData();
+      formData.append("eventName", name.trim());
+      formData.append("organiserName", organizer.trim());
+      formData.append("date", date);
+      formData.append("time", time);
+      formData.append("place", place.trim());
+      formData.append("isNeighbourEvent", isNeighbour ? "true" : "false");
+      formData.append("description", description || "");
 
-    setEvents((prev) => [newEvent, ...prev]);
+      if (imgFile) {
+        formData.append("image", imgFile);
+        console.log("🖼️ Uploading image:", imgFile.name);
+      }
 
-    setForm({
-      name: "",
-      organizer: "",
-      date: "",
-      time: "",
-      place: "",
-      imgFile: null,
-      imgPreview: null,
-      isNeighbour: false,
-      description: "",
-    });
+      const res = await axios.post("/api/users/events/create", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      const newEvent = res.data?.event;
+
+      if (!newEvent || !newEvent._id || newEvent._id.length !== 24) {
+        throw new Error("Invalid event response");
+      }
+
+      console.log("✅ Event created:", newEvent);
+
+      // Add the new event to the local list
+      setEvents((prev) => [newEvent, ...prev]);
+
+      alert("Event created successfully.");
+      navigate(`/my-society/events/send_invites/${newEvent._id}`);
+    } catch (err) {
+      console.error(
+        "Failed to create event:",
+        err.response?.data || err.message
+      );
+      alert("Failed to create event. Please try again.");
+    }
   };
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const upcomingEvents = events.filter((ev) => new Date(ev.date) > today);
+  const upcomingEvents = events.filter(
+    (ev) =>
+      new Date(ev.date) > today &&
+      ev.createdBy?.toString() === user?._id?.toString()
+  );
 
   return (
     <Container
@@ -180,7 +208,15 @@ export default function EventPage() {
         }),
       }}
     >
-      <Box display="flex" alignItems="center" mb={1} gap={1} px={4} py={3} flexWrap="wrap">
+      <Box
+        display="flex"
+        alignItems="center"
+        mb={1}
+        gap={1}
+        px={4}
+        py={3}
+        flexWrap="wrap"
+      >
         <EventAvailableIcon color="primary" fontSize="large" />
         <Box
           component="h4"
@@ -205,7 +241,8 @@ export default function EventPage() {
             userSelect: "none",
           }}
         >
-          {upcomingEvents.length} {upcomingEvents.length === 1 ? "Event" : "Events"}
+          {upcomingEvents.length}{" "}
+          {upcomingEvents.length === 1 ? "Event" : "Events"}
         </Paper>
         <Button
           variant="outlined"
@@ -228,7 +265,10 @@ export default function EventPage() {
         mb={6}
       >
         {upcomingEvents.length === 0 && (
-          <Typography color="text.secondary" sx={{ width: "100%", textAlign: "center" }}>
+          <Typography
+            color="text.secondary"
+            sx={{ width: "100%", textAlign: "center" }}
+          >
             No upcoming events found.
           </Typography>
         )}
@@ -250,8 +290,8 @@ export default function EventPage() {
           >
             <Box
               component="img"
-              src={ev.img}
-              alt={ev.name}
+              src={ev.image}
+              alt={ev.eventName}
               sx={{
                 width: isMobile ? "100%" : 200,
                 height: isMobile ? 150 : "100%",
@@ -262,15 +302,26 @@ export default function EventPage() {
             />
             <Box flexGrow={1} sx={{ mt: isMobile ? 1 : 0 }}>
               <Typography variant="h6" fontWeight="bold" mb={0.5} noWrap>
-                {ev.name}
+                {ev.eventName}
               </Typography>
-              <Typography variant="body2" color="text.secondary" mb={0.5} noWrap>
-                Organizer: {ev.organizer}
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                mb={0.5}
+                noWrap
+              >
+                Organizer: {ev.organiserName}
               </Typography>
+
               <Typography variant="body2" color="text.secondary" mb={0.5}>
                 Date: {new Date(ev.date).toLocaleDateString()} at {ev.time}
               </Typography>
-              <Typography variant="body2" color="text.secondary" mb={0.5} noWrap>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                mb={0.5}
+                noWrap
+              >
                 Place: {ev.place}
               </Typography>
               <Typography
@@ -319,8 +370,12 @@ export default function EventPage() {
             InputLabelProps={{
               sx: {
                 color: theme.palette.mode === "dark" ? "grey" : undefined,
-                "&.Mui-focused": { color: theme.palette.mode === "dark" ? "#f5f5f5" : undefined },
-                "&.MuiInputLabel-shrink": { color: theme.palette.mode === "dark" ? "#f5f5f5" : undefined },
+                "&.Mui-focused": {
+                  color: theme.palette.mode === "dark" ? "#f5f5f5" : undefined,
+                },
+                "&.MuiInputLabel-shrink": {
+                  color: theme.palette.mode === "dark" ? "#f5f5f5" : undefined,
+                },
               },
             }}
           />
@@ -334,8 +389,12 @@ export default function EventPage() {
             InputLabelProps={{
               sx: {
                 color: theme.palette.mode === "dark" ? "grey" : undefined,
-                "&.Mui-focused": { color: theme.palette.mode === "dark" ? "#f5f5f5" : undefined },
-                "&.MuiInputLabel-shrink": { color: theme.palette.mode === "dark" ? "#f5f5f5" : undefined },
+                "&.Mui-focused": {
+                  color: theme.palette.mode === "dark" ? "#f5f5f5" : undefined,
+                },
+                "&.MuiInputLabel-shrink": {
+                  color: theme.palette.mode === "dark" ? "#f5f5f5" : undefined,
+                },
               },
             }}
           />
@@ -370,8 +429,12 @@ export default function EventPage() {
             InputLabelProps={{
               sx: {
                 color: theme.palette.mode === "dark" ? "grey" : undefined,
-                "&.Mui-focused": { color: theme.palette.mode === "dark" ? "#f5f5f5" : undefined },
-                "&.MuiInputLabel-shrink": { color: theme.palette.mode === "dark" ? "#f5f5f5" : undefined },
+                "&.Mui-focused": {
+                  color: theme.palette.mode === "dark" ? "#f5f5f5" : undefined,
+                },
+                "&.MuiInputLabel-shrink": {
+                  color: theme.palette.mode === "dark" ? "#f5f5f5" : undefined,
+                },
               },
             }}
           />
@@ -386,8 +449,12 @@ export default function EventPage() {
             InputLabelProps={{
               sx: {
                 color: theme.palette.mode === "dark" ? "grey" : undefined,
-                "&.Mui-focused": { color: theme.palette.mode === "dark" ? "#f5f5f5" : undefined },
-                "&.MuiInputLabel-shrink": { color: theme.palette.mode === "dark" ? "#f5f5f5" : undefined },
+                "&.Mui-focused": {
+                  color: theme.palette.mode === "dark" ? "#f5f5f5" : undefined,
+                },
+                "&.MuiInputLabel-shrink": {
+                  color: theme.palette.mode === "dark" ? "#f5f5f5" : undefined,
+                },
               },
             }}
           />
@@ -410,14 +477,16 @@ export default function EventPage() {
                 sx={{ height: 80, borderRadius: 2 }}
               />
             )}
-            <Button
+            {/* <Button
               variant="outlined"
               size="medium"
               sx={{ width: "30%" }}
-              onClick={() => navigate("/my-society/events/send_invites")}
+              onClick={() =>
+                navigate(`/my-society/events/send_invites/${createdEventId}`)
+              }
             >
               Send Invitation
-            </Button>
+            </Button> */}
           </Box>
 
           <FormControlLabel
@@ -429,7 +498,8 @@ export default function EventPage() {
                 sx={{
                   color: theme.palette.mode === "dark" ? "#f5f5f5" : undefined,
                   "&.Mui-checked": {
-                    color: theme.palette.mode === "dark" ? "#f5f5f5" : undefined,
+                    color:
+                      theme.palette.mode === "dark" ? "#f5f5f5" : undefined,
                   },
                 }}
               />

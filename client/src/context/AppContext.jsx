@@ -66,6 +66,27 @@ export const AppContextProvider = ({ children }) => {
   });
 
   useEffect(() => {
+    const fetchUser = async () => {
+      if (!token || user) return;
+      try {
+        const { data } = await axios.get("/api/users/me", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setUser(data.user); // 👈 set the actual user object
+      } catch (err) {
+        console.error(
+          "❌ Failed to fetch logged-in user:",
+          err.response?.data || err.message
+        );
+      }
+    };
+
+    fetchUser();
+  }, [token]);
+
+  useEffect(() => {
     localStorage.setItem("gallery-images", JSON.stringify(galleryImages));
   }, [galleryImages]);
 
@@ -116,18 +137,6 @@ export const AppContextProvider = ({ children }) => {
       delete axios.defaults.headers.common["Authorization"];
     }
   }, [token]);
-
-  // useEffect(() => {
-  //   const fetchProducts = async () => {
-  //     try {
-  //       const { data } = await axios.get("/api/products");
-  //       if (data.success) setProducts(data.products);
-  //     } catch (err) {
-  //       console.error("Fetch products error:", err.message);
-  //     }
-  //   };
-  //   fetchProducts();
-  // }, []);
 
   useEffect(() => {
     const fetchSociety = async () => {
@@ -244,6 +253,30 @@ export const AppContextProvider = ({ children }) => {
         err.response?.data || err.message
       );
       return [];
+    }
+  };
+
+  const fetchAllEvents = async () => {
+    try {
+      const { data } = await axios.get("/api/users/events");
+      setEvents(data.events || []);
+    } catch (err) {
+      console.error(
+        "❌ Failed to fetch events:",
+        err.response?.data || err.message
+      );
+    }
+  };
+
+  const fetchInvitedEvents = async () => {
+    try {
+      const { data } = await axios.get("/api/users/events/invited");
+      setInvitations(data.events || []);
+    } catch (err) {
+      console.error(
+        "❌ Failed to fetch invitations:",
+        err.response?.data || err.message
+      );
     }
   };
 

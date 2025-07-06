@@ -11,6 +11,7 @@ import { deactivateProduct } from "../Controllers/productController.js";
 import { resolveComplaint, getComplaintsBySociety, getResolvedComplaints, deleteComplaint } from "../Controllers/complaintController.js";
 import { getNeighbouringSocieties } from "../Controllers/societyController.js";
 import { getEvents } from "../Controllers/eventController.js";
+import { getMyChats, sendMessage } from "../Controllers/chatsController.js";
 
 const router = express.Router();
 
@@ -37,6 +38,10 @@ router.patch("/polls/:pollId/lock", verifyAdmin, togglePollLock);
 // Notice routes
 router.post("/notices/create", verifyAdmin, createNotice);
 router.get("/notices/:societyId", verifyUser, getNoticesBySociety);
+
+//Chats
+router.post("/chats/send", verifyAdmin, sendMessage);
+router.get("/chats/me", verifyAdmin, getMyChats);
 
 // Buzz group routes
 router.post("/buzz/groups/create", verifyAdmin, createGroup);

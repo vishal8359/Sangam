@@ -1,5 +1,4 @@
-// pages/NoticesPage.jsx
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Container,
@@ -17,13 +16,39 @@ import { useTheme } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../../context/AppContext";
 import notices_bg from "../../assets/Notices_Bg.jpg";
+import dayjs from "dayjs";
 
 const NoticesPage = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const { notices } = useAppContext();
+  const { userRole, societyId, token, axios, setNotices, notices } =
+    useAppContext();
   const isDark = theme.palette.mode === "dark";
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchNotices = async () => {
+      try {
+        const role = userRole === "admin" ? "admin" : "users"; //FIXED HERE
+        const { data } = await axios.get(`/api/${role}/notices/${societyId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setNotices(data);
+      } catch (err) {
+        console.error(
+          "❌ Failed to fetch notices:",
+          err.response?.data || err.message
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (societyId && token) fetchNotices();
+  }, [societyId, token, axios, setNotices, userRole]);
 
   return (
     <Container
@@ -84,24 +109,31 @@ const NoticesPage = () => {
               <NotificationsActiveIcon color="warning" fontSize="large" />
             </IconButton>
           </Badge>
-          <Button
-            variant="contained"
-            size="medium"
-            onClick={() => navigate("/my-society/notices/new")}
-          >
-            Post Notice
-          </Button>
+
+          {userRole !== "resident" && (
+            <Button
+              variant="contained"
+              size="medium"
+              onClick={() => navigate("/my-society/notices/new")}
+            >
+              Post Notice
+            </Button>
+          )}
         </Box>
       </Box>
 
       <Box display="grid" gap={3} mb={4} px={isMobile ? 1 : 5}>
-        {notices.length === 0 ? (
+        {loading ? (
+          <Typography align="center" color="text.secondary">
+            Loading...
+          </Typography>
+        ) : notices.length === 0 ? (
           <Typography align="center" color="text.secondary">
             No notices available.
           </Typography>
         ) : (
           notices.map((notice) => (
-            <Card key={notice.id} elevation={5}>
+            <Card key={notice._id} elevation={5}>
               <CardContent>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
                   {notice.title}
@@ -111,7 +143,8 @@ const NoticesPage = () => {
                 </Typography>
                 <Divider sx={{ my: 1 }} />
                 <Typography variant="caption" color="text.secondary">
-                  Posted by: {notice.postedBy} | Date: {notice.date}
+                  Posted by: {notice.posted_by?.name || "Admin"} |{" "}
+                  {dayjs(notice.createdAt).format("MMM D, YYYY hh:mm A")}
                 </Typography>
               </CardContent>
             </Card>

@@ -2,13 +2,28 @@ import mongoose from "mongoose";
 
 const noticeSchema = new mongoose.Schema(
   {
-    title: { type: String, required: true },
-    description: { type: String, required: true }, 
-    society_id: { type: mongoose.Schema.Types.ObjectId, ref: "Society", required: true },
-    posted_by: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true }, 
-    posted_at: { type: Date, default: Date.now },
+    title: { type: String, required: true, trim: true },
+    description: { type: String, required: true },
+    society_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Society",
+      required: true,
+    },
+    posted_by: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    posted_at: {
+      type: Date,
+      default: Date.now,
+    },
   },
   { timestamps: true }
 );
 
-export default mongoose.model("Notice", noticeSchema);
+// Prevent OverwriteModelError
+const Notice =
+  mongoose.models.Notice || mongoose.model("Notice", noticeSchema);
+
+export default Notice;

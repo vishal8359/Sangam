@@ -1,9 +1,9 @@
 // context/AppContext.js
 import { useTheme } from "@emotion/react";
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { samplePolls } from "../assets/local.js";
+import io from "socket.io-client";
 
 axios.defaults.withCredentials = true;
 axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL;
@@ -13,6 +13,7 @@ export const AppContext = createContext();
 export const AppContextProvider = ({ children }) => {
   const navigate = useNavigate();
   const theme = useTheme();
+  const socketRef = useRef(null);
 
   // Auth and user info
   const [userId, setUserId] = useState(null);
@@ -55,7 +56,7 @@ export const AppContextProvider = ({ children }) => {
   //Address
   const [addresses, setAddresses] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState(null);
-
+  let messageHandler = null;
   // Notices
   const [notices, setNotices] = useState([]);
 
@@ -74,7 +75,8 @@ export const AppContextProvider = ({ children }) => {
             Authorization: `Bearer ${token}`,
           },
         });
-        setUser(data.user); // 👈 set the actual user object
+        setUser(data.user);
+        setUserId(data.user._id);
       } catch (err) {
         console.error(
           "❌ Failed to fetch logged-in user:",
@@ -199,11 +201,13 @@ export const AppContextProvider = ({ children }) => {
   const toggleTheme = () => {
     setThemeMode((prev) => (prev === "light" ? "dark" : "light"));
   };
-
+  const setMessageHandler = (handlerFn) => {
+    messageHandler = handlerFn;
+  };
   const login = (data) => {
     const { userId, houseId, societyId, userRole, userProfile, token } = data;
 
-    setUserId(userId);
+    setUserId(userProfile?._id);
     setHouseId(houseId);
     setSocietyId(societyId);
     setUserRole(userRole);
@@ -212,11 +216,17 @@ export const AppContextProvider = ({ children }) => {
     setToken(token);
     axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-    // ✅ Use sessionStorage instead of localStorage
+    // Use sessionStorage instead of localStorage
     sessionStorage.setItem("token", token);
     sessionStorage.setItem(
       "sangam-user",
-      JSON.stringify({ userId, houseId, societyId, userRole, userProfile })
+      JSON.stringify({
+        userId: userProfile?._id,
+        houseId,
+        societyId,
+        userRole,
+        userProfile,
+      })
     );
   };
 
@@ -256,29 +266,36 @@ export const AppContextProvider = ({ children }) => {
     }
   };
 
-  const fetchAllEvents = async () => {
-    try {
-      const { data } = await axios.get("/api/users/events");
-      setEvents(data.events || []);
-    } catch (err) {
-      console.error(
-        "❌ Failed to fetch events:",
-        err.response?.data || err.message
-      );
-    }
-  };
+  useEffect(() => {
+    if (!userId || !token) return;
 
-  const fetchInvitedEvents = async () => {
-    try {
-      const { data } = await axios.get("/api/users/events/invited");
-      setInvitations(data.events || []);
-    } catch (err) {
-      console.error(
-        "❌ Failed to fetch invitations:",
-        err.response?.data || err.message
-      );
-    }
-  };
+    const socket = io(import.meta.env.VITE_BACKEND_URL, {
+      transports: ["websocket"],
+      query: { token },
+    });
+
+    socket.emit("setup", userId);
+    socketRef.current = socket;
+
+    socket.on("connect", () => {
+      console.log("🟢 Socket connected:", socket.id);
+    });
+
+    socket.on("receive message", (msg) => {
+      console.log("📩 Message received via socket:", msg);
+      if (typeof messageHandler === "function") {
+        messageHandler(msg);
+      }
+    });
+
+    socket.on("disconnect", () => {
+      console.log("🔴 Socket disconnected");
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [userId, token]);
 
   // Cart logic
   const updateCartItem = (productId, quantity) => {
@@ -333,6 +350,8 @@ export const AppContextProvider = ({ children }) => {
     theme,
     themeMode,
     toggleTheme,
+    socket: socketRef,
+    setMessageHandler,
     isDark: themeMode === "dark",
     colors: {
       background: themeMode === "dark" ? "#121212" : "#ffffff",

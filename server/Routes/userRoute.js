@@ -54,6 +54,8 @@ import {
   getSocietyImages,
 } from "../Controllers/galleryController.js";
 import { createEvent, getEvents, getSocietyMembers, inviteToEvent } from "../Controllers/eventController.js";
+import { getChatHistory, getMyChats, getSocietyUsers, sendMessage, uploadChatFile } from "../Controllers/chatsController.js";
+
 
 const router = express.Router();
 // first register
@@ -73,6 +75,18 @@ router.post("/polls/:pollId/vote", verifyUser, voteInPoll);
 
 // Notices
 router.get("/notices/:societyId", verifyUser, getNoticesBySociety);
+
+// Chats
+router.post("/chats/send", verifyUser, sendMessage);
+router.get("/chats/me", verifyUser, getMyChats);
+router.get("/society/:societyId/users", verifyUser, getSocietyUsers);
+router.get("/chats/:userId/:peerId",getChatHistory);
+router.post(
+  "/chats/upload",
+  verifyUser,
+  upload.single("file"), 
+  uploadChatFile
+);
 
 // Buzz groups
 router.get("/buzz/groups/:societyId", verifyUser, getGroupsBySociety);

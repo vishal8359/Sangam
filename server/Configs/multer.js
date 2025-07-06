@@ -1,22 +1,13 @@
+// configs/multer.js
 import multer from "multer";
-import path from "path";
 
-// Use disk storage temporarily (for Cloudinary to pick up)
-const storage = multer.diskStorage({
-  filename: function (req, file, cb) {
-    cb(null, `${Date.now()}-${file.originalname}`);
-  },
-});
+const storage = multer.memoryStorage(); // ✅ Needed for buffer streaming
 
 const fileFilter = (req, file, cb) => {
-  const ext = path.extname(file.originalname);
-  if (
-    [".jpg", ".jpeg", ".png", ".mp3", ".mp4", ".wav", ".mov", ".webm"].includes(ext)
-  ) {
-    cb(null, true);
-  } else {
-    cb(new Error("Only media files allowed!"), false);
-  }
+  const allowedTypes = [".jpg", ".jpeg", ".png", ".mp3", ".mp4", ".pdf", ".doc", ".docx"];
+  const ext = file.originalname.toLowerCase().slice(file.originalname.lastIndexOf('.'));
+  if (allowedTypes.includes(ext)) cb(null, true);
+  else cb(new Error("Unsupported file type"), false);
 };
 
 const upload = multer({ storage, fileFilter });

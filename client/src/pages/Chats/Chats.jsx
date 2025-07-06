@@ -1,36 +1,28 @@
 import React, { useState, useRef, useEffect } from "react";
-import {
-  Box,
-  Typography,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  Avatar,
-  Divider,
-  Paper,
-  TextField,
-  IconButton,
-  useTheme,
-  useMediaQuery,
-} from "@mui/material";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import SendIcon from "@mui/icons-material/Send";
+import { Box, IconButton, useTheme, useMediaQuery, Fab } from "@mui/material";
+import MenuIcon from "@mui/icons-material/Menu";
 import chats_bg from "../../assets/chats_bg.jpg";
 import { useAppContext } from "../../context/AppContext";
+import Sidebar from "./Sidebar";
+import ChatContainer from "./ChatContainer";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function ChatsPage() {
-  const { societyId, userId, userProfile, axios } = useAppContext();
+  const { societyId, userId, userProfile, axios, socket, token } =
+    useAppContext();
+  const { socket: socketRef, setMessageHandler } = useAppContext();
+
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const messagesEndRef = useRef(null);
 
   const [members, setMembers] = useState([]);
-  const [chats, setChats] = useState({}); // { memberId: [{ sender, text }] }
+  const [chats, setChats] = useState({});
   const [selectedChatId, setSelectedChatId] = useState(null);
   const [newMessage, setNewMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [showSidebar, setShowSidebar] = useState(false);
 
   const selectedChat = selectedChatId ? chats[selectedChatId] || [] : [];
 
@@ -50,6 +42,8 @@ export default function ChatsPage() {
 
     setNewMessage("");
 
+    socket?.emit("send message", message);
+
     try {
       await axios.post("/api/chats/send", message);
     } catch (err) {
@@ -62,7 +56,16 @@ export default function ChatsPage() {
   useEffect(() => {
     const fetchMembers = async () => {
       try {
-        const { data } = await axios.get(`/api/users/society/${societyId}`);
+        console.log("🟡 Fetching members for:", societyId);
+        const { data } = await axios.get(
+          `/api/users/society/${societyId}/users`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        console.log("✅ Members response:", data);
         if (data.success) {
           const filtered = data.users.filter((u) => u._id !== userId);
           setMembers(filtered);
@@ -72,42 +75,81 @@ export default function ChatsPage() {
       }
     };
 
-    const fetchChats = async () => {
-      try {
-        const { data } = await axios.get("/api/chats/me");
-        if (data.success) {
-          const grouped = {};
-          data.messages.forEach((msg) => {
-            const otherId = msg.sender === userId ? msg.receiver : msg.sender;
-            if (!grouped[otherId]) grouped[otherId] = [];
-            grouped[otherId].push(msg);
-          });
-          setChats(grouped);
-        }
-      } catch (err) {
-        console.error("Fetch chats error:", err);
-      }
-    };
-
-    fetchMembers();
-    fetchChats();
+    if (societyId && userId) {
+      fetchMembers();
+    }
+    // console.log("Society ID:", societyId);
   }, [societyId, userId]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [selectedChat]);
+    if (socketRef?.current && userId) {
+      socketRef.current.emit("setup", userId);
+
+      socketRef.current.on("receive message", (msg) => {
+        const otherId = msg.sender === userId ? msg.receiver : msg.sender;
+        setChats((prev) => ({
+          ...prev,
+          [otherId]: [...(prev[otherId] || []), msg],
+        }));
+      });
+    }
+
+    console.log("🔎 userId:", userId, typeof userId);
+
+    return () => {
+      socketRef?.current?.off("receive message");
+    };
+  }, [socketRef, userId]);
+  useEffect(() => {
+    const fetchMessages = async () => {
+      if (!selectedChatId || !userId) return;
+
+      try {
+        const { data } = await axios.get(
+          `/api/users/chats/${userId}/${selectedChatId}`
+        );
+
+        if (data.success) {
+          setChats((prev) => ({
+            ...prev,
+            [selectedChatId]: data.messages,
+          }));
+        }
+      } catch (err) {
+        console.error("❌ Failed to fetch chat history:", err);
+      }
+    };
+
+    fetchMessages();
+  }, [selectedChatId, userId]);
+
+  useEffect(() => {
+    const handleIncomingMessage = (msg) => {
+      const otherId = msg.sender === userId ? msg.receiver : msg.sender;
+      setChats((prev) => ({
+        ...prev,
+        [otherId]: [...(prev[otherId] || []), msg],
+      }));
+    };
+
+    setMessageHandler(handleIncomingMessage);
+
+    return () => {
+      // clear on unmount to avoid memory leak
+      setMessageHandler(null);
+    };
+  }, [userId]);
 
   return (
     <Box
       display="flex"
       flexDirection={isMobile ? "column" : "row"}
       height={isMobile ? "100%" : "92vh"}
+      position="relative"
+      overflow="hidden"
+      zIndex={1}
       bgcolor={theme.palette.background.default}
       sx={{
-        m: 0,
-        position: "relative",
-        zIndex: 1,
-        overflow: "hidden",
         "&::before": {
           content: '""',
           position: "fixed",
@@ -136,155 +178,64 @@ export default function ChatsPage() {
         }),
       }}
     >
-      {(!isMobile || !selectedChatId) && (
-        <Box
-          width={isMobile ? "100%" : "30%"}
-          borderRight={isMobile ? "none" : `1px solid ${theme.palette.divider}`}
-          bgcolor={isDark ? "#272727" : "#f5f5f5"}
-          sx={{ color: isDark ? "#f5f5ff" : "" }}
+      {isMobile && !selectedChatId && (
+        <Fab
+          size="small"
+          onClick={() => setShowSidebar((prev) => !prev)}
+          sx={{
+            position: "absolute",
+            top: 10,
+            left: 10,
+            zIndex: 10,
+            bgcolor: theme.palette.primary.main,
+            color: theme.palette.primary.contrastText,
+            "&:hover": { bgcolor: theme.palette.primary.dark },
+          }}
         >
-          <Typography variant="h6" px={2.5} py={1.5} fontWeight={700}>
-            Conversations
-          </Typography>
-          <Divider />
-          <Box px={2.5} py={1}>
-            <TextField
-              fullWidth
-              variant="outlined"
-              size="small"
-              placeholder="Search members..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </Box>
-
-          <List>
-            {members
-              .filter((m) =>
-                m.name.toLowerCase().includes(searchTerm.toLowerCase())
-              )
-              .map((member) => (
-                <ListItem
-                  button
-                  key={member._id}
-                  selected={selectedChatId === member._id}
-                  onClick={() => setSelectedChatId(member._id)}
-                  sx={{
-                    cursor: "pointer",
-                    borderRadius: 2,
-                    mb: 1,
-                    bgcolor:
-                      selectedChatId === member._id
-                        ? theme.palette.action.selected
-                        : "transparent",
-                    "&:hover": {
-                      backgroundColor: theme.palette.action.hover,
-                    },
-                  }}
-                >
-                  <ListItemAvatar>
-                    <Avatar src={member.avatar || undefined}>
-                      {member.name[0]}
-                    </Avatar>
-                  </ListItemAvatar>
-                  <ListItemText primary={member.name} />
-                </ListItem>
-              ))}
-          </List>
-        </Box>
+          <MenuIcon />
+        </Fab>
       )}
 
-      {(!isMobile || selectedChatId !== null) && (
-        <Box
-          flex={1}
-          p={3}
-          display="flex"
-          flexDirection="column"
-          bgcolor={theme.palette.background.default}
-          sx={{ flex: 1, minWidth: 0, color: isDark ? "#f5f5ff" : "" }}
-        >
-          {isMobile && selectedChatId && (
-            <Box display="flex" alignItems="center" mb={2}>
-              <IconButton onClick={handleBack} sx={{ mr: 1 }}>
-                <ArrowBackIcon />
-              </IconButton>
-              <Typography variant="h6" fontWeight={600}>
-                {members.find((m) => m._id === selectedChatId)?.name || "Chat"}
-              </Typography>
-            </Box>
-          )}
-
-          {!isMobile && selectedChatId && (
-            <Typography variant="h6" fontWeight={600} mb={2}>
-              {members.find((m) => m._id === selectedChatId)?.name || "Chat"}
-            </Typography>
-          )}
-
-          <Paper
-            elevation={2}
-            sx={{
-              flex: 1,
-              p: 2,
-              mb: 2,
-              overflowY: "auto",
-              overflowX: "auto",
-              backgroundColor: isDark ? "#1e1e1e" : "#fdfdfd",
-              borderRadius: 2,
-              scrollbarWidth: "none",
-              "&::-webkit-scrollbar": { display: "none" },
-            }}
+      {/* Sidebar */}
+      <AnimatePresence>
+        {(!isMobile || showSidebar) && (
+          <motion.div
+            key="sidebar"
+            initial={{ y: -200, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -200, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            style={{ width: isMobile ? "100%" : "30%" }}
           >
-            {selectedChat.map((msg, idx) => {
-              const isYou = msg.sender === userId;
-              return (
-                <Box
-                  key={idx}
-                  display="flex"
-                  justifyContent={isYou ? "flex-end" : "flex-start"}
-                  mb={1}
-                >
-                  <Box
-                    px={2}
-                    py={1}
-                    maxWidth="75%"
-                    borderRadius={2}
-                    bgcolor={isYou ? "#f5f5f5" : "#000"}
-                    sx={{
-                      color: isYou ? "#000" : "#f5f5ff",
-                      wordBreak: "break-word",
-                    }}
-                  >
-                    <Typography variant="body2">{msg.text}</Typography>
-                  </Box>
-                </Box>
-              );
-            })}
-            <div ref={messagesEndRef} />
-          </Paper>
-
-          <Box display="flex" gap={1}>
-            <TextField
-              fullWidth
-              placeholder="Type your message..."
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              size="small"
-              variant="outlined"
-            />
-            <IconButton
-              color="primary"
-              onClick={handleSend}
-              sx={{
-                backgroundColor: theme.palette.primary.main,
-                color: theme.palette.primary.contrastText,
-                "&:hover": { backgroundColor: theme.palette.primary.dark },
+            <Sidebar
+              members={members}
+              selectedChatId={selectedChatId}
+              setSelectedChatId={(id) => {
+                setSelectedChatId(id);
+                setShowSidebar(false); // auto close on mobile
               }}
-            >
-              <SendIcon />
-            </IconButton>
-          </Box>
-        </Box>
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              isMobile={isMobile}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Chat container */}
+      {(!isMobile || selectedChatId) && (
+        <ChatContainer
+          isMobile={isMobile}
+          selectedChatId={selectedChatId}
+          members={members}
+          selectedChat={selectedChat}
+          userId={userId}
+          newMessage={newMessage}
+          setNewMessage={setNewMessage}
+          handleSend={handleSend}
+          handleBack={handleBack}
+          setChats={setChats}
+        />
       )}
     </Box>
   );

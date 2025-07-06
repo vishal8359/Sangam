@@ -47,27 +47,34 @@ export default function EventPage() {
   }, []);
 
   useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        const res = await axios.get("/api/users/events", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const fetchedEvents = res.data.events;
-        fetchedEvents.forEach((ev) => {
-          console.log("🆔 ev.createdBy:", ev.createdBy); // Could be ObjectId or populated object
-          console.log("🔐 user._id:", user?._id); // Should be a string or ObjectId
-          console.log(
-            "Match:",
-            ev.createdBy?.toString() === user?._id?.toString()
-          );
-        });
-        setEvents(res.data.events);
-      } catch (err) {
-        console.error("Failed to load events", err);
-      }
-    };
-    if (token) fetchEvents();
-  }, [token]);
+  const fetchEvents = async () => {
+    if (!token || !user || !user._id) return;
+
+    try {
+      const res = await axios.get("/api/users/events", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const fetchedEvents = res.data.events || [];
+
+      console.log("📦 Events from server:", fetchedEvents);
+      console.log("👤 Current user:", user);
+
+      fetchedEvents.forEach((ev) => {
+        console.log("🆔 ev.createdBy:", ev.createdBy);
+        console.log("🔐 user._id:", user._id);
+        console.log("🎯 Match:", ev.createdBy?.toString() === user._id?.toString());
+      });
+
+      setEvents(fetchedEvents);
+    } catch (err) {
+      console.error("❌ Failed to load events:", err);
+    }
+  };
+
+  fetchEvents();
+}, [token, user]); // ✅ Only runs when user is loaded
+
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;

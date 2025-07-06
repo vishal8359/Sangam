@@ -1,6 +1,8 @@
 // server.js
-import cookieParser from 'cookie-parser';
 import express from "express";
+import http from "http"; // 🆕 needed for socket
+import { Server as SocketIOServer } from "socket.io";
+import cookieParser from "cookie-parser";
 import cors from "cors";
 import dotenv from "dotenv";
 import connectDB from "./Configs/db.js";
@@ -13,30 +15,64 @@ await connectDB();
 await connectCloudinary();
 
 const app = express();
+const server = http.createServer(app); // 👈 create server for socket.io
 
-// ✅ Secure CORS configuration
+// Secure CORS configuration
 const allowedOrigins = ["http://localhost:5173"];
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true, // ✅ Required for cookies/auth headers
-  })
-);
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+};
 
-// Middlewares
+app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(express.json());
 
-// Routes
+// API Routes
 app.use("/api/users", userRoutes);
 app.use("/api/admin", adminRoutes);
 
+// Setup Socket.IO
+const io = new SocketIOServer(server, {
+  cors: corsOptions,
+});
+
+const onlineUsers = new Map();
+
+io.on("connection", (socket) => {
+  console.log("🔌 Socket connected:", socket.id);
+
+  socket.on("setup", (userId) => {
+    if (!userId) return;
+    socket.join(userId);
+    socket.data.userId = userId;
+    onlineUsers.set(userId, socket.id);
+    console.log(`✅ User ${userId} joined room`);
+  });
+
+  socket.on("send message", (msg) => {
+    const { receiver } = msg;
+    if (receiver) {
+      io.to(receiver).emit("receive message", msg);
+    }
+  });
+
+  socket.on("disconnect", () => {
+    const userId = socket.data.userId;
+    if (userId) {
+      onlineUsers.delete(userId);
+      console.log(`❌ User ${userId} disconnected`);
+    } else {
+      console.log("❌ Unknown socket disconnected:", socket.id);
+    }
+  });
+});
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

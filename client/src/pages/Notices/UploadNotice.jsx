@@ -17,24 +17,24 @@ const UploadNoticePage = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const navigate = useNavigate();
-  const { addNotice } = useAppContext();
+  const { addNotice, societyId, token, axios } = useAppContext();
 
-  // Notice type options
   const noticeTypes = ["Maintenance", "Event", "Emergency", "Meeting", "Other"];
 
   const [form, setForm] = useState({
     title: "",
     type: "",
     description: "",
-    postedBy: "Admin",
   });
+
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const { title, type, description } = form;
 
@@ -43,14 +43,35 @@ const UploadNoticePage = () => {
       return;
     }
 
-    const newNotice = {
-      id: Date.now(),
-      ...form,
-      date: new Date().toISOString().split("T")[0],
-    };
+    try {
+      setLoading(true);
+      const { data } = await axios.post(
+        "/api/admin/notices/create",
+        {
+          title,
+          type,
+          description,
+          society_id: societyId,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-    addNotice(newNotice);
-    navigate("/my-society/notices");
+      if (data?.notice) {
+        addNotice(data.notice);
+        navigate("/my-society/notices");
+      } else {
+        alert("Failed to upload notice.");
+      }
+    } catch (err) {
+      console.error("❌ Error posting notice:", err.response?.data || err.message);
+      alert(err.response?.data?.msg || "Server error while posting notice.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -67,7 +88,6 @@ const UploadNoticePage = () => {
           flexDirection="column"
           gap={3}
         >
-          {/* Title */}
           <TextField
             label="Notice Title"
             name="title"
@@ -77,16 +97,6 @@ const UploadNoticePage = () => {
             fullWidth
           />
 
-          {/* Posted By */}
-          <TextField
-            label="Posted By"
-            name="postedBy"
-            value={form.postedBy}
-            disabled
-            fullWidth
-          />
-
-          {/* Notice Type */}
           <TextField
             select
             label="Notice Type"
@@ -103,7 +113,6 @@ const UploadNoticePage = () => {
             ))}
           </TextField>
 
-          {/* Description */}
           <TextField
             label="Notice Description"
             name="description"
@@ -115,9 +124,8 @@ const UploadNoticePage = () => {
             fullWidth
           />
 
-          {/* Submit */}
-          <Button variant="contained" type="submit" size="large">
-            Upload Notice
+          <Button variant="contained" type="submit" size="large" disabled={loading}>
+            {loading ? "Uploading..." : "Upload Notice"}
           </Button>
         </Box>
       </Paper>

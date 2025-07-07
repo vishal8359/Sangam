@@ -13,6 +13,7 @@ const messageSchema = new mongoose.Schema({
   fileUrl: { type: String },
   fileType: { type: String },
   createdAt: { type: Date, default: Date.now },
+  seen : {type: Boolean, default : false},
 });
 
 export default mongoose.model("Message", messageSchema);

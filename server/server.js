@@ -9,6 +9,7 @@ import connectDB from "./Configs/db.js";
 import connectCloudinary from "./Configs/cloudinary.js";
 import userRoutes from "./Routes/userRoute.js";
 import adminRoutes from "./Routes/adminRoutes.js";
+import Chats from "./Models/Chats.js";
 
 dotenv.config();
 await connectDB();
@@ -61,6 +62,21 @@ io.on("connection", (socket) => {
     const { receiver } = msg;
     if (receiver) {
       io.to(receiver).emit("receive message", msg);
+    }
+  });
+  socket.on("mark as seen", async ({ userId, peerId }) => {
+    console.log("🟢 Marking messages seen:", { userId, peerId });
+
+    try {
+      await Chats.updateMany(
+        { sender: peerId, receiver: userId, seen: false },
+        { $set: { seen: true } }
+      );
+
+      // Optional: emit back to sender to update seen indicator
+      io.to(peerId.toString()).emit("messages seen", { from: userId });
+    } catch (err) {
+      console.error("Error marking messages as seen:", err);
     }
   });
 

@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
-
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 import InsertEmoticonIcon from "@mui/icons-material/InsertEmoticon";
+import DoneAllIcon from "@mui/icons-material/DoneAll";
+import chat_bg from "../../assets/chats_bg.jpg";
 import {
   Box,
   Typography,
@@ -33,24 +35,108 @@ export default function ChatContainer({
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const emojiPickerRef = useRef(null);
   const fileInputRef = useRef();
-
+  const [showScrollButton, setShowScrollButton] = useState(false);
   const selectedMember = members.find((m) => m._id === selectedChatId);
   const [openImage, setOpenImage] = useState(null);
+  const chatBoxRef = useRef(null);
+  const lastMessageRef = useRef(null);
+  const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(true);
 
   function isEmojiOnlyMessage(text) {
     const emojiRegex = /^[\p{Emoji}\s]+$/u;
     return emojiRegex.test(text.trim());
   }
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      handleSend(file); // Make sure your `handleSend` accepts file input
+  const formatTime = (timestamp) => {
+    try {
+      const date = new Date(timestamp);
+      return date.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
+    } catch {
+      return "--:--";
     }
   };
 
-  useEffect(() => {
+  const formatDate = (timestamp) => {
+    try {
+      const date = new Date(timestamp);
+      const today = new Date();
+      const yesterday = new Date();
+      yesterday.setDate(today.getDate() - 1);
+
+      if (date.toDateString() === today.toDateString()) return "Today";
+      if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
+
+      return date.toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      });
+    } catch {
+      return "";
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      handleSend(file);
+    }
+  };
+  const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const downloadImage = async (url) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = blobUrl;
+
+      // Optional: Give a default filename
+      link.download = "chat-image.jpg";
+
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error("Download failed:", error);
+    }
+  };
+  useEffect(() => {
+    if (isAutoScrollEnabled) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [selectedChat]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const el = chatBoxRef.current;
+      if (!el) return;
+
+      const distanceFromBottom =
+        el.scrollHeight - el.scrollTop - el.clientHeight;
+
+      // user is near bottom
+      const atBottom = distanceFromBottom < 100;
+
+      setShowScrollButton(!atBottom);
+      setIsAutoScrollEnabled(atBottom); // ✅ only auto-scroll if at bottom
+    };
+
+    const el = chatBoxRef.current;
+    if (el) el.addEventListener("scroll", handleScroll);
+
+    return () => {
+      if (el) el.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -71,41 +157,100 @@ export default function ChatContainer({
   useEffect(() => {
     if (!socket.current) return;
 
-    const handleReceive = (msg) => {
-      // If this is a local echo or already exists, skip
-      if (msg.local || String(msg.sender) === String(userId)) return;
-
-      const otherUserId =
-        String(msg.sender) === String(userId) ? msg.receiver : msg.sender;
+    const handleMessagesSeen = ({ from }) => {
+      console.log("📩 Seen ack from:", from);
 
       setChats((prev) => {
-        const existingMsgs = prev[otherUserId] || [];
-
-        // Optional: avoid true duplicates (based on text/timestamp/etc)
-        const isDuplicate = existingMsgs.some(
-          (m) => m.text === msg.text && String(m.sender) === String(msg.sender)
-        );
-
-        if (isDuplicate) return prev;
-
-        return {
-          ...prev,
-          [otherUserId]: [...existingMsgs, msg],
-        };
+        const updated = { ...prev };
+        if (updated[from]) {
+          updated[from] = updated[from].map((msg) =>
+            String(msg.sender) === String(userId) ? { ...msg, seen: true } : msg
+          );
+        }
+        return updated;
       });
     };
 
+    socket.current.on("messages seen", handleMessagesSeen);
+
     return () => {
-      socket.current.off("receive message", handleReceive);
+      socket.current.off("messages seen", handleMessagesSeen);
     };
   }, [socket, userId, setChats]);
+
+  useEffect(() => {
+    const onFocus = () => {
+      if (selectedChatId && socket.current) {
+        socket.current.emit("mark as seen", {
+          userId,
+          peerId: selectedChatId,
+        });
+      }
+    };
+
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [selectedChatId, socket, userId]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && selectedChatId && socket.current) {
+          socket.current.emit("mark as seen", {
+            userId,
+            peerId: selectedChatId,
+          });
+          console.log("👁️ Last message visible, marked as seen.");
+        }
+      },
+      {
+        root: chatBoxRef.current,
+        threshold: 0.8, // 80% of element should be visible
+      }
+    );
+
+    if (lastMessageRef.current) {
+      observer.observe(lastMessageRef.current);
+    }
+
+    return () => {
+      if (lastMessageRef.current) {
+        observer.unobserve(lastMessageRef.current);
+      }
+    };
+  }, [selectedChatId, userId, socket, selectedChat]);
+
+  useEffect(() => {
+    if (!socket.current) return;
+
+    socket.current.on("messages seen", ({ from }) => {
+      setChats((prev) => {
+        const updated = { ...prev };
+        if (updated[from]) {
+          updated[from] = updated[from].map((msg) =>
+            String(msg.sender) === String(userId) ? { ...msg, seen: true } : msg
+          );
+        }
+        return updated;
+      });
+    });
+
+    return () => {
+      socket.current.off("messages seen");
+    };
+  }, [socket, userId]);
 
   const handleSend = async (file = null) => {
     if (!selectedChatId) return;
 
     const societyId = user.joined_society || user.societyId;
 
-    if (file) {
+    // If both message is empty and no file, return early
+    const trimmed = newMessage.trim();
+    if (!file && !trimmed) return;
+
+    // Handle FILE Upload
+    if (file instanceof File) {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("sender", user._id);
@@ -121,11 +266,11 @@ export default function ChatContainer({
         });
 
         const msg = {
-          ...res.data, // returned { sender, receiver, text, fileUrl, etc. }
+          ...res.data,
           local: true,
+          createdAt: res.data.createdAt || new Date().toISOString(),
         };
 
-        // Optimistic UI update
         setChats((prev) => ({
           ...prev,
           [selectedChatId]: [...(prev[selectedChatId] || []), msg],
@@ -139,16 +284,14 @@ export default function ChatContainer({
       return;
     }
 
-    // Handle text messages
-    const trimmed = newMessage.trim();
-    if (!trimmed) return;
-
+    // Handle TEXT messages
     const msg = {
       sender: user._id,
       receiver: selectedChatId,
       text: trimmed,
       societyId,
       local: true,
+      createdAt: new Date().toISOString(),
     };
 
     setChats((prev) => ({
@@ -168,14 +311,15 @@ export default function ChatContainer({
 
   return (
     <Box
-      flex={1}
-      p={3}
       display="flex"
       flexDirection="column"
       bgcolor={theme.palette.background.default}
       sx={{
-        flex: 1,
-        minWidth: 0,
+        width: "100vw",
+        height: "92vh",
+        maxHeight: "100vh",
+        overflow: "hidden",
+        padding: isMobile ? 1 : 3,
         color: isDark ? "#f5f5ff" : undefined,
       }}
     >
@@ -193,101 +337,185 @@ export default function ChatContainer({
       )}
 
       <Paper
+        ref={chatBoxRef}
         elevation={2}
         sx={{
+          position: "relative",
           flex: 1,
-          p: 2,
+          p: 0,
           mb: 2,
-          overflowY: "auto",
-          overflowX: "hidden",
-          backgroundColor: isDark ? "#1e1e1e" : "#fdfdfd",
+          overflow: "hidden",
           borderRadius: 2,
-          scrollbarWidth: "none",
-          "&::-webkit-scrollbar": { display: "none" },
         }}
       >
-        {selectedChat.map((msg, idx) => {
-          const isYou = String(msg.sender) === String(userId);
-          return (
-            <Box
-              key={idx}
-              display="flex"
-              justifyContent={isYou ? "flex-end" : "flex-start"}
-              mb={1}
-            >
-              <Box
-                px={msg.fileUrl || isEmojiOnlyMessage(msg.text) ? 0 : 2}
-                py={msg.fileUrl || isEmojiOnlyMessage(msg.text) ? 0 : 1}
-                maxWidth="75%"
-                borderRadius={
-                  msg.fileUrl || isEmojiOnlyMessage(msg.text) ? 0 : 2
-                }
-                bgcolor={
-                  msg.fileUrl
-                    ? "transparent"
-                    : isEmojiOnlyMessage(msg.text)
-                      ? "transparent"
-                      : isYou
-                        ? "#f5f5f5"
-                        : "#000"
-                }
-                sx={{
-                  color:
-                    msg.fileUrl || isEmojiOnlyMessage(msg.text)
-                      ? undefined
-                      : isYou
-                        ? "#000"
-                        : "#f5f5ff",
-                  wordBreak: "break-word",
-                }}
-              >
-                {msg.fileUrl ? (
-                  msg.fileType?.startsWith("image") ? (
-                    <img
-                      src={msg.fileUrl}
-                      alt="uploaded"
-                      style={{
-                        cursor: "pointer",
-                        height: "100%",
-                        maxWidth: "100px",
-                        borderRadius: "8px",
-                      }}
-                      onClick={() => setOpenImage(msg.fileUrl)}
-                    />
-                  ) : (
-                    <a
-                      href={msg.fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        color: isYou ? "#000" : "#f5f5ff",
-                        textDecoration: "underline",
+        <Box
+          sx={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundImage: `url(${chat_bg})`,
+            backgroundSize: "cover",
+            backgroundRepeat: "repeat-y",
+            backgroundPosition: "center",
+            filter: "blur(1.5px) opacity(0.1)",
+            zIndex: 0,
+          }}
+        />
+        <Box
+          ref={chatBoxRef}
+          sx={{
+            position: "relative",
+            zIndex: 1,
+            height: "100%",
+            overflowY: "auto",
+            p: 2,
+            scrollbarWidth: "none",
+            "&::-webkit-scrollbar": { display: "none" },
+          }}
+        >
+          <Box position="relative" zIndex={1} width="100%">
+            {selectedChat.reduce((acc, msg, idx, arr) => {
+              console.log("msg:", msg);
+              const isYou = String(msg.sender) === String(userId);
+              const msgDate = formatDate(
+                msg.createdAt || msg.timestamp || msg.date
+              );
+              const prevMsg = arr[idx - 1];
+              const prevDate = prevMsg
+                ? formatDate(prevMsg.createdAt || prevMsg.date)
+                : null;
+
+              // Add date header if it's first message or date changed
+              if (idx === 0 || msgDate !== prevDate) {
+                acc.push(
+                  <Box key={`date-${idx}`} textAlign="center" my={2}>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        backgroundColor: "#ccc",
+                        px: 2,
+                        py: 0.5,
+                        borderRadius: 2,
+                        color: "#333",
+                        display: "inline-block",
                       }}
                     >
-                      📎 View File
-                    </a>
-                  )
-                ) : (
-                  <Typography
-                    variant={isEmojiOnlyMessage(msg.text) ? "h3" : "body2"}
+                      {msgDate}
+                    </Typography>
+                  </Box>
+                );
+              }
+
+              acc.push(
+                <Box
+                  key={idx}
+                  display="flex"
+                  justifyContent={isYou ? "flex-end" : "flex-start"}
+                  mb={1}
+                >
+                  <Box
+                    px={1.7}
+                    py={1}
+                    maxWidth="75%"
+                    borderRadius={2}
+                    bgcolor={isYou ? "#f5f5f5" : "#000"}
                     sx={{
-                      fontSize: isEmojiOnlyMessage(msg.text)
-                        ? "2.5rem"
-                        : undefined,
-                      background: "transparent",
-                      padding: 0,
-                      lineHeight: 1.2,
+                      color: isYou ? "#000" : "#f5f5ff",
+                      wordBreak: "break-word",
                     }}
                   >
-                    {msg.text}
-                  </Typography>
-                )}
-              </Box>
-            </Box>
-          );
-        })}
-        <div ref={messagesEndRef} />
+                    {msg.fileUrl ? (
+                      msg.fileType?.startsWith("image") ? (
+                        <img
+                          src={msg.fileUrl}
+                          alt="uploaded"
+                          style={{
+                            maxWidth: "200px",
+                            borderRadius: "8px",
+                            marginBottom: 4,
+                          }}
+                        />
+                      ) : (
+                        <a
+                          href={msg.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            color: isYou ? "#000" : "#f5f5ff",
+                            textDecoration: "underline",
+                          }}
+                        >
+                          📎 View File
+                        </a>
+                      )
+                    ) : (
+                      <Typography variant="body2">{msg.text}</Typography>
+                    )}
+
+                    {/* TIME */}
+                    <Box
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="flex-end"
+                      gap={0.5}
+                      mt={0.5}
+                    >
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          fontSize: isMobile ? "0.5rem" : "0.6rem",
+                          color: isYou ? "#333" : "#ccc",
+                        }}
+                      >
+                        {formatTime(msg.createdAt || msg.timestamp)}
+                      </Typography>
+
+                      {isYou && (
+                        <DoneAllIcon
+                          fontSize="small"
+                          sx={{
+                            color: msg.seen ? "blue" : "gray",
+                            verticalAlign: "middle",
+                            fontSize: "1rem",
+                          }}
+                        />
+                      )}
+                    </Box>
+                  </Box>
+                </Box>
+              );
+
+              return acc;
+            }, [])}
+
+            <div
+              ref={(el) => {
+                messagesEndRef.current = el;
+                lastMessageRef.current = el;
+              }}
+            />
+          </Box>
+        </Box>
       </Paper>
+      {showScrollButton && (
+        <Box position="absolute" right={24} bottom={100} zIndex={10}>
+          <IconButton
+            onClick={scrollToBottom}
+            sx={{
+              backgroundColor: theme.palette.primary.main,
+              color: "#fff",
+              "&:hover": {
+                backgroundColor: theme.palette.primary.dark,
+              },
+              boxShadow: 3,
+            }}
+          >
+            <KeyboardArrowDownIcon />
+          </IconButton>
+        </Box>
+      )}
 
       <Box position="relative">
         <Box display="flex" gap={1} alignItems="center">
@@ -355,7 +583,7 @@ export default function ChatContainer({
           <Box
             position="fixed"
             top={0}
-            left={0}
+            left={30}
             width="100vw"
             height="100vh"
             zIndex={1300}
@@ -371,17 +599,19 @@ export default function ChatContainer({
                 src={openImage}
                 alt="Full view"
                 style={{
-                  maxHeight: "90vh",
-                  maxWidth: "90vw",
+                  maxHeight: "80vh",
+                  maxWidth: "80vw",
                   objectFit: "contain",
                   borderRadius: "10px",
                 }}
               />
 
               {/* Download Button */}
-              <a
-                href={openImage}
-                download
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  downloadImage(openImage);
+                }}
                 style={{
                   position: "absolute",
                   top: 8,
@@ -393,12 +623,13 @@ export default function ChatContainer({
                   color: "#000",
                   fontWeight: "bold",
                   fontSize: "18px",
+                  border: "none",
+                  cursor: "pointer",
                 }}
-                onClick={(e) => e.stopPropagation()}
                 title="Download"
               >
                 ⬇
-              </a>
+              </button>
             </Box>
           </Box>
         )}

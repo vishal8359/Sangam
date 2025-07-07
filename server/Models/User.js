@@ -20,6 +20,13 @@ const userSchema = new mongoose.Schema(
       ref: "Home",
       required: true,
     },
+    isOnline: {
+      type: Boolean,
+      default: false,
+    },
+    lastSeen: {
+      type: Date,
+    },
 
     roles: {
       type: [
@@ -54,6 +61,7 @@ const userSchema = new mongoose.Schema(
     otp_expiry: Date,
     is_verified: { type: Boolean, default: false },
   },
+
   { timestamps: true }
 );
 

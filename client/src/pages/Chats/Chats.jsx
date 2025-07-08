@@ -230,6 +230,7 @@ export default function ChatsPage() {
           members={members}
           selectedChat={selectedChat}
           userId={userId}
+          chats={chats}
           newMessage={newMessage}
           setNewMessage={setNewMessage}
           handleSend={handleSend}

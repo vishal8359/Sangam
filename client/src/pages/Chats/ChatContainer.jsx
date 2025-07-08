@@ -6,6 +6,9 @@ import Picker from "@emoji-mart/react";
 import InsertEmoticonIcon from "@mui/icons-material/InsertEmoticon";
 import DoneAllIcon from "@mui/icons-material/DoneAll";
 import chat_bg from "../../assets/chats_bg.jpg";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+
 import {
   Box,
   Typography,
@@ -17,12 +20,14 @@ import {
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import SendIcon from "@mui/icons-material/Send";
 import { useAppContext } from "../../context/AppContext";
+import Fab from "@mui/material/Fab";
 
 export default function ChatContainer({
   isMobile,
   selectedChatId,
   members,
   selectedChat,
+  chats,
   newMessage,
   setNewMessage,
   setChats,
@@ -31,7 +36,15 @@ export default function ChatContainer({
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const messagesEndRef = useRef(null);
-  const { user, userId, socket, axios, token } = useAppContext();
+  const {
+    user,
+    userId,
+    socket,
+    axios,
+    token,
+    onlineStatus,
+    setMessageHandler,
+  } = useAppContext();
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const emojiPickerRef = useRef(null);
   const fileInputRef = useRef();
@@ -41,11 +54,15 @@ export default function ChatContainer({
   const chatBoxRef = useRef(null);
   const lastMessageRef = useRef(null);
   const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(true);
+  const [contextMenu, setContextMenu] = useState(null); // stores menu position
+  const [selectedMsg, setSelectedMsg] = useState(null);
+  const scrollRef = useRef(null);
+  const contextMenuRef = useRef(null);
 
-  function isEmojiOnlyMessage(text) {
-    const emojiRegex = /^[\p{Emoji}\s]+$/u;
-    return emojiRegex.test(text.trim());
-  }
+  // function isEmojiOnlyMessage(text) {
+  //   const emojiRegex = /^[\p{Emoji}\s]+$/u;
+  //   return emojiRegex.test(text.trim());
+  // }
   const formatTime = (timestamp) => {
     try {
       const date = new Date(timestamp);
@@ -117,26 +134,44 @@ export default function ChatContainer({
 
   useEffect(() => {
     const handleScroll = () => {
-      const el = chatBoxRef.current;
+      const el = scrollRef.current;
       if (!el) return;
 
       const distanceFromBottom =
         el.scrollHeight - el.scrollTop - el.clientHeight;
-
-      // user is near bottom
       const atBottom = distanceFromBottom < 100;
 
       setShowScrollButton(!atBottom);
-      setIsAutoScrollEnabled(atBottom); // ✅ only auto-scroll if at bottom
+      setIsAutoScrollEnabled(atBottom); // only auto-scroll if at bottom
     };
 
-    const el = chatBoxRef.current;
+    const el = scrollRef.current;
     if (el) el.addEventListener("scroll", handleScroll);
 
     return () => {
       if (el) el.removeEventListener("scroll", handleScroll);
     };
   }, []);
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        contextMenuRef.current &&
+        !contextMenuRef.current.contains(e.target)
+      ) {
+        setContextMenu(null);
+        setSelectedMsg(null);
+      }
+    };
+
+    if (contextMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [contextMenu]);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -193,37 +228,74 @@ export default function ChatContainer({
   }, [selectedChatId, socket, userId]);
 
   useEffect(() => {
+    if (!socket.current) return;
+
+    const handler = (msg) => {
+      setChats((prev) => {
+        const updated = { ...prev };
+        const chatId = msg.sender === userId ? msg.receiver : msg.sender;
+
+        updated[chatId] = [...(updated[chatId] || []), msg];
+        return updated;
+      });
+
+      // scroll to bottom if it's the current chat
+      if (
+        (msg.sender === selectedChatId || msg.receiver === selectedChatId) &&
+        isAutoScrollEnabled
+      ) {
+        setTimeout(() => scrollToBottom(), 100);
+      }
+    };
+
+    setMessageHandler(handler);
+
+    return () => setMessageHandler(null); // cleanup on unmount
+  }, [socket, userId, selectedChatId, isAutoScrollEnabled]);
+
+  useEffect(() => {
+    if (!lastMessageRef.current || !selectedChatId || !socket.current) return;
+
+    let hasMarkedSeen = false; // ensures emit happens once
+
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting && selectedChatId && socket.current) {
+        const lastMsg = chats[selectedChatId]?.at(-1);
+        const isLastFromOther =
+          lastMsg && String(lastMsg.sender) !== String(userId);
+
+        if (
+          entry.isIntersecting &&
+          isLastFromOther &&
+          !lastMsg?.seen &&
+          !hasMarkedSeen
+        ) {
           socket.current.emit("mark as seen", {
             userId,
             peerId: selectedChatId,
           });
           console.log("👁️ Last message visible, marked as seen.");
+          hasMarkedSeen = true;
         }
       },
       {
         root: chatBoxRef.current,
-        threshold: 0.8, // 80% of element should be visible
+        threshold: 0.9,
       }
     );
 
-    if (lastMessageRef.current) {
-      observer.observe(lastMessageRef.current);
-    }
+    observer.observe(lastMessageRef.current);
 
     return () => {
-      if (lastMessageRef.current) {
-        observer.unobserve(lastMessageRef.current);
-      }
+      observer.disconnect();
     };
-  }, [selectedChatId, userId, socket, selectedChat]);
+  }, [selectedChatId, userId, socket, chats[selectedChatId]]);
 
   useEffect(() => {
     if (!socket.current) return;
 
-    socket.current.on("messages seen", ({ from }) => {
+    // Seen handler
+    const handleMessagesSeen = ({ from }) => {
       setChats((prev) => {
         const updated = { ...prev };
         if (updated[from]) {
@@ -233,10 +305,31 @@ export default function ChatContainer({
         }
         return updated;
       });
-    });
+    };
+
+    // Delete message handler
+    const handleMessageDeleted = ({ messageId }) => {
+      setChats((prev) => {
+        const updated = { ...prev };
+
+        for (const chatId in updated) {
+          updated[chatId] = updated[chatId].filter(
+            (msg) => msg._id !== messageId
+          );
+        }
+
+        return updated;
+      });
+    };
+
+    socket.current.on("delete message", handleMessageDeleted);
+
+    socket.current.on("messages seen", handleMessagesSeen);
+    socket.current.on("delete message", handleMessageDeleted);
 
     return () => {
-      socket.current.off("messages seen");
+      socket.current.off("messages seen", handleMessagesSeen);
+      socket.current.off("delete message", handleMessageDeleted);
     };
   }, [socket, userId]);
 
@@ -309,6 +402,85 @@ export default function ChatContainer({
     }
   };
 
+  const handleDelete = async (type) => {
+    if (!selectedMsg || !selectedChatId) return;
+
+    if (type === "me") {
+      try {
+        // Backend call to mark message as deleted for this user
+        await axios.delete(`/api/users/chats/${selectedMsg._id}?for=self`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        // Update frontend
+        setChats((prev) => {
+          const updated = { ...prev };
+          updated[selectedChatId] = updated[selectedChatId]?.filter(
+            (msg) => msg._id !== selectedMsg._id
+          );
+          return updated;
+        });
+      } catch (err) {
+        console.error("❌ Failed to delete message for self:", err);
+      }
+
+      setContextMenu(null);
+      setSelectedMsg(null);
+      return;
+    }
+
+    if (type === "everyone") {
+      // Instantly remove from sender's UI
+      setChats((prev) => {
+        const updated = { ...prev };
+        updated[selectedChatId] = updated[selectedChatId]?.filter(
+          (msg) => msg._id !== selectedMsg._id
+        );
+        return updated;
+      });
+
+      // Emit socket to remove for receiver instantly
+      socket.current?.emit("delete message", {
+        messageId: selectedMsg._id,
+        receiver: selectedMsg.receiver,
+      });
+
+      //3. Make delete request in background
+      axios
+        .delete(`/api/users/chats/${selectedMsg._id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .catch((err) => {
+          console.error("❌ Backend delete failed:", err);
+        });
+
+      setContextMenu(null);
+      setSelectedMsg(null);
+    }
+  };
+
+  const formatLastSeen = (timestamp) => {
+    if (!timestamp) return "Unknown";
+
+    const date = new Date(timestamp);
+    const now = new Date();
+
+    const isToday = date.toDateString() === now.toDateString();
+
+    return isToday
+      ? `Last seen at ${date.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        })}`
+      : `Last seen on ${date.toLocaleDateString()} at ${date.toLocaleTimeString(
+          [],
+          {
+            hour: "2-digit",
+            minute: "2-digit",
+          }
+        )}`;
+  };
+
   return (
     <Box
       display="flex"
@@ -330,9 +502,39 @@ export default function ChatContainer({
               <ArrowBackIcon />
             </IconButton>
           )}
-          <Typography variant="h6" fontWeight={600}>
-            {selectedMember?.name || "Chat"}
-          </Typography>
+          <Box>
+            <Box display="flex" alignItems="center" gap={1}>
+              <Typography variant="h6" fontWeight={600}>
+                {selectedMember?.name || "Chat"}
+              </Typography>
+
+              {/* Online/offline dot */}
+              {selectedMember && onlineStatus[selectedMember._id]?.isOnline && (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: isDark ? "#90caf9" : "#1976d2",
+                    fontWeight: 100,
+                    mt: 0.5,
+                  }}
+                >
+                  Online
+                </Typography>
+              )}
+            </Box>
+
+            {/* Last seen text (only if offline) */}
+            {!onlineStatus[selectedMember?._id]?.isOnline &&
+              onlineStatus[selectedMember?._id]?.lastSeen && (
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ ml: 0.3, fontSize: "0.75rem" }}
+                >
+                  {formatLastSeen(onlineStatus[selectedMember._id].lastSeen)}
+                </Typography>
+              )}
+          </Box>
         </Box>
       )}
 
@@ -358,13 +560,23 @@ export default function ChatContainer({
             backgroundImage: `url(${chat_bg})`,
             backgroundSize: "cover",
             backgroundRepeat: "repeat-y",
-            backgroundPosition: "center",
+            backgroundPosition: "center 0",
+            animation: "scrollBg 100s linear infinite",
             filter: "blur(1.5px) opacity(0.1)",
             zIndex: 0,
+            "@keyframes scrollBg": {
+              from: {
+                backgroundPosition: "center 0",
+              },
+              to: {
+                backgroundPosition: "center -1000px",
+              },
+            },
           }}
         />
+
         <Box
-          ref={chatBoxRef}
+          ref={scrollRef}
           sx={{
             position: "relative",
             zIndex: 1,
@@ -376,8 +588,7 @@ export default function ChatContainer({
           }}
         >
           <Box position="relative" zIndex={1} width="100%">
-            {selectedChat.reduce((acc, msg, idx, arr) => {
-              console.log("msg:", msg);
+            {(chats[selectedChatId] || []).reduce((acc, msg, idx, arr) => {
               const isYou = String(msg.sender) === String(userId);
               const msgDate = formatDate(
                 msg.createdAt || msg.timestamp || msg.date
@@ -408,36 +619,79 @@ export default function ChatContainer({
                 );
               }
 
-              acc.push(
+              const baseMessage = (
                 <Box
                   key={idx}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setContextMenu({
+                      mouseX: e.clientX + 2,
+                      mouseY: e.clientY - 6,
+                    });
+                    setSelectedMsg(msg);
+                  }}
                   display="flex"
                   justifyContent={isYou ? "flex-end" : "flex-start"}
                   mb={1}
                 >
-                  <Box
-                    px={1.7}
-                    py={1}
-                    maxWidth="75%"
-                    borderRadius={2}
-                    bgcolor={isYou ? "#f5f5f5" : "#000"}
-                    sx={{
-                      color: isYou ? "#000" : "#f5f5ff",
-                      wordBreak: "break-word",
-                    }}
-                  >
-                    {msg.fileUrl ? (
-                      msg.fileType?.startsWith("image") ? (
-                        <img
-                          src={msg.fileUrl}
-                          alt="uploaded"
-                          style={{
-                            maxWidth: "200px",
-                            borderRadius: "8px",
-                            marginBottom: 4,
+                  {/* IMAGE-ONLY MESSAGES: No background container */}
+                  {msg.fileUrl && msg.fileType?.startsWith("image") ? (
+                    <Box>
+                      <img
+                        src={msg.fileUrl}
+                        alt="uploaded"
+                        onClick={() => setOpenImage(msg.fileUrl)}
+                        style={{
+                          maxWidth: "200px",
+                          borderRadius: "8px",
+                          marginBottom: 4,
+                          cursor: "pointer",
+                        }}
+                      />
+
+                      {/* TIME + SEEN below image */}
+                      <Box
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="flex-end"
+                        gap={0.5}
+                        mt={0.5}
+                      >
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            fontSize: isMobile ? "0.5rem" : "0.6rem",
+                            color: isYou ? "#333" : "#ccc",
                           }}
-                        />
-                      ) : (
+                        >
+                          {formatTime(msg.createdAt || msg.timestamp)}
+                        </Typography>
+                        {isYou && (
+                          <DoneAllIcon
+                            fontSize="small"
+                            sx={{
+                              color: msg.seen ? "blue" : "gray",
+                              verticalAlign: "middle",
+                              fontSize: "1rem",
+                            }}
+                          />
+                        )}
+                      </Box>
+                    </Box>
+                  ) : (
+                    // TEXT/FILE MESSAGES: With background
+                    <Box
+                      px={1.7}
+                      py={1}
+                      maxWidth="75%"
+                      borderRadius={2}
+                      bgcolor={isYou ? "#f5f5f5" : "#000"}
+                      sx={{
+                        color: isYou ? "#000" : "#f5f5ff",
+                        wordBreak: "break-word",
+                      }}
+                    >
+                      {msg.fileUrl ? (
                         <a
                           href={msg.fileUrl}
                           target="_blank"
@@ -449,44 +703,45 @@ export default function ChatContainer({
                         >
                           📎 View File
                         </a>
-                      )
-                    ) : (
-                      <Typography variant="body2">{msg.text}</Typography>
-                    )}
-
-                    {/* TIME */}
-                    <Box
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="flex-end"
-                      gap={0.5}
-                      mt={0.5}
-                    >
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          fontSize: isMobile ? "0.5rem" : "0.6rem",
-                          color: isYou ? "#333" : "#ccc",
-                        }}
-                      >
-                        {formatTime(msg.createdAt || msg.timestamp)}
-                      </Typography>
-
-                      {isYou && (
-                        <DoneAllIcon
-                          fontSize="small"
-                          sx={{
-                            color: msg.seen ? "blue" : "gray",
-                            verticalAlign: "middle",
-                            fontSize: "1rem",
-                          }}
-                        />
+                      ) : (
+                        <Typography variant="body2">{msg.text}</Typography>
                       )}
+
+                      {/* TIME + SEEN */}
+                      <Box
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="flex-end"
+                        gap={0.5}
+                        mt={0.5}
+                      >
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            fontSize: isMobile ? "0.5rem" : "0.6rem",
+                            color: isYou ? "#333" : "#ccc",
+                          }}
+                        >
+                          {formatTime(msg.createdAt || msg.timestamp)}
+                        </Typography>
+
+                        {isYou && (
+                          <DoneAllIcon
+                            fontSize="small"
+                            sx={{
+                              color: msg.seen ? "blue" : "gray",
+                              verticalAlign: "middle",
+                              fontSize: "1rem",
+                            }}
+                          />
+                        )}
+                      </Box>
                     </Box>
-                  </Box>
+                  )}
                 </Box>
               );
 
+              acc.push(baseMessage);
               return acc;
             }, [])}
 
@@ -498,24 +753,27 @@ export default function ChatContainer({
             />
           </Box>
         </Box>
-      </Paper>
-      {showScrollButton && (
-        <Box position="absolute" right={24} bottom={100} zIndex={10}>
-          <IconButton
+
+        {showScrollButton && (
+          <Fab
+            size="small"
             onClick={scrollToBottom}
             sx={{
-              backgroundColor: theme.palette.primary.main,
+              position: "absolute",
+              bottom: 30,
+              right: 16,
+              zIndex: 20,
+              bgcolor: "#1976d2",
               color: "#fff",
               "&:hover": {
-                backgroundColor: theme.palette.primary.dark,
+                bgcolor: "#1565c0",
               },
-              boxShadow: 3,
             }}
           >
             <KeyboardArrowDownIcon />
-          </IconButton>
-        </Box>
-      )}
+          </Fab>
+        )}
+      </Paper>
 
       <Box position="relative">
         <Box display="flex" gap={1} alignItems="center">
@@ -631,6 +889,46 @@ export default function ChatContainer({
                 ⬇
               </button>
             </Box>
+          </Box>
+        )}
+        {/* Right-click Context Menu */}
+        {contextMenu && selectedMsg && (
+          <Box
+            ref={contextMenuRef}
+            sx={{
+              position: "fixed",
+              top: contextMenu.mouseY,
+              left: contextMenu.mouseX,
+              zIndex: 9999,
+              bgcolor: "#fff",
+              boxShadow: 3,
+              borderRadius: 1,
+              overflow: "hidden",
+              minWidth: 150,
+            }}
+            onMouseLeave={() => setContextMenu(null)}
+          >
+            {/* Delete for Me */}
+            <Box
+              px={2}
+              py={1}
+              sx={{ cursor: "pointer", "&:hover": { bgcolor: "#f0f0f0" } }}
+              onClick={() => handleDelete("me")}
+            >
+              🧍 Delete for Me
+            </Box>
+
+            {/* Delete for Everyone */}
+            {String(selectedMsg.sender) === String(userId) && (
+              <Box
+                px={2}
+                py={1}
+                sx={{ cursor: "pointer", "&:hover": { bgcolor: "#f0f0f0" } }}
+                onClick={() => handleDelete("everyone")}
+              >
+                🌐 Delete for Everyone
+              </Box>
+            )}
           </Box>
         )}
       </Box>

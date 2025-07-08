@@ -60,6 +60,8 @@ export const AppContextProvider = ({ children }) => {
   // Notices
   const [notices, setNotices] = useState([]);
 
+  const [onlineStatus, setOnlineStatus] = useState({});
+
   // Gallery Images (visible only to society members)
   const [galleryImages, setGalleryImages] = useState(() => {
     const saved = localStorage.getItem("gallery-images");
@@ -197,6 +199,27 @@ export const AppContextProvider = ({ children }) => {
 
     fetchPolls();
   }, [societyId, token, userRole]);
+  const fetchMembers = async () => {
+    if (!societyId || !token) return;
+
+    try {
+      const { data } = await axios.get(
+        `/api/users/society/${societyId}/members`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setMembers(data.members || []);
+    } catch (err) {
+      console.error(
+        "❌ Failed to fetch members:",
+        err.response?.data || err.message
+      );
+    }
+  };
 
   const toggleTheme = () => {
     setThemeMode((prev) => (prev === "light" ? "dark" : "light"));
@@ -277,15 +300,21 @@ export const AppContextProvider = ({ children }) => {
     socket.emit("setup", userId);
     socketRef.current = socket;
 
-    socket.on("connect", () => {
-      console.log("🟢 Socket connected:", socket.id);
-    });
-
     socket.on("receive message", (msg) => {
       console.log("📩 Message received via socket:", msg);
       if (typeof messageHandler === "function") {
         messageHandler(msg);
       }
+    });
+    socket.on("user status", ({ userId, isOnline, lastSeen }) => {
+      setOnlineStatus((prev) => ({
+        ...prev,
+        [userId]: { isOnline, lastSeen },
+      }));
+    });
+
+    socket.on("online status", (statusMap) => {
+      setOnlineStatus(statusMap); 
     });
 
     socket.on("disconnect", () => {
@@ -294,6 +323,7 @@ export const AppContextProvider = ({ children }) => {
 
     return () => {
       socket.disconnect();
+      socket.off("user status");
     };
   }, [userId, token]);
 
@@ -346,6 +376,7 @@ export const AppContextProvider = ({ children }) => {
     token,
     setToken,
     fetchComplaints,
+    onlineStatus,
     // theme
     theme,
     themeMode,

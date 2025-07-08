@@ -129,3 +129,37 @@ export const uploadChatFile = async (req, res) => {
     res.status(500).json({ error: error.message || "Internal Server Error" });
   }
 };
+
+// DELETE /api/users/chats/:id
+export const deleteMessage = async (req, res) => {
+  const userId = req.user._id;
+  const { id } = req.params;
+  const forWhom = req.query.for; // "self" or "everyone"
+
+  try {
+    const message = await Chat.findById(id);
+
+    if (!message) {
+      return res.status(404).json({ message: "Message not found" });
+    }
+
+    if (forWhom === "self") {
+      // Only mark as deleted for this user (frontend can decide to hide)
+      message.deletedFor = message.deletedFor || [];
+      message.deletedFor.push(userId);
+      await message.save();
+      return res.status(200).json({ message: "Deleted for self" });
+    }
+
+    // Delete for everyone if sender
+    if (String(message.sender) === String(userId)) {
+      await message.deleteOne();
+      return res.status(200).json({ message: "Deleted for everyone" });
+    }
+
+    return res.status(403).json({ message: "Not authorized" });
+  } catch (err) {
+    console.error("Delete failed:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};

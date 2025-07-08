@@ -54,7 +54,7 @@ import {
   getSocietyImages,
 } from "../Controllers/galleryController.js";
 import { createEvent, getEvents, getSocietyMembers, inviteToEvent } from "../Controllers/eventController.js";
-import { getChatHistory, getMyChats, getSocietyUsers, sendMessage, uploadChatFile } from "../Controllers/chatsController.js";
+import { deleteMessage, getChatHistory, getMyChats, getSocietyUsers, sendMessage, uploadChatFile } from "../Controllers/chatsController.js";
 
 
 const router = express.Router();
@@ -87,6 +87,7 @@ router.post(
   upload.single("file"), 
   uploadChatFile
 );
+router.delete("/chats/:id", verifyUserOrAdmin, deleteMessage);
 
 // Buzz groups
 router.get("/buzz/groups/:societyId", verifyUser, getGroupsBySociety);

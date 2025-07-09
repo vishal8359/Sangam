@@ -256,14 +256,30 @@ export default function ChatContainer({
   useEffect(() => {
     if (!lastMessageRef.current || !selectedChatId || !socket.current) return;
 
-    let hasMarkedSeen = false; // ensures emit happens once
+    let hasMarkedSeen = false;
+
+    const lastMsg = chats[selectedChatId]?.at(-1);
+    const isLastFromOther =
+      lastMsg && String(lastMsg.sender) !== String(userId);
+
+    // Force check visibility on mount
+    if (
+      isLastFromOther &&
+      !lastMsg?.seen &&
+      chatBoxRef.current &&
+      lastMessageRef.current.getBoundingClientRect().top <
+        chatBoxRef.current.getBoundingClientRect().bottom
+    ) {
+      socket.current.emit("mark as seen", {
+        userId,
+        peerId: selectedChatId,
+      });
+      hasMarkedSeen = true;
+      console.log("👁️ Manually marked last as seen on load.");
+    }
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        const lastMsg = chats[selectedChatId]?.at(-1);
-        const isLastFromOther =
-          lastMsg && String(lastMsg.sender) !== String(userId);
-
         if (
           entry.isIntersecting &&
           isLastFromOther &&

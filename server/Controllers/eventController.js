@@ -21,7 +21,7 @@ export const createEvent = async (req, res) => {
 
     let imageUrl = "";
     if (req.file) {
-      const uploaded = await uploadToCloudinary(req.file.path);
+      const uploaded = await uploadToCloudinary(req.file.buffer, "events", req.file.mimetype);
       console.log("🔹 Cloudinary upload result:", uploaded);
       imageUrl = uploaded.url;
     }

@@ -9,7 +9,8 @@ import connectCloudinary from "./Configs/cloudinary.js";
 import userRoutes from "./Routes/userRoute.js";
 import adminRoutes from "./Routes/adminRoutes.js";
 import Chats from "./Models/Chats.js";
-import User from "./Models/User.js"; // ✅ Required for online status map
+import User from "./Models/User.js"; // Required for online status map
+import { registerBuzzHandlers } from "./Controllers/buzzController.js";
 
 dotenv.config();
 await connectDB();
@@ -64,7 +65,7 @@ async function broadcastOnlineStatus() {
 
 io.on("connection", (socket) => {
   console.log("🔌 Socket connected:", socket.id);
-
+  registerBuzzHandlers(io, socket);
   socket.on("setup", async (userId) => {
     if (!userId) return;
 

@@ -1,5 +1,5 @@
+// utils/cloudinaryUpload.js
 import { v2 as cloudinary } from "cloudinary";
-import fs from "fs";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -7,15 +7,19 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-export const uploadToCloudinary = async (filePath, folder) => {
+export const uploadToCloudinary = async (fileBuffer, folder, mimetype) => {
   try {
-    const res = await cloudinary.uploader.upload(filePath, {
+    const base64 = fileBuffer.toString("base64");
+    const dataURI = `data:${mimetype};base64,${base64}`;
+
+    const res = await cloudinary.uploader.upload(dataURI, {
       folder,
       resource_type: "auto",
     });
-    fs.unlinkSync(filePath); 
+
     return { url: res.secure_url, public_id: res.public_id };
   } catch (err) {
+    console.error("❌ Cloudinary Upload Error:", err); // Log actual error
     throw new Error("Cloudinary upload failed");
   }
 };

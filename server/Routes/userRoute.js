@@ -22,6 +22,8 @@ import {
   getGroupsBySociety,
   getGroupDetails,
   postInGroup,
+  getMessages,
+  uploadVoiceMessage,
 } from "../Controllers/buzzController.js";
 import upload from "../Configs/multer.js";
 import { requestToJoinGroup } from "../Controllers/groupJoinController.js";
@@ -43,7 +45,6 @@ import {
 } from "../Controllers/societyController.js";
 import { getReelEngagement } from "../Controllers/reelEngagementController.js";
 
-
 import {
   uploadReel,
   getAllReels,
@@ -53,9 +54,20 @@ import {
   uploadImage,
   getSocietyImages,
 } from "../Controllers/galleryController.js";
-import { createEvent, getEvents, getSocietyMembers, inviteToEvent } from "../Controllers/eventController.js";
-import { deleteMessage, getChatHistory, getMyChats, getSocietyUsers, sendMessage, uploadChatFile } from "../Controllers/chatsController.js";
-
+import {
+  createEvent,
+  getEvents,
+  getSocietyMembers,
+  inviteToEvent,
+} from "../Controllers/eventController.js";
+import {
+  deleteMessage,
+  getChatHistory,
+  getMyChats,
+  getSocietyUsers,
+  sendMessage,
+  uploadChatFile,
+} from "../Controllers/chatsController.js";
 
 const router = express.Router();
 // first register
@@ -80,28 +92,30 @@ router.get("/notices/:societyId", verifyUser, getNoticesBySociety);
 router.post("/chats/send", verifyUser, sendMessage);
 router.get("/chats/me", verifyUser, getMyChats);
 router.get("/society/:societyId/users", verifyUser, getSocietyUsers);
-router.get("/chats/:userId/:peerId",getChatHistory);
-router.post(
-  "/chats/upload",
-  verifyUser,
-  upload.single("file"), 
-  uploadChatFile
-);
+router.get("/chats/:userId/:peerId", getChatHistory);
+router.post("/chats/upload", verifyUser, upload.single("file"), uploadChatFile);
 router.delete("/chats/:id", verifyUserOrAdmin, deleteMessage);
 
 // Buzz groups
+router.get("/buzz/message/:societyId", verifyUser, getMessages);
+router.post(
+  "/buzz/upload/voice",
+  verifyUser,
+  upload.single("audio"),
+  uploadVoiceMessage
+);
 router.get("/buzz/groups/:societyId", verifyUser, getGroupsBySociety);
 router.get("/buzz/group/:groupId", verifyUser, getGroupDetails);
-router.post(
-  "/buzz/groups/:groupId/post",
-  verifyUser,
-  upload.fields([
-    { name: "image", maxCount: 1 },
-    { name: "audio", maxCount: 1 },
-    { name: "reel", maxCount: 1 },
-  ]),
-  postInGroup
-);
+// router.post(
+//   "/buzz/groups/:groupId/post",
+//   verifyUser,
+//   upload.fields([
+//     { name: "image", maxCount: 1 },
+//     { name: "audio", maxCount: 1 },
+//     { name: "reel", maxCount: 1 },
+//   ]),
+//   postInGroup
+// );
 router.post(
   "/buzz/groups/:groupId/join-request",
   verifyUser,
@@ -134,7 +148,7 @@ router.get(
 );
 
 // Events
-router.post("/events/create", verifyUser, multer.single("image"), createEvent);
+router.post("/events/create", verifyUser, upload.single("image"), createEvent);
 router.get("/members", verifyUser, getSocietyMembers);
 router.post("/events/invite", verifyUser, inviteToEvent);
 router.get("/events", verifyUser, getEvents);

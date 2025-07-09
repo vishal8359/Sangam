@@ -2,23 +2,27 @@ import Group from "../Models/Group.js";
 import GroupJoinRequest from "../Models/GroupJoinRequest.js";
 import { uploadToCloudinary } from "../Utils/cloudinaryUpload.js";
 import User from "../Models/User.js";
+import BuzzMessage from "../Models/BuzzMessage.js";
+import fs from "fs";
+import path from "path";
 
-// Create a group
+// Create a new buzz group (admin only)
 export const createGroup = async (req, res) => {
   try {
     const { name, description, society_id } = req.body;
-
     if (!name || !society_id) {
-      return res.status(400).json({ message: "Name and society_id are required" });
+      return res
+        .status(400)
+        .json({ message: "Name and society_id are required" });
     }
-
     const group = await Group.create({
       name,
       description,
       society_id,
-      created_by: req.user._id // set from logged-in admin
+      created_by: req.user._id,
+      members: [req.user._id], // Admin joins by default
+      posts: [],
     });
-
     res.status(201).json({ message: "Group created", group });
   } catch (err) {
     console.error("Create group error:", err);
@@ -26,11 +30,10 @@ export const createGroup = async (req, res) => {
   }
 };
 
-// Get all groups by society
+// Get all groups for a society
 export const getGroupsBySociety = async (req, res) => {
   try {
     const { societyId } = req.params;
-
     const groups = await Group.find({ society_id: societyId });
     res.status(200).json(groups);
   } catch (err) {
@@ -39,14 +42,14 @@ export const getGroupsBySociety = async (req, res) => {
   }
 };
 
-// Get detailed group info (with posts & user names)
+// Get detailed group info (with posts and usernames)
 export const getGroupDetails = async (req, res) => {
   try {
     const { groupId } = req.params;
-
-    const group = await Group.findById(groupId).populate("posts.user", "name");
+    const group = await Group.findById(groupId)
+      .populate("posts.user", "name email")
+      .populate("created_by", "name email");
     if (!group) return res.status(404).json({ message: "Group not found" });
-
     res.status(200).json(group);
   } catch (err) {
     console.error("Group details error:", err);
@@ -54,7 +57,7 @@ export const getGroupDetails = async (req, res) => {
   }
 };
 
-// Post in group
+// Post a message or media in a group
 export const postInGroup = async (req, res) => {
   try {
     const { text } = req.body;
@@ -64,49 +67,170 @@ export const postInGroup = async (req, res) => {
     const group = await Group.findById(groupId);
     if (!group) return res.status(404).json({ message: "Group not found" });
 
-    const user = await User.findById(userId);
-    const isMember = user.roles.some(
-      (role) => role.society_id?.toString() === group.society_id?.toString()
-    );
-
-    if (!isMember) {
-      return res.status(403).json({ message: "Access denied: Not a member of this society." });
+    // Check membership
+    if (!group.members.map((m) => m.toString()).includes(userId.toString())) {
+      return res.status(403).json({ message: "Access denied: Not a member" });
     }
 
-    // Handle file uploads (Multer adds files to req.files)
+    // Handle media uploads
     const media = {};
+    if (req.files?.image?.length) {
+      media.image = await uploadToCloudinary(
+        req.files.image[0].path,
+        "buzz/posts/images"
+      );
+    }
+    if (req.files?.audio?.length) {
+      media.audio = await uploadToCloudinary(
+        req.files.audio[0].path,
+        "buzz/posts/audio"
+      );
+    }
+    if (req.files?.reel?.length) {
+      media.reel = await uploadToCloudinary(
+        req.files.reel[0].path,
+        "buzz/posts/reels"
+      );
+    }
 
-    if (req.files?.image?.[0]) {
-      media.image = await uploadToCloudinary(req.files.image[0].path, "buzz/posts/images");
-    }
-    if (req.files?.audio?.[0]) {
-      media.audio = await uploadToCloudinary(req.files.audio[0].path, "buzz/posts/audio");
-    }
-    if (req.files?.reel?.[0]) {
-      media.reel = await uploadToCloudinary(req.files.reel[0].path, "buzz/posts/reels");
-    }
-
-    if (!text && Object.keys(media).length === 0) {
+    if (!text?.trim() && Object.keys(media).length === 0) {
       return res.status(400).json({ message: "Post must have text or media." });
     }
 
     const newPost = {
       user: userId,
       text: text?.trim() || "",
-      created_at: new Date(),
       media: Object.keys(media).length ? media : undefined,
+      created_at: new Date(),
     };
-
     group.posts.push(newPost);
     await group.save();
 
-    res.status(201).json({
-      message: "Post added successfully",
-      post: group.posts[group.posts.length - 1],
-    });
+    // Populate the returned post user info
+    const populatedPost = await Group.findOne(
+      { _id: groupId },
+      { posts: { $slice: -1 } }
+    ).populate("posts.user", "name email");
+
+    res
+      .status(201)
+      .json({ message: "Post added", post: populatedPost.posts[0] });
   } catch (err) {
-    console.error("❌ Post in group error:", err);
+    console.error("Post in group error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
+
+// Request to join a group
+export const requestToJoinGroup = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { groupId } = req.params;
+
+    const group = await Group.findById(groupId);
+    if (!group) return res.status(404).json({ message: "Group not found" });
+
+    // Check existing membership or pending request
+    const alreadyMember = group.members
+      .map((m) => m.toString())
+      .includes(userId.toString());
+    const pending = await GroupJoinRequest.findOne({
+      group: groupId,
+      user: userId,
+    });
+    if (alreadyMember)
+      return res.status(400).json({ message: "Already a member" });
+    if (pending)
+      return res.status(400).json({ message: "Request already pending" });
+
+    const joinReq = await GroupJoinRequest.create({
+      group: groupId,
+      user: userId,
+    });
+    res.status(201).json({ message: "Join request sent", request: joinReq });
+  } catch (err) {
+    console.error("Join request error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const registerBuzzHandlers = (io, socket) => {
+  // Join the socket.io “room” for a given society
+  socket.on("joinBuzz", (societyId) => {
+    socket.join(societyId);
+  });
+
+  // Handle incoming buzz messages
+  socket.on("sendBuzzMessage", async (data) => {
+    const { societyId, groupId = null, sender, senderName, content } = data;
+    try {
+      // Persist message
+      const msg = await BuzzMessage.create({
+        sender,
+        senderName,
+        content,
+        group: groupId,
+        societyId,
+      });
+
+      // Emit to everyone in that society
+      io.to(societyId).emit("receiveBuzzMessage", msg);
+    } catch (err) {
+      console.error("⚠️ Error saving buzz message:", err);
+    }
+  });
+};
+
+export const getMessages = async (req, res) => {
+  try {
+    const { societyId } = req.params;
+    const messages = await BuzzMessage.find({ societyId }).sort({
+      createdAt: 1,
+    }); // oldest→newest
+
+    return res.status(200).json(messages);
+  } catch (err) {
+    console.error("Get buzz messages error:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const uploadVoiceMessage = async (req, res) => {
+  try {
+    const { societyId, groupId, sender, senderName } = req.body;
+    const audioFile = req.file;
+
+    if (!audioFile) {
+      return res.status(400).json({ error: "No audio file uploaded" });
+    }
+
+    // Upload to Cloudinary (or your provider)
+    const uploaded = await cloudinary.uploader.upload(audioFile.path, {
+      resource_type: "video", // or "auto" for Cloudinary
+      folder: "buzz/audio",
+    });
+
+    const audioUrl = uploaded.secure_url;
+
+    // Save to DB (assumes you have a BuzzMessage model)
+    const newMessage = await BuzzMessage.create({
+      sender,
+      senderName,
+      content: "🎤 Voice Message",
+      audio: audioUrl, // ✅ THIS IS MISSING IN YOUR DATA
+      societyId,
+      group: groupId || null,
+    });
+
+    // Emit to socket
+    io.to(societyId).emit("receiveBuzzMessage", newMessage);
+
+    res.status(200).json({ audioUrl }); // client needs this
+  } catch (err) {
+    console.error("Audio upload error:", err);
+    res.status(500).json({ error: "Server error during audio upload" });
+  }
+};
+
+
 

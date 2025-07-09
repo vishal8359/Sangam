@@ -52,19 +52,16 @@ const CartPage = () => {
     setCartArray(tempArray);
   };
 
- const getUserAddress = async () => {
-  const stored = JSON.parse(localStorage.getItem("mock-addresses") || "[]");
+  const getUserAddress = async () => {
+    const stored = JSON.parse(localStorage.getItem("mock-addresses") || "[]");
 
-  if (stored.length > 0) {
-    setAddresses(stored);
-    setSelectedAddress(stored[0]);
-  }
-};
-
-
+    if (stored.length > 0) {
+      setAddresses(stored);
+      setSelectedAddress(stored[0]);
+    }
+  };
 
   const placeOrder = async () => {
-    
     try {
       if (!selectedAddress) return toast.error("Please select an address");
 

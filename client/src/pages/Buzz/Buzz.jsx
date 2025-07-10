@@ -25,6 +25,8 @@ import {
   FormControlLabel,
   FormGroup,
   Fab,
+  Menu,
+  MenuItem,
 } from "@mui/material";
 import { Send, Mic, CameraAlt } from "@mui/icons-material";
 import Groups2Icon from "@mui/icons-material/Groups2";
@@ -33,8 +35,9 @@ import EmojiEmotionsIcon from "@mui/icons-material/EmojiEmotions";
 import AddIcon from "@mui/icons-material/Add";
 import chatWindow from "../../assets/ChatWindow.jpg";
 import { useAppContext } from "../../context/AppContext";
-
+import AttachFileIcon from "@mui/icons-material/AttachFile";
 import { keyframes } from "@emotion/react";
+import WaveformPlayer from "../../components/WaveformPlayer";
 
 const SOCKET_SERVER_URL = "http://localhost:5000"; // adjust as needed
 
@@ -50,6 +53,8 @@ export default function SocietyBuzz() {
     members,
     societyId,
     token,
+    buzzMessages,
+    setBuzzMessages,
     axios,
   } = useAppContext();
 
@@ -71,6 +76,18 @@ export default function SocietyBuzz() {
   const [recording, setRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState(null);
   const discardRecordingRef = useRef(false);
+  const [audioChunks, setAudioChunks] = useState([]);
+  const audioChunksRef = useRef([]);
+
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewType, setPreviewType] = useState(""); // "image", "video", "pdf"
+  const [previewUrl, setPreviewUrl] = useState("");
+
+  const [showCamera, setShowCamera] = useState(false);
+  const [cameraStream, setCameraStream] = useState(null);
+  const [capturedImage, setCapturedImage] = useState(null);
+  const videoRef = useRef(null);
+  const [contextMenu, setContextMenu] = useState(null);
 
   // Auto‑scroll
   useEffect(() => {
@@ -228,6 +245,191 @@ export default function SocietyBuzz() {
     }
   };
 
+  const handleStartRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+
+      const chunks = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      recorder.onstop = async () => {
+        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+
+        // Optional: Discard logic
+        if (discardRecordingRef.current) {
+          discardRecordingRef.current = false;
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("audio", blob, "voice-message.webm");
+
+        try {
+          const res = await axios.post("/api/users/buzz/audio", formData, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "multipart/form-data",
+            },
+          });
+
+          const audioUrl = res.data.url;
+          const payload = {
+            societyId,
+            groupId: currentGroup?._id || null,
+            sender: userId,
+            senderName: userProfile?.name || "Unknown",
+            content: "🎤 Voice Message",
+            audioUrl, // Include audio URL
+          };
+
+          socketRef.current.emit("sendBuzzMessage", payload);
+        } catch (err) {
+          console.error("🎙 Audio Upload Failed", err);
+        } finally {
+          setRecording(false);
+          setMediaRecorder(null);
+          audioChunksRef.current = [];
+        }
+      };
+
+      recorder.start();
+      setRecording(true);
+      setMediaRecorder(recorder);
+      setAudioChunks(chunks);
+      discardRecordingRef.current = false;
+    } catch (err) {
+      console.error("Recording failed:", err);
+    }
+  };
+  const handleFileUpload = async (file) => {
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await axios.post("/api/users/buzz/upload", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      const fileUrl = res.data.url;
+      const fileType = file.type;
+
+      const payload = {
+        societyId,
+        groupId: currentGroup?._id || null,
+        sender: userId,
+        senderName: userProfile?.name || "Unknown",
+        content: "📎 Attachment",
+        fileUrl,
+        fileType,
+      };
+
+      socketRef.current.emit("sendBuzzMessage", payload);
+    } catch (err) {
+      console.error(" File upload failed:", err);
+    }
+  };
+
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      setCameraStream(stream);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+      setShowCamera(true);
+    } catch (err) {
+      console.error("Camera access denied:", err);
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((track) => track.stop());
+      setCameraStream(null);
+    }
+    setShowCamera(false);
+  };
+
+  const capturePhoto = () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    const dataURL = canvas.toDataURL("image/jpeg");
+    stopCamera(); // stop the video stream
+    setCapturedImage(dataURL); // set image preview
+  };
+
+  const handleSendCapturedImage = async () => {
+    if (!capturedImage) return;
+
+    const blob = await (await fetch(capturedImage)).blob();
+    const file = new File([blob], "captured-photo.jpg", { type: "image/jpeg" });
+
+    await handleFileUpload(file); // your existing upload method
+    setCapturedImage(null); // close preview after sending
+  };
+
+  const openPreview = (type, url) => {
+    setPreviewType(type);
+    setPreviewUrl(url);
+    setPreviewOpen(true);
+  };
+
+  const closePreview = () => {
+    setPreviewOpen(false);
+    setPreviewType("");
+    setPreviewUrl("");
+  };
+
+  const handleDelete = async (messageId, type) => {
+    try {
+      const endpoint =
+        type === "me"
+          ? `/api/users/buzz/message/${messageId}/me`
+          : `/api/users/buzz/message/${messageId}/all`;
+
+      await axios.delete(endpoint, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      socketRef.current.emit("buzzDeleteMessage", {
+        messageId,
+        type, 
+        userId,
+      });
+
+      // Instantly remove the message from UI
+      setMessages((prevMessages) =>
+        type === "me"
+          ? prevMessages.filter((msg) => msg._id !== messageId)
+          : prevMessages.map((msg) =>
+              msg._id === messageId
+                ? {
+                    ...msg,
+                    content: "🗑 Message deleted",
+                    fileUrl: null,
+                    audioUrl: null,
+                  }
+                : msg
+            )
+      );
+    } catch (err) {
+      console.error("Failed to delete message:", err);
+    }
+  };
 
   return (
     <Box
@@ -392,6 +594,15 @@ export default function SocietyBuzz() {
                           msg.sender === userId ? "flex-end" : "flex-start"
                         }
                         mb={1}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          setContextMenu({
+                            mouseX: e.clientX - 2,
+                            mouseY: e.clientY - 4,
+                            messageId: msg._id,
+                            isSender: msg.sender === userId,
+                          });
+                        }}
                       >
                         <Box>
                           {msg.sender !== userId && (
@@ -403,28 +614,104 @@ export default function SocietyBuzz() {
                             </Typography>
                           )}
 
-                          <Box
-                            sx={{
-                              bgcolor:
-                                msg.sender === userId
-                                  ? theme.palette.grey[300]
-                                  : theme.palette.primary.main,
-                              color: msg.sender === userId ? "#000" : "#fff",
-                              mx: 2,
-                              pl: 2,
-                              pr: 2,
-                              pt: 1,
-                              pb: 1,
-                              borderRadius: 2,
-                              mt: 0.5,
-                              maxWidth: "80%",
-                              wordBreak: "break-word",
-                            }}
-                          >
-                            {(
-                              msg.content
-                            )}
-                          </Box>
+                          {msg.fileUrl && msg.fileType?.startsWith("image") ? (
+                            <img
+                              src={msg.fileUrl}
+                              alt="attachment"
+                              style={{
+                                maxWidth: "300px",
+                                height: "auto",
+                                borderRadius: "10px",
+                                display: "block",
+                                marginTop: "4px",
+                                cursor: "pointer",
+                              }}
+                              onClick={() => openPreview("image", msg.fileUrl)}
+                            />
+                          ) : msg.fileUrl &&
+                            msg.fileType?.startsWith("video") ? (
+                            <Box
+                              onClick={() => openPreview("video", msg.fileUrl)}
+                              sx={{
+                                cursor: "pointer",
+                                mt: 0.5,
+                                width: "300px",
+                                borderRadius: 2,
+                                overflow: "hidden",
+                              }}
+                            >
+                              <video
+                                src={msg.fileUrl}
+                                style={{
+                                  width: "100%",
+                                  borderRadius: 8,
+                                  display: "block",
+                                }}
+                                muted
+                                autoPlay
+                                loop
+                              />
+                            </Box>
+                          ) : (
+                            <Box
+                              sx={{
+                                bgcolor:
+                                  msg.sender === userId
+                                    ? theme.palette.grey[300]
+                                    : theme.palette.primary.main,
+                                color: msg.sender === userId ? "#000" : "#fff",
+                                mx: 2,
+                                p: 1.5,
+                                borderRadius: 2,
+                                mt: 0.5,
+                                maxWidth: "80%",
+                                wordBreak: "break-word",
+                                cursor:
+                                  msg.content === "🎤 Voice Message"
+                                    ? "pointer"
+                                    : "default",
+                              }}
+                            >
+                              {(msg.content === "🎤 Voice Message" &&
+                                msg.audioUrl) ||
+                              msg.fileType?.startsWith("audio") ? (
+                                <WaveformPlayer
+                                  audioUrl={msg.audioUrl || msg.fileUrl}
+                                  fromSender={msg.sender === userId}
+                                />
+                              ) : msg.fileUrl ? (
+                                msg.fileType?.includes("pdf") ? (
+                                  <Typography
+                                    onClick={() =>
+                                      openPreview("pdf", msg.fileUrl)
+                                    }
+                                    sx={{
+                                      textDecoration: "underline",
+                                      cursor: "pointer",
+                                    }}
+                                  >
+                                    📄 View PDF
+                                  </Typography>
+                                ) : (
+                                  <a
+                                    href={msg.fileUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{
+                                      color: "inherit",
+                                      textDecoration: "underline",
+                                    }}
+                                  >
+                                    📎 Download File
+                                  </a>
+                                )
+                              ) : (
+                                <Typography variant="body2">
+                                  {msg.content}
+                                </Typography>
+                              )}
+                            </Box>
+                          )}
 
                           <Typography
                             variant="caption"
@@ -510,13 +797,41 @@ export default function SocietyBuzz() {
               ),
               endAdornment: (
                 <InputAdornment position="end">
-                  <IconButton>
-                    <Mic />
+                  <>
+                    <input
+                      type="file"
+                      id="upload-file"
+                      hidden
+                      onChange={(e) => {
+                        if (e.target.files.length > 0) {
+                          handleFileUpload(e.target.files[0]);
+                          e.target.value = null; // reset input for re-uploading same file
+                        }
+                      }}
+                    />
+                    <label htmlFor="upload-file">
+                      <IconButton component="span">
+                        <AttachFileIcon />
+                      </IconButton>
+                    </label>
+                  </>
+
+                  <IconButton
+                    onClick={() => {
+                      if (recording) {
+                        mediaRecorder?.stop();
+                      } else {
+                        handleStartRecording();
+                      }
+                    }}
+                  >
+                    <Mic color={recording ? "error" : "inherit"} />
                   </IconButton>
 
-                  <IconButton>
+                  <IconButton onClick={startCamera}>
                     <CameraAlt />
                   </IconButton>
+
                   <IconButton onClick={handleSend}>
                     <Send />
                   </IconButton>
@@ -598,6 +913,155 @@ export default function SocietyBuzz() {
           <Button onClick={handleCreateGroup}>Create</Button>
         </DialogActions>
       </Dialog>
+      <Dialog open={previewOpen} onClose={closePreview} fullScreen>
+        <Box
+          onClick={closePreview}
+          sx={{
+            width: "100vw",
+            height: "100vh",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            bgcolor: theme.palette.mode === "dark" ? "#000" : "#fff",
+          }}
+        >
+          {previewType === "image" && (
+            <img
+              src={previewUrl}
+              alt="preview"
+              style={{
+                maxWidth: "90%",
+                maxHeight: "90%",
+                borderRadius: 8,
+              }}
+            />
+          )}
+
+          {previewType === "video" && (
+            <video
+              src={previewUrl}
+              controls
+              autoPlay
+              style={{
+                maxWidth: "90%",
+                maxHeight: "90%",
+                borderRadius: 8,
+              }}
+            />
+          )}
+
+          {previewType === "pdf" && (
+            <iframe
+              src={`https://docs.google.com/gview?url=${encodeURIComponent(previewUrl)}&embedded=true`}
+              style={{
+                width: "90%",
+                height: "90%",
+                border: "none",
+                borderRadius: 8,
+              }}
+              title="PDF Preview"
+            />
+          )}
+        </Box>
+      </Dialog>
+      <Dialog
+        open={showCamera || !!capturedImage}
+        onClose={() => {
+          stopCamera();
+          setCapturedImage(null);
+        }}
+        fullScreen
+      >
+        <Box
+          sx={{
+            width: "100vw",
+            height: "100vh",
+            bgcolor: "#000",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            p: 2,
+          }}
+        >
+          {capturedImage ? (
+            <>
+              <img
+                src={capturedImage}
+                alt="Captured"
+                style={{ maxWidth: "90%", maxHeight: "80vh", borderRadius: 10 }}
+              />
+              <Box mt={2} display="flex" gap={2}>
+                <Button variant="contained" onClick={handleSendCapturedImage}>
+                  Send
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  onClick={() => {
+                    setCapturedImage(null);
+                    startCamera(); // go back to camera
+                  }}
+                >
+                  Retake
+                </Button>
+              </Box>
+            </>
+          ) : (
+            <>
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                style={{
+                  maxHeight: "80vh",
+                  maxWidth: "90vw",
+                  borderRadius: 10,
+                }}
+              />
+              <Box mt={2} display="flex" gap={2}>
+                <Button variant="contained" onClick={capturePhoto}>
+                  Capture
+                </Button>
+                <Button variant="outlined" color="error" onClick={stopCamera}>
+                  Cancel
+                </Button>
+              </Box>
+            </>
+          )}
+        </Box>
+      </Dialog>
+
+      <Menu
+        open={contextMenu !== null}
+        onClose={() => setContextMenu(null)}
+        anchorReference="anchorPosition"
+        anchorPosition={
+          contextMenu !== null
+            ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
+            : undefined
+        }
+      >
+        <MenuItem
+          onClick={async () => {
+            await handleDelete(contextMenu.messageId, "me");
+            setContextMenu(null);
+          }}
+        >
+          Delete for Me
+        </MenuItem>
+
+        {contextMenu?.isSender && (
+          <MenuItem
+            onClick={async () => {
+              await handleDelete(contextMenu.messageId, "all");
+              setContextMenu(null);
+            }}
+          >
+            Delete for Everyone
+          </MenuItem>
+        )}
+      </Menu>
     </Box>
   );
 }

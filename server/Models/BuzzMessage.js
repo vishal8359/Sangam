@@ -8,7 +8,9 @@ const buzzMessageSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    audio: String,
+    audioUrl: {
+      type: String,
+    },
     senderName: {
       type: String,
       required: true,
@@ -29,7 +31,16 @@ const buzzMessageSchema = new mongoose.Schema(
       ref: "Society",
       required: true,
     },
+    fileType: {
+      type: String,
+    },
+    fileUrl: {
+      type: String, 
+    },
+    deletedFor: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+
   },
+
   { timestamps: true }
 );
 

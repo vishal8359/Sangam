@@ -25,6 +25,7 @@ export const AppContextProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [societyDetails, setSocietyDetails] = useState(null);
   const [token, setToken] = useState("");
+  const [buzzMessages, setBuzzMessages] = useState([]);
 
   // Reels
   const [userReels, setUserReels] = useState([]);
@@ -314,9 +315,37 @@ export const AppContextProvider = ({ children }) => {
     });
 
     socket.on("online status", (statusMap) => {
-      setOnlineStatus(statusMap); 
+      setOnlineStatus(statusMap);
+    });
+    socket.on("buzz message deleted for me", ({ messageId }) => {
+      setBuzzMessages((prev) => prev.filter((msg) => msg._id !== messageId));
     });
 
+    socket.on("buzz message deleted for all", ({ messageId }) => {
+      setBuzzMessages((prev) => prev.filter((msg) => msg._id !== messageId));
+    });
+    socket.on(
+      "buzzMessageDeleted",
+      ({ messageId, type, userId: deleterId }) => {
+        setMessages((prevMessages) =>
+          type === "me"
+            ? prevMessages.filter((msg) =>
+                // Only remove if it's the deleter’s own message (for "me" delete)
+                deleterId === userId ? msg._id !== messageId : true
+              )
+            : prevMessages.map((msg) =>
+                msg._id === messageId
+                  ? {
+                      ...msg,
+                      content: "🗑 Message deleted",
+                      fileUrl: null,
+                      audioUrl: null,
+                    }
+                  : msg
+              )
+        );
+      }
+    );
     socket.on("disconnect", () => {
       console.log("🔴 Socket disconnected");
     });

@@ -42,7 +42,7 @@ app.use("/api/admin", adminRoutes);
 const io = new SocketIOServer(server, {
   cors: corsOptions,
 });
-
+app.set("socketio", io);
 const onlineUsers = new Map();
 
 async function broadcastOnlineStatus() {
@@ -77,7 +77,7 @@ io.on("connection", (socket) => {
     try {
       await User.findByIdAndUpdate(userId, { isOnline: true });
 
-      // ✅ Send online status map immediately to newly connected client
+      // Send online status map immediately to newly connected client
       const users = await User.find({}, "_id isOnline lastSeen");
       const statusMap = {};
       for (const user of users) {
@@ -102,7 +102,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("mark as seen", async ({ userId, peerId }) => {
-    console.log("🟢 Marking messages seen:", { userId, peerId });
+    console.log("Marking messages seen:", { userId, peerId });
 
     try {
       await Chats.updateMany(
@@ -121,12 +121,12 @@ io.on("connection", (socket) => {
       io.to(receiver).emit("delete message", { messageId });
     }
   });
-
+  
   socket.on("disconnect", async () => {
     const userId = socket.data.userId;
     if (userId) {
       onlineUsers.delete(userId);
-      console.log(`❌ User ${userId} disconnected`);
+      console.log(` User ${userId} disconnected`);
 
       try {
         await User.findByIdAndUpdate(userId, {
@@ -138,7 +138,7 @@ io.on("connection", (socket) => {
         console.error("Error marking user offline:", err);
       }
     } else {
-      console.log("❌ Unknown socket disconnected:", socket.id);
+      console.log("Unknown socket disconnected:", socket.id);
     }
   });
 });

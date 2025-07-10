@@ -3,8 +3,6 @@ import GroupJoinRequest from "../Models/GroupJoinRequest.js";
 import { uploadToCloudinary } from "../Utils/cloudinaryUpload.js";
 import User from "../Models/User.js";
 import BuzzMessage from "../Models/BuzzMessage.js";
-import fs from "fs";
-import path from "path";
 
 // Create a new buzz group (admin only)
 export const createGroup = async (req, res) => {
@@ -162,31 +160,44 @@ export const registerBuzzHandlers = (io, socket) => {
 
   // Handle incoming buzz messages
   socket.on("sendBuzzMessage", async (data) => {
-    const { societyId, groupId = null, sender, senderName, content } = data;
+    const {
+      societyId,
+      groupId = null,
+      sender,
+      senderName,
+      content,
+      fileUrl,
+      fileType,
+      audioUrl,
+    } = data;
+
     try {
-      // Persist message
       const msg = await BuzzMessage.create({
         sender,
         senderName,
         content,
         group: groupId,
         societyId,
+        fileUrl,
+        fileType,
+        audioUrl, // ✅ And save it
       });
 
-      // Emit to everyone in that society
       io.to(societyId).emit("receiveBuzzMessage", msg);
     } catch (err) {
       console.error("⚠️ Error saving buzz message:", err);
     }
   });
 };
-
 export const getMessages = async (req, res) => {
   try {
     const { societyId } = req.params;
-    const messages = await BuzzMessage.find({ societyId }).sort({
-      createdAt: 1,
-    }); // oldest→newest
+    const userId = req.user._id;
+
+    const messages = await BuzzMessage.find({
+      societyId,
+      deletedFor: { $ne: userId },
+    }).sort({ createdAt: 1 });
 
     return res.status(200).json(messages);
   } catch (err) {
@@ -232,5 +243,91 @@ export const uploadVoiceMessage = async (req, res) => {
   }
 };
 
+export const uploadBuzzFile = async (req, res) => {
+  try {
+    if (!req.file) {
+      console.log("❌ No file received in req.file");
+      return res.status(400).json({ message: "No file uploaded" });
+    }
 
+    console.log("📦 File received:", req.file.originalname);
 
+    const buffer = req.file.buffer;
+    const mimetype = req.file.mimetype;
+
+    const uploadResult = await uploadToCloudinary(
+      buffer,
+      "buzz_uploads",
+      mimetype
+    );
+
+    return res.status(200).json({
+      url: uploadResult.url,
+      public_id: uploadResult.public_id,
+    });
+  } catch (err) {
+    console.error("📤 Upload failed:", err);
+    res.status(500).json({ message: "Upload failed", error: err.message });
+  }
+};
+
+export const deleteBuzzMessageForMe = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const userId = req.user._id;
+
+    const message = await BuzzMessage.findById(messageId);
+    if (!message.deletedFor) message.deletedFor = [];
+
+    if (!message) return res.status(404).json({ message: "Message not found" });
+
+    if (message.deletedFor.includes(userId)) {
+      return res
+        .status(400)
+        .json({ message: "Message already deleted for you" });
+    }
+
+    message.deletedFor.push(userId);
+    await message.save();
+
+    const io = req.app.get("socketio");
+    io.to(userId.toString()).emit("buzz message deleted for me", { messageId });
+
+    res.status(200).json({ message: "Message deleted for you" });
+  } catch (err) {
+    console.error("❌ Delete for me error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// DELETE for Everyone
+export const deleteBuzzMessageForEveryone = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const userId = req.user._id;
+
+    const message = await BuzzMessage.findById(messageId);
+    if (!message) return res.status(404).json({ message: "Message not found" });
+
+    // Allow only sender or admin to delete for all
+    const isAdmin = req.user.role === "admin"; // assuming user has a role field
+    const isSender = message.sender.toString() === userId.toString();
+    if (!isSender && !isAdmin) {
+      return res
+        .status(403)
+        .json({ message: "Not authorized to delete for all" });
+    }
+
+    await BuzzMessage.findByIdAndDelete(messageId);
+
+    const io = req.app.get("socketio");
+    io.to(message.societyId.toString()).emit("buzz message deleted for all", {
+      messageId,
+    });
+
+    res.status(200).json({ message: "Message deleted for everyone" });
+  } catch (err) {
+    console.error("❌ Delete for all error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};

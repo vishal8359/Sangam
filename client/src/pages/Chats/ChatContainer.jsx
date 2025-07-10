@@ -6,8 +6,6 @@ import Picker from "@emoji-mart/react";
 import InsertEmoticonIcon from "@mui/icons-material/InsertEmoticon";
 import DoneAllIcon from "@mui/icons-material/DoneAll";
 import chat_bg from "../../assets/chats_bg.jpg";
-import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
 
 import {
   Box,

@@ -11,10 +11,13 @@ export const uploadToCloudinary = async (fileBuffer, folder, mimetype) => {
   try {
     const base64 = fileBuffer.toString("base64");
     const dataURI = `data:${mimetype};base64,${base64}`;
+    const isPDF = mimetype === "application/pdf";
+
 
     const res = await cloudinary.uploader.upload(dataURI, {
       folder,
       resource_type: "auto",
+      format: isPDF ? "pdf" : undefined,
     });
 
     return { url: res.secure_url, public_id: res.public_id };

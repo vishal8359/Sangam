@@ -24,6 +24,9 @@ import {
   postInGroup,
   getMessages,
   uploadVoiceMessage,
+  uploadBuzzFile,
+  deleteBuzzMessageForMe,
+  deleteBuzzMessageForEveryone,
 } from "../Controllers/buzzController.js";
 import upload from "../Configs/multer.js";
 import { requestToJoinGroup } from "../Controllers/groupJoinController.js";
@@ -106,21 +109,17 @@ router.post(
 );
 router.get("/buzz/groups/:societyId", verifyUser, getGroupsBySociety);
 router.get("/buzz/group/:groupId", verifyUser, getGroupDetails);
-// router.post(
-//   "/buzz/groups/:groupId/post",
-//   verifyUser,
-//   upload.fields([
-//     { name: "image", maxCount: 1 },
-//     { name: "audio", maxCount: 1 },
-//     { name: "reel", maxCount: 1 },
-//   ]),
-//   postInGroup
-// );
 router.post(
   "/buzz/groups/:groupId/join-request",
   verifyUser,
   requestToJoinGroup
 );
+
+router.delete("/buzz/message/:messageId/me", verifyUser, deleteBuzzMessageForMe);
+router.delete("/buzz/message/:messageId/all", verifyUser, deleteBuzzMessageForEveryone);
+
+router.post("/buzz/upload", verifyUser, upload.single("file"), uploadBuzzFile);
+
 
 // products
 router.post(

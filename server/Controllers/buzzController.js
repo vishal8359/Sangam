@@ -215,28 +215,26 @@ export const uploadVoiceMessage = async (req, res) => {
       return res.status(400).json({ error: "No audio file uploaded" });
     }
 
-    // Upload to Cloudinary (or your provider)
-    const uploaded = await cloudinary.uploader.upload(audioFile.path, {
-      resource_type: "video", // or "auto" for Cloudinary
-      folder: "buzz/audio",
-    });
+    // Use utility to upload to Cloudinary
+    const { url: audioUrl } = await uploadToCloudinary(
+      audioFile.buffer,
+      "buzz/audio",
+      audioFile.mimetype
+    );
 
-    const audioUrl = uploaded.secure_url;
-
-    // Save to DB (assumes you have a BuzzMessage model)
     const newMessage = await BuzzMessage.create({
       sender,
       senderName,
       content: "🎤 Voice Message",
-      audio: audioUrl, // ✅ THIS IS MISSING IN YOUR DATA
+      audio: audioUrl,
       societyId,
       group: groupId || null,
     });
 
-    // Emit to socket
+    const io = req.app.get("socketio");
     io.to(societyId).emit("receiveBuzzMessage", newMessage);
 
-    res.status(200).json({ audioUrl }); // client needs this
+    res.status(200).json({ url: audioUrl });
   } catch (err) {
     console.error("Audio upload error:", err);
     res.status(500).json({ error: "Server error during audio upload" });

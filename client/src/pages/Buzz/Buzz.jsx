@@ -78,6 +78,8 @@ export default function SocietyBuzz() {
   const discardRecordingRef = useRef(false);
   const [audioChunks, setAudioChunks] = useState([]);
   const audioChunksRef = useRef([]);
+  const streamRef = useRef(null);
+  const [sendingMedia, setSendingMedia] = useState(false);
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewType, setPreviewType] = useState(""); // "image", "video", "pdf"
@@ -248,6 +250,7 @@ export default function SocietyBuzz() {
   const handleStartRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
       const recorder = new MediaRecorder(stream);
 
       const chunks = [];
@@ -257,38 +260,46 @@ export default function SocietyBuzz() {
 
       recorder.onstop = async () => {
         const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-
-        // Optional: Discard logic
         if (discardRecordingRef.current) {
           discardRecordingRef.current = false;
+          stopStream(); // Clean up mic
           return;
         }
-
         const formData = new FormData();
         formData.append("audio", blob, "voice-message.webm");
+        formData.append("sender", userId);
+        formData.append("senderName", userProfile?.name || "Unknown");
+        formData.append("societyId", societyId);
+        formData.append("groupId", currentGroup?._id || "");
 
         try {
-          const res = await axios.post("/api/users/buzz/audio", formData, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "multipart/form-data",
-            },
-          });
+          setSendingMedia(true);
+          const res = await axios.post(
+            "/api/users/buzz/upload/voice",
+            formData,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "multipart/form-data",
+              },
+            }
+          );
 
           const audioUrl = res.data.url;
+
           const payload = {
             societyId,
             groupId: currentGroup?._id || null,
             sender: userId,
             senderName: userProfile?.name || "Unknown",
             content: "🎤 Voice Message",
-            audioUrl, // Include audio URL
+            audio: audioUrl,
           };
-
-          socketRef.current.emit("sendBuzzMessage", payload);
         } catch (err) {
           console.error("🎙 Audio Upload Failed", err);
         } finally {
+          setSendingMedia(false);
+          stopStream();
           setRecording(false);
           setMediaRecorder(null);
           audioChunksRef.current = [];
@@ -304,6 +315,14 @@ export default function SocietyBuzz() {
       console.error("Recording failed:", err);
     }
   };
+
+  const stopStream = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop()); // Stops mic
+      streamRef.current = null;
+    }
+  };
+
   const handleFileUpload = async (file) => {
     if (!file) return;
 
@@ -407,7 +426,7 @@ export default function SocietyBuzz() {
       });
       socketRef.current.emit("buzzDeleteMessage", {
         messageId,
-        type, 
+        type,
         userId,
       });
 
@@ -644,7 +663,7 @@ export default function SocietyBuzz() {
                                 src={msg.fileUrl}
                                 style={{
                                   width: "100%",
-                                  borderRadius: 8,
+                                  borderRadius: 15,
                                   display: "block",
                                 }}
                                 muted
@@ -673,10 +692,10 @@ export default function SocietyBuzz() {
                               }}
                             >
                               {(msg.content === "🎤 Voice Message" &&
-                                msg.audioUrl) ||
+                                msg.audio) ||
                               msg.fileType?.startsWith("audio") ? (
                                 <WaveformPlayer
-                                  audioUrl={msg.audioUrl || msg.fileUrl}
+                                  audioUrl={msg.audio || msg.fileUrl}
                                   fromSender={msg.sender === userId}
                                 />
                               ) : msg.fileUrl ? (
@@ -866,7 +885,12 @@ export default function SocietyBuzz() {
                   variant="outlined"
                   onClick={() => {
                     discardRecordingRef.current = true;
-                    if (mediaRecorder) mediaRecorder.stop();
+
+                    if (mediaRecorder && mediaRecorder.state === "recording") {
+                      mediaRecorder.onstop = null;
+                      mediaRecorder.stop();
+                    }
+                    stopStream();
                     setRecording(false);
                     setMediaRecorder(null);
                     setAudioChunks([]);
@@ -875,6 +899,21 @@ export default function SocietyBuzz() {
                   Delete
                 </Button>
               </Box>
+            </Box>
+          )}
+          {sendingMedia && (
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+                padding: "8px 12px",
+                borderRadius: 2,
+                bgcolor: isDark ? "#333" : "#f0f0f0",
+              }}
+            >
+              <CircularProgress size={20} />
+              <Typography variant="body2">Uploading audio...</Typography>
             </Box>
           )}
         </Box>

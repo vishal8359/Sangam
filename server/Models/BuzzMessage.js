@@ -8,7 +8,7 @@ const buzzMessageSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    audioUrl: {
+    audio: {
       type: String,
     },
     senderName: {

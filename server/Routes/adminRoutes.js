@@ -5,7 +5,7 @@ import { verifyAdmin, verifyUser, verifyUserOrAdmin } from "../Middlewares/authM
 import { getSocietyById } from "../Controllers/societyController.js";
 import { createPoll, getPollsBySociety, voteInPoll, getPollResults, togglePollLock } from "../Controllers/pollController.js";
 import { createNotice, getNoticesBySociety } from "../Controllers/noticeController.js";
-import { createGroup, getGroupsBySociety, getGroupDetails, postInGroup } from "../Controllers/buzzController.js";
+import { getGroupsBySociety, getGroupDetails, postInGroup, createBuzzGroup, getSocietyMembers } from "../Controllers/buzzController.js";
 import { rejectGroupJoinRequest, approveGroupJoinRequest } from "../Controllers/groupJoinController.js";
 import { deactivateProduct } from "../Controllers/productController.js";
 import { resolveComplaint, getComplaintsBySociety, getResolvedComplaints, deleteComplaint } from "../Controllers/complaintController.js";
@@ -44,7 +44,10 @@ router.post("/chats/send", verifyAdmin, sendMessage);
 router.get("/chats/me", verifyAdmin, getMyChats);
 
 // Buzz group routes
-router.post("/buzz/groups/create", verifyAdmin, createGroup);
+router.post("/buzz/create-group", verifyAdmin, createBuzzGroup);
+// routes/adminRoutes.js
+router.get("/buzz/members/:societyId", verifyAdmin, getSocietyMembers);
+
 router.get("/buzz/groups/:societyId", verifyUser, getGroupsBySociety);
 router.get("/buzz/group/:groupId", verifyUser, getGroupDetails);
 router.post("/buzz/group/:groupId/post", verifyUser, postInGroup);

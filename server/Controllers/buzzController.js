@@ -3,28 +3,70 @@ import GroupJoinRequest from "../Models/GroupJoinRequest.js";
 import { uploadToCloudinary } from "../Utils/cloudinaryUpload.js";
 import User from "../Models/User.js";
 import BuzzMessage from "../Models/BuzzMessage.js";
-
-// Create a new buzz group (admin only)
-export const createGroup = async (req, res) => {
+import BuzzGroup from "../Models/BuzzGroup.js";
+import mongoose from "mongoose";
+export const createBuzzGroup = async (req, res) => {
   try {
-    const { name, description, society_id } = req.body;
-    if (!name || !society_id) {
+    const { groupName, members, societyId } = req.body;
+
+    if (!groupName || !members || !societyId) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    const newGroup = await BuzzGroup.create({
+      groupName,
+      members,
+      societyId,
+    });
+
+    res.status(201).json({ success: true, group: newGroup });
+  } catch (err) {
+    console.error("Error creating buzz group:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+export const getBuzzGroups = async (req, res) => {
+  try {
+    const { societyId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(societyId)) {
       return res
         .status(400)
-        .json({ message: "Name and society_id are required" });
+        .json({ success: false, message: "Invalid societyId" });
     }
-    const group = await Group.create({
-      name,
-      description,
-      society_id,
-      created_by: req.user._id,
-      members: [req.user._id], // Admin joins by default
-      posts: [],
+
+    console.log("👉 Fetching buzz groups for societyId:", societyId);
+
+    const groups = await BuzzGroup.find({
+      societyId: new mongoose.Types.ObjectId(societyId),
     });
-    res.status(201).json({ message: "Group created", group });
+
+    console.log("📦 Found groups:", groups);
+
+    res.status(200).json({ success: true, groups });
   } catch (err) {
-    console.error("Create group error:", err);
-    res.status(500).json({ message: "Server error" });
+    console.error("❌ Failed to fetch buzz groups:", err);
+    res
+      .status(500)
+      .json({ success: false, message: "Error fetching buzz groups" });
+  }
+};
+
+
+export const getSocietyMembers = async (req, res) => {
+  try {
+    const { societyId } = req.params;
+
+    // This matches your working route
+    const users = await User.find({ joined_societies: societyId }).select(
+      "_id name email avatar"
+    );
+
+    res.json(users); // no need to wrap in { success: true, ... }
+  } catch (err) {
+    console.error("❌ Error fetching buzz members:", err);
+    res.status(500).json({ error: "Server Error" });
   }
 };
 

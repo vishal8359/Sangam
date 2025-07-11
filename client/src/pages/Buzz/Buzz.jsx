@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import io from "socket.io-client";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import Picker from "@emoji-mart/react";
@@ -51,6 +51,7 @@ export default function SocietyBuzz() {
     userId,
     userRole,
     members,
+    setMembers,
     societyId,
     token,
     buzzMessages,
@@ -90,6 +91,8 @@ export default function SocietyBuzz() {
   const [capturedImage, setCapturedImage] = useState(null);
   const videoRef = useRef(null);
   const [contextMenu, setContextMenu] = useState(null);
+  const [loadingMembers, setLoadingMembers] = useState(false);
+  const [creatingGroup, setCreatingGroup] = useState(false);
 
   // Auto‑scroll
   useEffect(() => {
@@ -164,9 +167,32 @@ export default function SocietyBuzz() {
       socket.disconnect();
     };
   }, [societyId]);
+  useEffect(() => {
+    const fetchMembers = async () => {
+      try {
+        setLoadingMembers(true);
+        const res = await axios.get(`/api/admin/buzz/members/${societyId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        setMembers(res.data);
+      } catch (err) {
+        console.error("❌ Failed to fetch members", err);
+      } finally {
+        setLoadingMembers(false);
+      }
+    };
+
+    if (openDialog && societyId) {
+      fetchMembers();
+    }
+  }, [openDialog, societyId]);
 
   // Filter groups & current
-  const groupList = buzzGroups.filter((g) => g.members.includes(userId));
+  const groupList = useMemo(() => {
+    return buzzGroups.filter((g) => g.members.includes(userId));
+  }, [buzzGroups, userId]);
+
   const currentGroup = tab === 0 ? null : groupList[tab - 1];
 
   // Send via socket + optional local echo
@@ -183,6 +209,12 @@ export default function SocietyBuzz() {
     setMessage("");
   };
 
+  useEffect(() => {
+    if (societyId && token) {
+      fetchGroups(); // fetch on initial load
+    }
+  }, [societyId, token]);
+
   // Filter for display
   const getFilteredMessages = () => {
     if (tab === 0) {
@@ -197,22 +229,6 @@ export default function SocietyBuzz() {
         ? prev.filter((id) => id !== memberId)
         : [...prev, memberId]
     );
-  };
-
-  const handleCreateGroup = () => {
-    const trimmed = newGroupName.trim();
-    if (
-      trimmed &&
-      !buzzGroups.some((g) => g.name.toLowerCase() === trimmed.toLowerCase())
-    ) {
-      setBuzzGroups((prev) => [
-        ...prev,
-        { _id: Date.now().toString(), name: trimmed, members: selectedMembers },
-      ]);
-    }
-    setNewGroupName("");
-    setSelectedMembers([]);
-    setOpenDialog(false);
   };
 
   const formatDate = (timestamp) => {
@@ -449,6 +465,76 @@ export default function SocietyBuzz() {
       console.error("Failed to delete message:", err);
     }
   };
+  const fetchGroups = async () => {
+    try {
+      const res = await axios.get(`/api/users/buzz/groups/${societyId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const newGroups = res.data.groups || [];
+      setBuzzGroups(newGroups); // updates context/global state
+      return newGroups; // return to use after group creation
+    } catch (err) {
+      console.error("❌ Failed to fetch groups after creation:", err);
+      return [];
+    }
+  };
+
+  const handleCreateGroup = async () => {
+    if (!newGroupName.trim()) return alert("Enter a group name.");
+    if (selectedMembers.length === 0)
+      return alert("Select at least one member.");
+
+    try {
+      setCreatingGroup(true);
+
+      const members = [...new Set([...selectedMembers, userId])];
+
+      const res = await axios.post(
+        "/api/admin/buzz/create-group",
+        {
+          groupName: newGroupName,
+          members,
+          societyId,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (res.data.success) {
+        alert("Group created!");
+        setOpenDialog(false);
+        setNewGroupName("");
+        setSelectedMembers([]);
+
+        // Fetch new group list
+        const updatedGroups = await fetchGroups();
+
+        // Find index of the new group in the updated list
+        const myGroups = updatedGroups.filter((g) =>
+          g.members.includes(userId)
+        );
+        const newGroupIndex = myGroups.findIndex(
+          (g) => g.groupName === newGroupName
+        );
+
+        // Set tab to newly created group (+1 because 0 is Public)
+        if (newGroupIndex !== -1) {
+          setTab(newGroupIndex + 1);
+        }
+        socketRef.current.emit("buzzGroupCreated", {
+          societyId,
+          group: res.data.group,
+        });
+      }
+    } catch (err) {
+      console.error("❌ Error creating group:", err);
+      alert("Failed to create group.");
+    } finally {
+      setCreatingGroup(false);
+    }
+  };
 
   return (
     <Box
@@ -505,18 +591,19 @@ export default function SocietyBuzz() {
                 </Box>
               }
             />
-            {groupList.map((g, i) => (
+            {groupList.map((g) => (
               <Tab
                 key={g._id}
                 label={
-                  <Box display="flex" alignItems="center">
+                  <Box display="flex" alignItems="center" sx={{color: isDark? "#fff" : ""}}>
                     <Groups2Icon />
-                    &nbsp;{g.name}
+                    &nbsp;{g.groupName}
                   </Box>
                 }
               />
             ))}
           </Tabs>
+
           {userRole === "admin" && (
             <Tooltip title="New Group">
               <IconButton onClick={() => setOpenDialog(true)}>
@@ -922,36 +1009,63 @@ export default function SocietyBuzz() {
       {/* Create Group Dialog */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
         <DialogTitle>Create New Group</DialogTitle>
-        <DialogContent>
+
+        <DialogContent dividers>
           <TextField
             label="Group Name"
             fullWidth
+            required
             value={newGroupName}
             onChange={(e) => setNewGroupName(e.target.value)}
+            sx={{ mt: 1 }}
           />
+
           <Typography variant="subtitle2" mt={2}>
             Select Members
           </Typography>
+
           <FormGroup>
-            {members.map((m) => (
-              <FormControlLabel
-                key={m._id}
-                control={
-                  <Checkbox
-                    checked={selectedMembers.includes(m._id)}
-                    onChange={() => handleToggleMember(m._id)}
-                  />
-                }
-                label={m.name || m.email}
-              />
-            ))}
+            {members.length > 0 ? (
+              members.map((m) => (
+                <FormControlLabel
+                  key={m._id}
+                  control={
+                    <Checkbox
+                      checked={selectedMembers.includes(m._id)}
+                      onChange={() => handleToggleMember(m._id)}
+                    />
+                  }
+                  label={m.name || m.email}
+                />
+              ))
+            ) : (
+              <Typography variant="body2" color="textSecondary">
+                No members available
+              </Typography>
+            )}
           </FormGroup>
         </DialogContent>
+
         <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-          <Button onClick={handleCreateGroup}>Create</Button>
+          <Button onClick={() => setOpenDialog(false)} disabled={creatingGroup}>
+            Cancel
+          </Button>
+
+          <Button
+            onClick={handleCreateGroup}
+            disabled={
+              creatingGroup ||
+              !newGroupName.trim() ||
+              selectedMembers.length === 0
+            }
+            variant="contained"
+            color="primary"
+          >
+            {creatingGroup ? "Creating..." : "Create"}
+          </Button>
         </DialogActions>
       </Dialog>
+
       <Dialog open={previewOpen} onClose={closePreview} fullScreen>
         <Box
           onClick={closePreview}

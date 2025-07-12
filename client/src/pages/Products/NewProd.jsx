@@ -18,7 +18,6 @@ import { keyframes } from "@emotion/react";
 import { useAppContext } from "../../context/AppContext.jsx";
 
 import prod2 from "../../assets/prod2_bg.jpg";
-import { dummyProducts } from "../../assets/local.js";
 
 const Products = () => {
   const navigate = useNavigate();
@@ -26,6 +25,8 @@ const Products = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const {
+    axios,
+    token,
     products,
     setProducts,
     cartItems,
@@ -36,8 +37,22 @@ const Products = () => {
   } = useAppContext();
 
   useEffect(() => {
-    setProducts(dummyProducts);
-  }, [setProducts]);
+    const fetchProducts = async () => {
+      if (!token) return; 
+
+      try {
+        const { data } = await axios.get("/api/users/products/society", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setProducts(data);
+      } catch (err) {
+        console.error("❌ Error fetching society products:", err);
+        toast.error("Failed to load products.");
+      }
+    };
+
+    fetchProducts();
+  }, [token, setProducts]); 
 
   const handleQtyChange = (productId, delta) => {
     const currentQty = cartItems[productId] || 0;
@@ -76,8 +91,8 @@ const Products = () => {
           backgroundRepeat: "repeat-y",
           backgroundPosition: "center bottom",
           animation: `${backgroundMove} 30s linear infinite`,
-          opacity: 0.1,
-          filter: "blur(2px)",
+          opacity: 0.05,
+          filter: "blur(0px)",
           zIndex: -2,
         },
         ...(isDark && {
@@ -134,7 +149,7 @@ const Products = () => {
         >
           <Badge badgeContent={getCartCount()} color="primary">
             <ShoppingCartIcon
-              sx={{ fontSize: 30, color: theme.palette.primary.main }}
+              sx={{ fontSize: 30, color: isDark ? "#fff" : "" }}
             />
           </Badge>
         </Box>
@@ -173,7 +188,7 @@ const Products = () => {
                 })
               }
               component="img"
-              src={product.image[0]}
+              src={product.image}
               alt={product.name}
               sx={{
                 height: isMobile ? 60 : 140,
@@ -197,7 +212,7 @@ const Products = () => {
               fontSize="0.75rem"
               color="text.secondary"
             >
-              Seller: {product.sellerName || "Unknown"}
+              Seller: {product.sellerName}
             </Typography>
             <Typography
               align="center"
@@ -255,7 +270,7 @@ const Products = () => {
                   >
                     –
                   </IconButton>
-                  <Typography sx={{ mx: 1.5, fontWeight: 500 }}>
+                  <Typography sx={{ mx: 1.5, fontWeight: 500, color: isDark? "#1976d2" : "" }}>
                     {cartItems[product._id]}
                   </Typography>
                   <IconButton

@@ -1,56 +1,55 @@
 import MySociety from "../pages/Society/MySociety";
-import lamp from "../assets/prodImages/lamp.jpg"
-import lamp2 from "../assets/prodImages/lamp2.jpg"
-import lamp3 from "../assets/prodImages/lamp3.jpg"
+import lamp from "../assets/prodImages/lamp.jpg";
+import lamp2 from "../assets/prodImages/lamp2.jpg";
+import lamp3 from "../assets/prodImages/lamp3.jpg";
 
-import vase from "../assets/prodImages/vase.jpg"
-import vase2 from "../assets/prodImages/vase2.jpeg"
-import vase3 from "../assets/prodImages/vase3.jpg"
+import vase from "../assets/prodImages/vase.jpg";
+import vase2 from "../assets/prodImages/vase2.jpeg";
+import vase3 from "../assets/prodImages/vase3.jpg";
 
-import painting from "../assets/prodImages/wall_painting.jpg"
-import painting2 from "../assets/prodImages/wall_painting2.jpg"
-import painting3 from "../assets/prodImages/wall_painting3.jpg"
+import painting from "../assets/prodImages/wall_painting.jpg";
+import painting2 from "../assets/prodImages/wall_painting2.jpg";
+import painting3 from "../assets/prodImages/wall_painting3.jpg";
 
-import basket1 from "../assets/prodImages/basket1.jpg"
-import basket2 from "../assets/prodImages/basket2.jpg"
+import basket1 from "../assets/prodImages/basket1.jpg";
+import basket2 from "../assets/prodImages/basket2.jpg";
 
-import clock1 from "../assets/prodImages/clock1.jpg"
-import clock2 from "../assets/prodImages/clock2.jpg"
+import clock1 from "../assets/prodImages/clock1.jpg";
+import clock2 from "../assets/prodImages/clock2.jpg";
 
-import diffuser1 from "../assets/prodImages/diffuser1.jpg"
-import diffuser2 from "../assets/prodImages/diffuser2.jpg"
-import diffuser3 from "../assets/prodImages/diffuser3.jpg"
+import diffuser1 from "../assets/prodImages/diffuser1.jpg";
+import diffuser2 from "../assets/prodImages/diffuser2.jpg";
+import diffuser3 from "../assets/prodImages/diffuser3.jpg";
 
-import glass1 from "../assets/prodImages/glass1.jpg"
-import glass2 from "../assets/prodImages/glass2.jpg"
+import glass1 from "../assets/prodImages/glass1.jpg";
+import glass2 from "../assets/prodImages/glass2.jpg";
 
-import laundry1 from "../assets/prodImages/laundry1.jpg"
-import laundry2 from "../assets/prodImages/laundry2.jpg"
+import laundry1 from "../assets/prodImages/laundry1.jpg";
+import laundry2 from "../assets/prodImages/laundry2.jpg";
 
-import led1 from "../assets/prodImages/led1.jpg"
-import led2 from "../assets/prodImages/led2.jpg"
+import led1 from "../assets/prodImages/led1.jpg";
+import led2 from "../assets/prodImages/led2.jpg";
 
-import planter1 from "../assets/prodImages/planter1.jpg"
-import planter2 from "../assets/prodImages/planter2.jpg"
+import planter1 from "../assets/prodImages/planter1.jpg";
+import planter2 from "../assets/prodImages/planter2.jpg";
 
-import rug1 from "../assets/prodImages/rug1.jpg"
-import rug2 from "../assets/prodImages/rug2.jpg"
-import rug3 from "../assets/prodImages/rug3.jpg"
+import rug1 from "../assets/prodImages/rug1.jpg";
+import rug2 from "../assets/prodImages/rug2.jpg";
+import rug3 from "../assets/prodImages/rug3.jpg";
 
-import shelf1 from "../assets/prodImages/shelf1.jpg"
-import shelf2 from "../assets/prodImages/shelf2.jpg"
+import shelf1 from "../assets/prodImages/shelf1.jpg";
+import shelf2 from "../assets/prodImages/shelf2.jpg";
 
-import stand1 from "../assets/prodImages/stand1.jpg"
-import stand2 from "../assets/prodImages/stand2.jpg"
+import stand1 from "../assets/prodImages/stand1.jpg";
+import stand2 from "../assets/prodImages/stand2.jpg";
 
 export const society = {
-    name: "Green Valley Apartments",
-    id: "GV-1234",
-    address: "Sector 22, Dwarka, New Delhi",
-    members: 58,
-    admin: "Radhika Sharma",
-    imageUrl: "./mySociety",
-
+  name: "Green Valley Apartments",
+  id: "GV-1234",
+  address: "Sector 22, Dwarka, New Delhi",
+  members: 58,
+  admin: "Radhika Sharma",
+  imageUrl: "./mySociety",
 };
 export const samplePolls = [
   {
@@ -84,34 +83,34 @@ export const samplePolls = [
 export const productsFromSociety = [
   {
     id: 1,
-    name: 'Wooden Chair',
-    price: '₹800',
-    image: 'https://source.unsplash.com/random/200x200?chair',
-    description: 'Solid teakwood chair in excellent condition.',
+    name: "Wooden Chair",
+    price: "₹800",
+    image: "https://source.unsplash.com/random/200x200?chair",
+    description: "Solid teakwood chair in excellent condition.",
   },
   {
     id: 2,
-    name: 'Microwave Oven',
-    price: '₹1200',
-    image: 'https://source.unsplash.com/random/200x200?microwave',
-    description: 'Hardly used, 20L capacity.',
+    name: "Microwave Oven",
+    price: "₹1200",
+    image: "https://source.unsplash.com/random/200x200?microwave",
+    description: "Hardly used, 20L capacity.",
   },
 ];
 
 export const productsFromNeighbours = [
   {
     id: 3,
-    name: 'Study Table',
-    price: '₹1500',
-    image: 'https://source.unsplash.com/random/200x200?table',
-    description: 'Spacious and durable study table.',
+    name: "Study Table",
+    price: "₹1500",
+    image: "https://source.unsplash.com/random/200x200?table",
+    description: "Spacious and durable study table.",
   },
   {
     id: 4,
-    name: 'Refrigerator',
-    price: '₹5000',
-    image: 'https://source.unsplash.com/random/200x200?refrigerator',
-    description: 'Double door fridge, 260L.',
+    name: "Refrigerator",
+    price: "₹5000",
+    image: "https://source.unsplash.com/random/200x200?refrigerator",
+    description: "Double door fridge, 260L.",
   },
 ];
 // Severe conditions list
@@ -161,7 +160,7 @@ export const dummyProducts = [
       "Perfect for fresh flowers or dried arrangements",
       "Handcrafted with traditional pottery techniques",
       "Durable and water-resistant build",
-      "Adds charm to any living space or shelf"
+      "Adds charm to any living space or shelf",
     ],
   },
   {
@@ -180,7 +179,7 @@ export const dummyProducts = [
       "Abstract art inspired by modern Indian themes",
       "Ready to hang with attached hooks",
       "UV-resistant coating to prevent fading",
-      "Ideal for living rooms, hallways, or offices"
+      "Ideal for living rooms, hallways, or offices",
     ],
   },
   {
@@ -199,7 +198,7 @@ export const dummyProducts = [
       "Warm ambient lighting with soft glow effect",
       "Minimalist design blends with any decor",
       "Fitted with energy-saving LED bulb",
-      "Perfect for bedside tables or study desks"
+      "Perfect for bedside tables or study desks",
     ],
   },
   {

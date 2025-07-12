@@ -1,98 +1,145 @@
 import Product from "../Models/Product.js";
 import { uploadToCloudinary } from "../Utils/cloudinaryUpload.js";
-import { v2 as cloudinary } from "cloudinary";
-import mongoose from "mongoose";
 
 
 // POST: User uploads product
-export const createProduct = async (req, res) => {
+export const addProduct = async (req, res) => {
   try {
-    const { name, price, quantity, description, society_id } = req.body;
-
-    const files = req.files || [];
-
-    const imageUrls = await Promise.all(
-      files.map((file) => uploadToCloudinary(file.path, "products"))
-    );
-
-    const product = await Product.create({
+    const {
       name,
       price,
+      offerPrice,
       quantity,
       description,
-      images: imageUrls,
-      created_by: req.user._id,
-      society_id: society_id || req.user.joined_society,
-    });
+      rating,
+      societyId,
+    } = req.body;
+    const uploader = req.user._id;
+    const images = [];
 
-    res.status(201).json({ message: "Product created", product });
-  } catch (err) {
-    console.error("Create product error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-// GET: All active products
-export const getActiveProducts = async (req, res) => {
-  try {
-    const products = await Product.find({
-      society_id: req.user.joined_society,
-      is_active: true,
-    });
-    res.json(products);
-  } catch (err) {
-    console.error("Fetch products error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-// DELETE: Admin deactivates suspicious product
-export const deactivateProduct = async (req, res) => {
-  try {
-    const product = await Product.findById(req.params.productId);
-    if (!product) return res.status(404).json({ message: "Product not found" });
-
-    product.is_active = false;
-    await product.save();
-
-    res.json({ message: "Product deactivated by admin" });
-  } catch (err) {
-    console.error("Deactivate error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-// DELETE: By resident
-export const deleteProduct = async (req, res) => {
-  try {
-    const { productId } = req.params;
-    const userId = req.user._id;
-
-    const product = await Product.findById(productId);
-
-    if (!product) return res.status(404).json({ message: "Product not found" });
-
-    if (!mongoose.Types.ObjectId.isValid(productId)) {
-      return res.status(400).json({ message: "Invalid product ID" });
-    }
-
-    if (product.created_by.toString() !== userId.toString()) {
-      return res
-        .status(403)
-        .json({ message: "Unauthorized to delete this product" });
-    }
-
-    for (const img of product.images) {
-      if (img.public_id) {
-        await cloudinary.uploader.destroy(img.public_id);
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        const result = await uploadToCloudinary(
+          file.buffer,
+          "sangam-products",
+          file.mimetype
+        );
+        images.push(result);
       }
     }
 
-    await product.deleteOne();
+    const product = new Product({
+      name,
+      price,
+      offerPrice,
+      quantity,
+      description,
+      rating,
+      images,
+      createdBy: uploader,
+      societyId,
+    });
 
-    res.status(200).json({ message: "Product deleted successfully" });
+    await product.save();
+    res.status(201).json({ message: "✅ Product added successfully", product });
+  } catch (error) {
+    console.error("❌ Product Upload Error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+export const getMyProducts = async (req, res) => {
+  try {
+    const myProducts = await Product.find({
+      createdBy: req.user._id,
+    }).sort({ createdAt: -1 });
+
+    // Inject earnings field into each product
+    const updatedProducts = myProducts.map((p) => ({
+      ...p._doc,
+      earnings: (p.price || 0) * (p.soldQuantity || 0), // You can change this logic as needed
+    }));
+
+    res.status(200).json(updatedProducts);
+  } catch (error) {
+    console.error("❌ Fetch My Products Error:", error);
+    res.status(500).json({ message: "Failed to fetch your products." });
+  }
+};
+export const getSocietyProducts = async (req, res) => {
+  try {
+    const { societyId } = req.user;
+
+    const products = await Product.find({
+      societyId,
+      isActive: true,
+    })
+      .populate("createdBy", "name address")
+      .sort({ createdAt: -1 });
+
+    // Format the product data
+    const formatted = products.map((p) => ({
+      ...p._doc,
+      image: p.images?.[0]?.url || "", 
+      sellerName: p.createdBy?.name || "Unknown",
+      sellerAddress: p.createdBy?.address || "N/A",
+    }));
+
+    res.status(200).json(formatted);
   } catch (err) {
-    console.error("❌ Delete product error:", err);
+    console.error("❌ Error in getSocietyProducts:", err);
+    res.status(500).json({ message: "Failed to fetch society products." });
+  }
+};
+
+export const toggleProductActiveStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const product = await Product.findById(id);
+
+    if (!product) return res.status(404).json({ message: "Product not found" });
+
+    // Only owner can toggle
+    if (product.createdBy.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    product.isActive = !product.isActive;
+    await product.save();
+
+    res.status(200).json({
+      message: `Product ${product.isActive ? "listed" : "unlisted"} successfully`,
+      isActive: product.isActive,
+    });
+  } catch (err) {
+    console.error("❌ Error toggling product status:", err);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+export const getCartProducts = async (req, res) => {
+  try {
+    const { ids } = req.body; // Array of product IDs
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: "No product IDs provided" });
+    }
+
+    const products = await Product.find({
+      _id: { $in: ids },
+      isActive: true,
+    }).populate("createdBy", "name address");
+
+    const formatted = products.map((p) => ({
+      ...p._doc,
+      image: p.images?.[0]?.url || "",
+      sellerName: p.createdBy?.name || "Unknown",
+      sellerAddress: p.createdBy?.address || "N/A",
+    }));
+
+    res.status(200).json({ products: formatted });
+  } catch (err) {
+    console.error("❌ Error fetching cart products:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };

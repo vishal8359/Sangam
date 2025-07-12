@@ -38,10 +38,15 @@ export const AppContextProvider = ({ children }) => {
 
   // Marketplace
   const [products, setProducts] = useState([]);
-  const [cartItems, setCartItems] = useState({});
+  const [cartItems, setCartItems] = useState(() => {
+    const stored = localStorage.getItem("sangam-cart");
+    return stored ? JSON.parse(stored) : {};
+  });
+  const [productsLoading, setProductsLoading] = useState(true);
   const [cartCount, setCartCount] = useState(0);
   const [firstCartId, setFirstCartId] = useState(null);
   const currency = import.meta.env.VITE_CURRENCY;
+  const [cartArray, setCartArray] = useState([]);
 
   // Events
   const [events, setEvents] = useState([]);
@@ -103,6 +108,10 @@ export const AppContextProvider = ({ children }) => {
     const stored = JSON.parse(localStorage.getItem("notices")) || [];
     setNotices(stored);
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem("sangam-cart", JSON.stringify(cartItems));
+  }, [cartItems]);
 
   useEffect(() => {
     localStorage.setItem("notices", JSON.stringify(notices));
@@ -200,27 +209,68 @@ export const AppContextProvider = ({ children }) => {
 
     fetchPolls();
   }, [societyId, token, userRole]);
-  const fetchMembers = async () => {
-    if (!societyId || !token) return;
-
-    try {
-      const { data } = await axios.get(
-        `/api/users/society/${societyId}/members`,
-        {
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setProductsLoading(true);
+        const { data } = await axios.get("/api/users/products", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
-      );
+        });
+        setProducts(data.products);
+      } catch (err) {
+        console.error(
+          "❌ Failed to fetch products:",
+          err.response?.data || err.message
+        );
+      } finally {
+        setProductsLoading(false);
+      }
+    };
 
-      setMembers(data.members || []);
-    } catch (err) {
-      console.error(
-        "❌ Failed to fetch members:",
-        err.response?.data || err.message
-      );
+    if (token && products.length === 0) {
+      fetchProducts();
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    const fetchCartProducts = async () => {
+      const cartProductIds = Object.keys(cartItems);
+      if (cartProductIds.length === 0) {
+        setCartArray([]);
+        return;
+      }
+
+      try {
+        const { data } = await axios.post(
+          "/api/users/products/cart",
+          { ids: cartProductIds },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        const formatted = data.products.map((product) => ({
+          ...product,
+          quantity: cartItems[product._id] || 1,
+        }));
+
+        setCartArray(formatted);
+      } catch (err) {
+        console.error(
+          "❌ Failed to fetch cart products:",
+          err.response?.data || err.message
+        );
+      }
+    };
+
+    if (token && Object.keys(cartItems).length > 0) {
+      fetchCartProducts();
+    } else {
+      setCartArray([]);
+    }
+  }, [token, cartItems]);
 
   const toggleTheme = () => {
     setThemeMode((prev) => (prev === "light" ? "dark" : "light"));
@@ -264,6 +314,8 @@ export const AppContextProvider = ({ children }) => {
     setToken("");
     sessionStorage.removeItem("sangam-user");
     sessionStorage.removeItem("token");
+    setCartItems({});
+    localStorage.removeItem("sangam-cart");
   };
 
   const fetchComplaints = async () => {
@@ -369,6 +421,12 @@ export const AppContextProvider = ({ children }) => {
       return updated;
     });
   };
+  useEffect(() => {
+    localStorage.setItem("sangam-cart", JSON.stringify(cartItems));
+    const ids = Object.keys(cartItems);
+    setCartCount(Object.values(cartItems).reduce((a, b) => a + b, 0));
+    setFirstCartId(ids.length > 0 ? ids[0] : null);
+  }, [cartItems]);
 
   const removeFromCart = (productId) => {
     setCartItems((prev) => {
@@ -382,10 +440,10 @@ export const AppContextProvider = ({ children }) => {
     Object.values(cartItems).reduce((acc, qty) => acc + qty, 0);
 
   const getCartAmount = () => {
-    return Object.keys(cartItems).reduce((total, id) => {
-      const product = products.find((p) => p._id === id);
-      return total + (product?.offerPrice || 0) * cartItems[id];
-    }, 0);
+    return cartArray.reduce(
+      (total, item) => total + (item.offerPrice || 0) * item.quantity,
+      0
+    );
   };
 
   const value = {
@@ -442,6 +500,9 @@ export const AppContextProvider = ({ children }) => {
     firstCartId,
     setFirstCartId,
     currency,
+    productsLoading,
+    cartArray,
+    setCartArray,
 
     // society features
     members,

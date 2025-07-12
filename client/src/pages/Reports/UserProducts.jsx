@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
 import {
   Box,
@@ -25,33 +25,8 @@ import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import soaps from "../../assets/soaps.jpg";
 import pickels from "../../assets/pickels.jpg";
 import honey from "../../assets/honey.jpeg";
-
-const sampleProducts = [
-  {
-    id: 1,
-    name: "Organic Honey",
-    quantity: 0,
-    description: "Pure organic honey from local bees.",
-    date: "2025-06-20",
-    image: honey,
-    price: 250,
-    sold: true,
-    earnings: 2500,
-    listed: true,
-  },
-  {
-    id: 2,
-    name: "Homemade Pickles",
-    quantity: 5,
-    description: "Spicy mango pickles, 500g jar.",
-    date: "2025-06-15",
-    image: pickels,
-    price: 150,
-    sold: false,
-    earnings: 450,
-    listed: true,
-  },
-];
+import { toast } from "react-hot-toast";
+import { useAppContext } from "../../context/AppContext";
 
 const purchasedProducts = [
   {
@@ -66,17 +41,53 @@ const purchasedProducts = [
 const COLORS = ["#00C49F", "#FF8042"];
 
 const YourProductsPage = () => {
-  const [products, setProducts] = useState(sampleProducts);
+  const { axios, token } = useAppContext();
+  const [products, setProducts] = useState([]);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isDark = theme.palette.mode === "dark";
-  const handleToggle = (id) => {
-    setProducts((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, listed: !p.listed } : p))
-    );
+  const handleToggle = async (productId) => {
+    try {
+      const { data } = await axios.patch(
+        `/api/users/products/${productId}/toggle`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      setProducts((prev) =>
+        prev.map((p) =>
+          p._id === productId ? { ...p, isActive: data.isActive } : p
+        )
+      );
+
+      toast.success(
+        `Product ${data.isActive ? "listed" : "unlisted"} successfully`
+      );
+    } catch (err) {
+      toast.error("Failed to update product listing");
+      console.error("❌ Toggle error:", err.response?.data || err.message);
+    }
   };
 
-  const navigate = useNavigate();
+  useEffect(() => {
+    if (!token) return;
+
+    const fetchMyProducts = async () => {
+      try {
+        const { data } = await axios.get("/api/users/products/mine", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setProducts(data);
+      } catch (err) {
+        toast.error("Failed to load your products.");
+        console.error("❌ Fetch error:", err.response?.data || err.message);
+      }
+    };
+
+    fetchMyProducts();
+  }, [token]);
 
   const pieData = [
     {
@@ -108,9 +119,8 @@ const YourProductsPage = () => {
         justifyContent="space-between"
         alignItems="center"
         mb={4}
-        flexWrap="wrap" // ensures responsiveness on small screens
+        flexWrap="wrap"
       >
-        {/* Title on the left */}
         <Box
           color={isDark ? "#f5f5ff" : ""}
           component="h4"
@@ -123,7 +133,8 @@ const YourProductsPage = () => {
 
         {/* Sell Product Button on the right */}
         <Button
-          component={RouterLink} to="/reports/products"
+          component={RouterLink}
+          to="/reports/products"
           variant="contained"
           color="primary"
           startIcon={<ShoppingCartIcon />}
@@ -152,7 +163,9 @@ const YourProductsPage = () => {
               {/* Product Image */}
               <CardMedia
                 component="img"
-                image={product.image}
+                image={
+                  product.images?.[0]?.url || "https://via.placeholder.com/150"
+                }
                 alt={product.name}
                 sx={{
                   width: "100%",
@@ -160,6 +173,9 @@ const YourProductsPage = () => {
                   objectFit: "cover",
                   borderTopLeftRadius: isMobile ? 8 : 12,
                   borderTopRightRadius: isMobile ? 8 : 12,
+                }}
+                onError={(e) => {
+                  e.target.src = "https://via.placeholder.com/150"; // fallback if broken
                 }}
               />
 
@@ -185,13 +201,14 @@ const YourProductsPage = () => {
                   Status: {product.sold ? "Sold" : "Available"}
                 </Typography>
                 <Typography fontWeight={500} color="success.main">
-                  Earnings: ₹{product.earnings}
+                  Earnings: ₹{product.earnings ?? 0}
                 </Typography>
+
                 <Box mt={1} display="flex" alignItems="center" gap={1}>
                   <Typography variant="body2">Listed</Typography>
                   <Switch
-                    checked={product.listed}
-                    onChange={() => handleToggle(product.id)}
+                    checked={product.isActive}
+                    onChange={() => handleToggle(product._id)}
                   />
                 </Box>
               </CardContent>
@@ -237,11 +254,18 @@ const YourProductsPage = () => {
         <Grid container spacing={3}>
           {purchasedProducts.map((product) => (
             <Grid item xs={12} sm={6} md={4} key={product.id}>
-              <Card sx={{ borderRadius: 3, boxShadow: theme.shadows[3], width:160, height:310 }}>
+              <Card
+                sx={{
+                  borderRadius: 3,
+                  boxShadow: theme.shadows[3],
+                  width: 160,
+                  height: 310,
+                }}
+              >
                 <CardMedia
                   component="img"
                   height="150"
-                  sx={{height:130}}
+                  sx={{ height: 130 }}
                   image={product.image}
                   alt={product.name}
                 />

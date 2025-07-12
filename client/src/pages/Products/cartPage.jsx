@@ -31,35 +31,17 @@ const CartPage = () => {
     setAddresses,
     selectedAddress,
     setSelectedAddress,
+    token,
+    productsLoading,
+    cartArray,
+    setCartArray,
   } = useAppContext();
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const [cartArray, setCartArray] = useState([]);
   const [paymentOption, setPaymentOption] = useState("COD");
   const [showAddress, setShowAddress] = useState(false);
-
-  const getCart = () => {
-    const tempArray = [];
-    for (const key in cartItems) {
-      const product = products.find((item) => item._id === key);
-      if (product) {
-        product.quantity = cartItems[key];
-        tempArray.push(product);
-      }
-    }
-    setCartArray(tempArray);
-  };
-
-  const getUserAddress = async () => {
-    const stored = JSON.parse(localStorage.getItem("mock-addresses") || "[]");
-
-    if (stored.length > 0) {
-      setAddresses(stored);
-      setSelectedAddress(stored[0]);
-    }
-  };
 
   const placeOrder = async () => {
     try {
@@ -79,6 +61,7 @@ const CartPage = () => {
         if (data.success) {
           toast.success(data.message);
           setCartItems({});
+          localStorage.removeItem("sangam-cart");
           navigate("/my-orders");
         } else {
           toast.error(data.message);
@@ -97,16 +80,55 @@ const CartPage = () => {
   };
 
   useEffect(() => {
-    if (products.length > 0 && cartItems) getCart();
-  }, [products, cartItems]);
+    const loadAddress = async () => {
+      const stored = JSON.parse(localStorage.getItem("mock-addresses") || "[]");
+
+      if (stored.length > 0) {
+        setAddresses(stored);
+        setSelectedAddress((prev) => prev || stored[0]);
+      } else if (user?.address) {
+        const fallback = {
+          _id: "default",
+          street: user.address,
+          city: "",
+          state: "",
+          country: "",
+        };
+        setAddresses([fallback]);
+        setSelectedAddress(fallback);
+      }
+    };
+
+    if (user && addresses.length === 0 && !selectedAddress) {
+      loadAddress();
+    }
+  }, [user, addresses.length, selectedAddress]);
 
   useEffect(() => {
-    if (user && addresses.length === 0) {
-      getUserAddress();
-    }
-  }, [user, addresses.length]);
+    console.log("🧾 user object:", user);
+  }, [user]);
 
-  if (!cartArray.length) {
+  if (productsLoading) {
+    return (
+      <Box p={3}>
+        <Typography variant="h6">Loading Cart...</Typography>
+      </Box>
+    );
+  }
+  if (!user) {
+    return (
+      <Box p={3}>
+        <Typography variant="h6">Loading user data...</Typography>
+      </Box>
+    );
+  }
+
+  if (
+    Array.isArray(cartArray) &&
+    cartArray.length === 0 &&
+    Array.isArray(products) &&
+    products.length > 0
+  ) {
     return (
       <Box p={3}>
         <Typography variant="h6">Your cart is empty.</Typography>
@@ -151,7 +173,7 @@ const CartPage = () => {
                   onClick={() =>
                     navigate(`/my-society/ads/${product._id}/product_detail`)
                   }
-                  src={product.image[0]}
+                  src={product.images?.[0]?.url}
                   alt={product.name}
                   width={isMobile ? 40 : 40}
                   height={40}
@@ -172,15 +194,6 @@ const CartPage = () => {
                   >
                     {product.name}
                   </Typography>
-                  {/* <Typography color="text.secondary" fontSize="0.85rem" mb={0.5}>
-                  {product.description || "No description available"}
-                </Typography> */}
-                  {/* <Typography fontSize="0.8rem" color="text.secondary">
-                  Seller: <strong>{product.sellerName || "Unknown"}</strong>
-                </Typography>
-                <Typography fontSize="0.75rem" color="text.secondary" mb={1}>
-                  Address: {product.sellerAddress || "N/A"}
-                </Typography> */}
                   <Typography>
                     Quantity:
                     <Select
@@ -191,7 +204,7 @@ const CartPage = () => {
                       }
                       sx={{ ml: 1 }}
                     >
-                      {Array(product.quantity > 9 ? product.quantity : 9)
+                      {Array(Math.max(9, product.quantity || 0))
                         .fill("")
                         .map((_, i) => (
                           <MenuItem key={i} value={i + 1}>
@@ -247,7 +260,7 @@ const CartPage = () => {
         <Typography color="text.secondary" mb={1}>
           {selectedAddress
             ? `${selectedAddress.street}, ${selectedAddress.city}, ${selectedAddress.state}, ${selectedAddress.country}`
-            : "No address selected"}
+            : user?.address || "No address found"}
         </Typography>
 
         <Button

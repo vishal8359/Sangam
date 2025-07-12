@@ -7,7 +7,7 @@ import { createPoll, getPollsBySociety, voteInPoll, getPollResults, togglePollLo
 import { createNotice, getNoticesBySociety } from "../Controllers/noticeController.js";
 import { getGroupsBySociety, getGroupDetails, postInGroup, createBuzzGroup, getSocietyMembers } from "../Controllers/buzzController.js";
 import { rejectGroupJoinRequest, approveGroupJoinRequest } from "../Controllers/groupJoinController.js";
-import { deactivateProduct } from "../Controllers/productController.js";
+
 import { resolveComplaint, getComplaintsBySociety, getResolvedComplaints, deleteComplaint } from "../Controllers/complaintController.js";
 import { getNeighbouringSocieties } from "../Controllers/societyController.js";
 import { getEvents } from "../Controllers/eventController.js";
@@ -55,7 +55,7 @@ router.post("/buzz/groups/requests/:requestId/approve", verifyAdmin, approveGrou
 router.post("/buzz/groups/requests/:requestId/reject", verifyAdmin, rejectGroupJoinRequest);
 
 // Product Delete
-router.put("/products/:productId/deactivate", verifyAdmin, deactivateProduct);
+
 
 // Complaints
 router.get("/complaints/:societyId", verifyAdmin, getComplaintsBySociety);

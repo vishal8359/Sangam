@@ -31,11 +31,7 @@ import {
 } from "../Controllers/buzzController.js";
 import upload from "../Configs/multer.js";
 import { requestToJoinGroup } from "../Controllers/groupJoinController.js";
-import {
-  createProduct,
-  getActiveProducts,
-  deleteProduct,
-} from "../Controllers/productController.js";
+import { addProduct, getCartProducts, getMyProducts, getSocietyProducts, toggleProductActiveStatus } from "../Controllers/productController.js";
 import {
   submitComplaint,
   getComplaintsBySociety,
@@ -123,15 +119,15 @@ router.post("/buzz/upload", verifyUser, upload.single("file"), uploadBuzzFile);
 
 
 // products
-router.post(
-  "/products/create",
-  verifyUser,
-  upload.array("images", 5),
-  createProduct
+router.post("/add", verifyUser, upload.array("images", 4), addProduct);
+router.get("/products/mine", verifyUser, getMyProducts);
+router.get("/products/society", verifyUser, getSocietyProducts);
+router.post("/products/cart", verifyUser, getCartProducts);
+router.patch(
+  "/products/:id/toggle",
+  verifyUser, 
+  toggleProductActiveStatus
 );
-router.get("/products", verifyUser, getActiveProducts);
-router.delete("/products/:productId", verifyUser, deleteProduct);
-
 // Complaint
 
 router.post(

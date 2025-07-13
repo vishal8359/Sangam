@@ -33,10 +33,6 @@ const productSchema = new mongoose.Schema(
       trim: true,
       maxlength: [1000, "Description can't exceed 1000 characters"],
     },
-    earnings: {
-      type: Number,
-      default: 0,
-    },
     rating: {
       type: Number,
       default: 0,
@@ -64,7 +60,16 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
-    seller: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    soldQuantity: {
+      type: Number,
+      default: 0,
+    },
+
+    seller: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
   },
   {
     timestamps: true,
@@ -79,6 +84,5 @@ productSchema.pre("save", function (next) {
   }
   next();
 });
-
 
 export default mongoose.model("Product", productSchema);

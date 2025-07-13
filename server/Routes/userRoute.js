@@ -31,7 +31,7 @@ import {
 } from "../Controllers/buzzController.js";
 import upload from "../Configs/multer.js";
 import { requestToJoinGroup } from "../Controllers/groupJoinController.js";
-import { addProduct, getCartProducts, getMyProducts, getSocietyProducts, toggleProductActiveStatus } from "../Controllers/productController.js";
+import { addProduct, getCartProducts, getMyProducts, getProductById, getRelatedProducts, getSellerProductsWithStats, getSocietyProducts, toggleProductActiveStatus } from "../Controllers/productController.js";
 import {
   submitComplaint,
   getComplaintsBySociety,
@@ -133,7 +133,9 @@ router.patch(
 router.post("/order/create", verifyUser, createOrder);
 router.get("/order/seller", verifyUser, getSellerOrders);
 router.get("/order/my-orders", verifyUser, getMyOrders);
-
+router.get("/products/stats", verifyUser, getSellerProductsWithStats);
+router.get("/products/:id", getProductById);
+router.get("/products", getRelatedProducts);
 // Complaint
 
 router.post(

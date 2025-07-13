@@ -1,6 +1,6 @@
 // controllers/orderController.js
 import Order from "../Models/Order.js";
-
+import Product from "../Models/Product.js";
 export const createOrder = async (req, res) => {
   try {
     const { userId, items, address, paymentMethod = "COD" } = req.body;
@@ -11,12 +11,35 @@ export const createOrder = async (req, res) => {
         .json({ success: false, message: "Missing order details" });
     }
 
+    // 1. Create order first
     const order = await Order.create({
       user: userId,
       items,
       address,
       paymentMethod,
     });
+
+    // 2. Update each product: soldQuantity, earnings, quantity, isActive
+    for (const item of items) {
+      const product = await Product.findById(item.product);
+
+      if (product) {
+        const price = product.offerPrice ?? product.price;
+        const earnings = price * item.quantity;
+
+        product.earnings += earnings;
+        product.soldQuantity += item.quantity;
+        product.quantity -= item.quantity;
+
+        // Ensure quantity doesn't go below 0 and deactivate product
+        if (product.quantity <= 0) {
+          product.quantity = 0;
+          product.isActive = false;
+        }
+
+        await product.save();
+      }
+    }
 
     res.status(201).json({
       success: true,
@@ -28,7 +51,6 @@ export const createOrder = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
-
 // controllers/orderController.js
 
 export const getSellerOrders = async (req, res) => {

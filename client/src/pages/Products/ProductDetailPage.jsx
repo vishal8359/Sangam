@@ -2,7 +2,12 @@ import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAppContext } from "../../context/AppContext";
 import { Box, Typography, Button, Paper, Grid, useTheme } from "@mui/material";
-import { FaStar, FaRegStar, FaShoppingCart } from "react-icons/fa";
+import {
+  FaStar,
+  FaRegStar,
+  FaStarHalfAlt,
+  FaShoppingCart,
+} from "react-icons/fa";
 import { useMediaQuery } from "@mui/material";
 import { IconButton } from "@mui/material";
 import FloatingCartIcon from "../../components/FloatingCartIcon"; // ✅ Added
@@ -13,7 +18,7 @@ const ProductDetailPage = () => {
   const theme = useTheme();
 
   const {
-    products,
+    axios,
     currency,
     updateCartItem,
     cartItems,
@@ -29,17 +34,46 @@ const ProductDetailPage = () => {
   const [added, setAdded] = useState(false);
 
   useEffect(() => {
-    const found = products.find((p) => p._id === product_id);
-    setProduct(found);
-    if (found?.image?.length) setThumbnail(found.image[0]);
-  }, [products, product_id]);
+    const fetchProduct = async () => {
+      try {
+        const { data } = await axios.get(`/api/users/products/${product_id}`);
+        const prod = data.product;
+
+        // Parse description if stringified list
+        const parsedDescription = Array.isArray(prod.description)
+          ? prod.description
+          : prod.description
+              ?.split(/[\n\r,]+/)
+              .map((item) => item.trim())
+              .filter((d) => d);
+
+        setProduct({ ...prod, description: parsedDescription });
+        if (prod.images?.length) setThumbnail(prod.images[0].url);
+      } catch (err) {
+        console.error("❌ Failed to fetch product:", err);
+      }
+    };
+
+    fetchProduct();
+  }, [product_id]);
 
   useEffect(() => {
-    if (product && products.length > 0) {
-      const filtered = products.filter((p) => p._id !== product._id);
-      setRelatedProducts(filtered.slice(0, 5));
-    }
-  }, [product, products]);
+    const fetchRelatedProducts = async () => {
+      if (!product) return;
+
+      try {
+        const { data } = await axios.get(
+          `/api/users/products?societyId=${product.societyId}&exclude=${product._id}`
+        );
+
+        setRelatedProducts(data.products.slice(0, 5));
+      } catch (err) {
+        console.error("❌ Failed to fetch related products:", err);
+      }
+    };
+
+    fetchRelatedProducts();
+  }, [product]);
 
   const handleQtyChange = (productId, delta) => {
     const currentQty = cartItems[productId] || 0;
@@ -70,10 +104,10 @@ const ProductDetailPage = () => {
         <Grid item xs={12} md={6}>
           <Box display="flex" gap={2}>
             <Box display="flex" flexDirection="column" gap={1}>
-              {product.image.map((img, i) => (
+              {product.images.map((img, i) => (
                 <Box
                   key={i}
-                  onClick={() => setThumbnail(img)}
+                  onClick={() => setThumbnail(img.url)}
                   sx={{
                     cursor: "pointer",
                     border: "1px solid #ccc",
@@ -84,7 +118,7 @@ const ProductDetailPage = () => {
                   }}
                 >
                   <img
-                    src={img}
+                    src={img.url}
                     alt={`thumb-${i}`}
                     width="100%"
                     height="100%"
@@ -114,13 +148,18 @@ const ProductDetailPage = () => {
           </Typography>
 
           <Box mt={1} display="flex" alignItems="center" gap={0.5}>
-            {Array.from({ length: 5 }, (_, i) =>
-              i < Math.floor(product.rating) ? (
-                <FaStar key={i} color="gold" />
-              ) : (
-                <FaRegStar key={i} color="gold" />
-              )
-            )}
+            {Array.from({ length: 5 }, (_, i) => {
+              const fullStars = Math.floor(product.rating);
+              const hasHalfStar = product.rating - fullStars >= 0.5;
+
+              if (i < fullStars) {
+                return <FaStar key={i} color="gold" />;
+              } else if (i === fullStars && hasHalfStar) {
+                return <FaStarHalfAlt key={i} color="gold" />;
+              } else {
+                return <FaRegStar key={i} color="gold" />;
+              }
+            })}
             <Typography variant="body2" ml={1}>
               ({product.reviews} reviews)
             </Typography>
@@ -251,7 +290,7 @@ const ProductDetailPage = () => {
                       state: { product: prod },
                     })
                   }
-                  src={prod.image[0]}
+                  src={prod.images?.[0]?.url || "/fallback.jpg"}
                   alt={prod.name}
                   style={{
                     width: "100%",
@@ -270,15 +309,20 @@ const ProductDetailPage = () => {
                   Seller: {prod.sellerName}
                 </Typography>
                 <Box mt={1} display="flex" alignItems="center" gap={0.5}>
-                  {Array.from({ length: 5 }, (_, i) =>
-                    i < Math.floor(prod.rating) ? (
-                      <FaStar key={i} size={14} color="gold" />
-                    ) : (
-                      <FaRegStar key={i} size={14} color="gold" />
-                    )
-                  )}
+                  {Array.from({ length: 5 }, (_, i) => {
+                    const fullStars = Math.floor(prod.rating);
+                    const isHalf = prod.rating - fullStars >= 0.5;
+
+                    if (i < fullStars) {
+                      return <FaStar key={i} size={14} color="gold" />;
+                    } else if (i === fullStars && isHalf) {
+                      return <FaStarHalfAlt key={i} size={14} color="gold" />;
+                    } else {
+                      return <FaRegStar key={i} size={14} color="gold" />;
+                    }
+                  })}
                   <Typography variant="caption" color="text.secondary" ml={0.5}>
-                    ({prod.reviews})
+                    ({prod.rating})
                   </Typography>
                 </Box>
 
@@ -288,18 +332,6 @@ const ProductDetailPage = () => {
                   display="flex"
                   justifyContent="space-between"
                 >
-                  <Button
-                    variant="text"
-                    size="small"
-                    onClick={() =>
-                      navigate(`/my-society/ads/${prod._id}/product_detail`, {
-                        state: { product: prod },
-                      })
-                    }
-                  >
-                    View
-                  </Button>
-
                   {cartItems[prod._id] ? (
                     <Box
                       display="flex"

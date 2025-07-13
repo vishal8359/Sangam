@@ -253,7 +253,7 @@ export const AppContextProvider = ({ children }) => {
 
         const formatted = data.products.map((product) => ({
           ...product,
-          quantity: cartItems[product._id] || 1,
+          cartQuantity: cartItems[product._id] || 1,
         }));
 
         setCartArray(formatted);
@@ -441,7 +441,7 @@ export const AppContextProvider = ({ children }) => {
 
   const getCartAmount = () => {
     return cartArray.reduce(
-      (total, item) => total + (item.offerPrice || 0) * item.quantity,
+      (total, item) => total + (item.offerPrice || 0) * item.cartQuantity,
       0
     );
   };

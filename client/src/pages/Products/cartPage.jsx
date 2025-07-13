@@ -51,7 +51,7 @@ const CartPage = () => {
         userId: user._id,
         items: cartArray.map((item) => ({
           product: item._id,
-          quantity: item.quantity,
+          quantity: item.cartQuantity,
         })),
         address: selectedAddress._id,
       };
@@ -198,20 +198,34 @@ const CartPage = () => {
                   <Typography>
                     Quantity:
                     <Select
-                      value={product.quantity}
+                      value={product.cartQuantity || 1}
                       size="small"
-                      onChange={(e) =>
-                        updateCartItem(product._id, Number(e.target.value))
-                      }
+                      onChange={(e) => {
+                        const selectedQty = Number(e.target.value);
+                        const availableQty = product.quantity;
+
+                        if (selectedQty > availableQty) {
+                          toast.error("Only few left, please reduce quantity");
+                          return;
+                        }
+
+                        updateCartItem(product._id, selectedQty);
+                      }}
                       sx={{ ml: 1 }}
                     >
-                      {Array(Math.max(9, product.quantity || 0))
-                        .fill("")
-                        .map((_, i) => (
-                          <MenuItem key={i} value={i + 1}>
+                      {Array.from(
+                        {
+                          length: Math.min(
+                            10,
+                            Math.max(1, product.quantity || 0)
+                          ),
+                        },
+                        (_, i) => (
+                          <MenuItem key={i + 1} value={i + 1}>
                             {i + 1}
                           </MenuItem>
-                        ))}
+                        )
+                      )}
                     </Select>
                   </Typography>
                 </Box>
@@ -226,7 +240,7 @@ const CartPage = () => {
               >
                 <Typography variant="subtitle2" fontWeight={600}>
                   {currency}
-                  {(product.offerPrice * product.quantity).toFixed(2)}
+                  {(product.offerPrice * product.cartQuantity).toFixed(2)}
                 </Typography>
                 <Button
                   variant="outlined"
@@ -313,15 +327,14 @@ const CartPage = () => {
           Price: {currency}
           {getCartAmount()}
         </Typography>
-        <Typography variant="body1">Shipping: Free</Typography>
         <Typography variant="body1">
-          Tax (2%): {currency}
-          {(getCartAmount() * 0.02).toFixed(2)}
+          Shipping Fee: {currency}
+          {Math.ceil(getCartAmount() * 0.005).toFixed(2)}
         </Typography>
 
         <Typography variant="h6" mt={2}>
           Total: {currency}
-          {(getCartAmount() * 1.02).toFixed(2)}
+          {(getCartAmount() + Math.ceil(getCartAmount() * 0.005)).toFixed(2)}
         </Typography>
 
         <Button

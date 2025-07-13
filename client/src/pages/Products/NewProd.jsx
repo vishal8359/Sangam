@@ -11,7 +11,12 @@ import {
   useMediaQuery,
   Badge,
 } from "@mui/material";
-import { FaStar, FaRegStar, FaShoppingCart } from "react-icons/fa";
+import {
+  FaStar,
+  FaRegStar,
+  FaStarHalfAlt,
+  FaShoppingCart,
+} from "react-icons/fa";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import NewReleasesIcon from "@mui/icons-material/NewReleases";
 import { keyframes } from "@emotion/react";
@@ -38,7 +43,7 @@ const Products = () => {
 
   useEffect(() => {
     const fetchProducts = async () => {
-      if (!token) return; 
+      if (!token) return;
 
       try {
         const { data } = await axios.get("/api/users/products/society", {
@@ -52,7 +57,7 @@ const Products = () => {
     };
 
     fetchProducts();
-  }, [token, setProducts]); 
+  }, [token, setProducts]);
 
   const handleQtyChange = (productId, delta) => {
     const currentQty = cartItems[productId] || 0;
@@ -224,13 +229,28 @@ const Products = () => {
             </Typography>
 
             <Box display="flex" justifyContent="center" mt={isMobile ? 0.5 : 1}>
-              {Array.from({ length: 5 }, (_, i) =>
-                i < Math.floor(product.rating) ? (
-                  <FaStar key={i} size={isMobile ? 12 : 16} color="gold" />
-                ) : (
-                  <FaRegStar key={i} size={isMobile ? 12 : 16} color="gold" />
-                )
-              )}
+              {Array.from({ length: 5 }, (_, i) => {
+                const fullStars = Math.floor(product.rating);
+                const isHalf = product.rating - fullStars >= 0.5;
+
+                if (i < fullStars) {
+                  return (
+                    <FaStar key={i} size={isMobile ? 12 : 16} color="gold" />
+                  );
+                } else if (i === fullStars && isHalf) {
+                  return (
+                    <FaStarHalfAlt
+                      key={i}
+                      size={isMobile ? 12 : 16}
+                      color="gold"
+                    />
+                  );
+                } else {
+                  return (
+                    <FaRegStar key={i} size={isMobile ? 12 : 16} color="gold" />
+                  );
+                }
+              })}
             </Box>
 
             <Box
@@ -270,7 +290,13 @@ const Products = () => {
                   >
                     –
                   </IconButton>
-                  <Typography sx={{ mx: 1.5, fontWeight: 500, color: isDark? "#1976d2" : "" }}>
+                  <Typography
+                    sx={{
+                      mx: 1.5,
+                      fontWeight: 500,
+                      color: isDark ? "#1976d2" : "",
+                    }}
+                  >
                     {cartItems[product._id]}
                   </Typography>
                   <IconButton

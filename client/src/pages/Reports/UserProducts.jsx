@@ -127,15 +127,21 @@ const YourProductsPage = () => {
   const pieData = [
     {
       name: "Sold",
-      value: products
-        .filter((p) => p.sold)
-        .reduce((acc, p) => acc + p.earnings, 0),
+      value: products.reduce(
+        (acc, p) =>
+          acc +
+          (p.soldQuantity > 0 ? p.soldQuantity * (p.offerPrice ?? p.price) : 0),
+        0
+      ),
     },
     {
       name: "Unsold",
-      value: products
-        .filter((p) => !p.sold)
-        .reduce((acc, p) => acc + p.earnings, 0),
+      value: products.reduce(
+        (acc, p) =>
+          acc +
+          (p.soldQuantity === 0 ? p.quantity * (p.offerPrice ?? p.price) : 0),
+        0
+      ),
     },
   ];
 
@@ -237,8 +243,9 @@ const YourProductsPage = () => {
                   {product.name}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Posted on: {product.date}
+                  Posted on: {new Date(product.createdAt).toLocaleDateString()}
                 </Typography>
+
                 <Typography mt={1}>
                   Quantity:{" "}
                   {product.quantity > 0 ? product.quantity : "Sold Out"}
@@ -247,7 +254,7 @@ const YourProductsPage = () => {
                   Status: {product.sold ? "Sold" : "Available"}
                 </Typography>
                 <Typography fontWeight={500} color="success.main">
-                  Earnings: ₹{product.earnings ?? 0}
+                  Earnings: ₹{product.soldQuantity * product.offerPrice ?? 0}
                 </Typography>
 
                 <Box mt={1} display="flex" alignItems="center" gap={1}>
@@ -268,25 +275,40 @@ const YourProductsPage = () => {
         <Typography variant="h6" fontWeight={600} mb={2}>
           📈 Earnings Distribution
         </Typography>
+
         <ResponsiveContainer width="100%" height={300}>
           <PieChart>
             <Pie
-              data={pieData}
               dataKey="value"
               nameKey="name"
+              data={[
+                {
+                  name: "Sold",
+                  value: products.reduce(
+                    (acc, p) =>
+                      acc + (p.soldQuantity || 0) * (p.offerPrice ?? p.price),
+                    0
+                  ),
+                },
+                {
+                  name: "Unsold",
+                  value: products.reduce((acc, p) => {
+                    const remainingQty = p.quantity ?? 0;
+                    const price = p.offerPrice ?? p.price;
+                    return acc + remainingQty * price;
+                  }, 0),
+                },
+              ]}
               outerRadius={100}
               label={({ name, percent }) =>
                 `${name}: ${(percent * 100).toFixed(0)}%`
               }
             >
-              {pieData.map((entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={COLORS[index % COLORS.length]}
-                />
+              {COLORS.map((color, index) => (
+                <Cell key={`cell-${index}`} fill={color} />
               ))}
             </Pie>
-            <Tooltip />
+            <Tooltip formatter={(value) => `₹${value.toLocaleString()}`} />
             <Legend />
           </PieChart>
         </ResponsiveContainer>
@@ -305,7 +327,7 @@ const YourProductsPage = () => {
                   borderRadius: 3,
                   boxShadow: theme.shadows[3],
                   width: 160,
-                  height: 280,
+                  height: 300,
                 }}
               >
                 <CardMedia

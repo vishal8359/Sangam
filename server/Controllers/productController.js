@@ -1,6 +1,6 @@
 import Product from "../Models/Product.js";
 import { uploadToCloudinary } from "../Utils/cloudinaryUpload.js";
-
+import mongoose from "mongoose";
 
 // POST: User uploads product
 export const addProduct = async (req, res) => {
@@ -80,7 +80,7 @@ export const getSocietyProducts = async (req, res) => {
     // Format the product data
     const formatted = products.map((p) => ({
       ...p._doc,
-      image: p.images?.[0]?.url || "", 
+      image: p.images?.[0]?.url || "",
       sellerName: p.createdBy?.name || "Unknown",
       sellerAddress: p.createdBy?.address || "N/A",
     }));
@@ -108,7 +108,9 @@ export const toggleProductActiveStatus = async (req, res) => {
     await product.save();
 
     res.status(200).json({
-      message: `Product ${product.isActive ? "listed" : "unlisted"} successfully`,
+      message: `Product ${
+        product.isActive ? "listed" : "unlisted"
+      } successfully`,
       isActive: product.isActive,
     });
   } catch (err) {
@@ -116,7 +118,6 @@ export const toggleProductActiveStatus = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 export const getCartProducts = async (req, res) => {
   try {
@@ -142,5 +143,113 @@ export const getCartProducts = async (req, res) => {
   } catch (err) {
     console.error("❌ Error fetching cart products:", err);
     res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
+export const getSellerProductsWithStats = async (req, res) => {
+  try {
+    const sellerId = req.user._id;
+
+    const soldStats = await Order.aggregate([
+      { $unwind: "$items" },
+      {
+        $lookup: {
+          from: "products",
+          localField: "items.product",
+          foreignField: "_id",
+          as: "productDetails",
+        },
+      },
+      { $unwind: "$productDetails" },
+      { $match: { "productDetails.seller": sellerId } },
+      {
+        $group: {
+          _id: "$items.product",
+          totalSold: { $sum: "$items.quantity" },
+        },
+      },
+    ]);
+
+    const soldMap = new Map();
+    soldStats.forEach((item) => {
+      soldMap.set(item._id.toString(), item.totalSold);
+    });
+
+    const products = await Product.find({ seller: sellerId }).lean();
+
+    const enrichedProducts = products.map((product) => {
+      const soldQty = soldMap.get(product._id.toString()) || 0;
+      const price = product.offerPrice ?? product.price;
+      const earnings = soldQty * price;
+
+      return {
+        ...product,
+        soldQuantity: soldQty,
+        earnings,
+      };
+    });
+
+    res.status(200).json({ success: true, products: enrichedProducts });
+  } catch (error) {
+    console.error("❌ Error fetching seller products:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+
+export const getProductById = async (req, res) => {
+  try {
+    const productId = req.params.id;
+
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      return res.status(400).json({ message: "Invalid product ID" });
+    }
+
+    const product = await Product.findById(productId)
+      .populate("seller", "user_name address") // Optional: get seller info
+      .lean();
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    // Add seller info
+    product.sellerName = product.seller?.user_name || "N/A";
+    product.sellerAddress = product.seller?.address || "Not Provided";
+
+    res.status(200).json({ product });
+  } catch (error) {
+    console.error("❌ Error in getProductById:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// 2. Get related products from same society
+export const getRelatedProducts = async (req, res) => {
+  try {
+    const { societyId, exclude } = req.query;
+
+    if (!societyId) {
+      return res.status(400).json({ message: "societyId is required" });
+    }
+
+    const query = {
+      societyId,
+      isActive: true,
+    };
+
+    if (exclude && mongoose.Types.ObjectId.isValid(exclude)) {
+      query._id = { $ne: exclude };
+    }
+
+    const products = await Product.find(query)
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .select("-__v");
+
+    res.status(200).json({ products });
+  } catch (error) {
+    console.error("❌ Error in getRelatedProducts:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };

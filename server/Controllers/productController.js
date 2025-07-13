@@ -38,6 +38,7 @@ export const addProduct = async (req, res) => {
       images,
       createdBy: uploader,
       societyId,
+      seller: uploader,
     });
 
     await product.save();

@@ -11,6 +11,7 @@ import adminRoutes from "./Routes/adminRoutes.js";
 import Chats from "./Models/Chats.js";
 import User from "./Models/User.js"; // Required for online status map
 import { registerBuzzHandlers } from "./Controllers/buzzController.js";
+import debugRoutes from "./Routes/debugRoutes.js";
 
 dotenv.config();
 await connectDB();
@@ -38,6 +39,8 @@ app.use(express.json());
 
 app.use("/api/users", userRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/debug", debugRoutes);
+
 
 const io = new SocketIOServer(server, {
   cors: corsOptions,

@@ -64,21 +64,21 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    seller: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   },
   {
     timestamps: true,
   }
 );
 
-// 🔁 Auto-unlist or relist based on quantity
+// Auto-unlist or relist based on quantity
 productSchema.pre("save", function (next) {
   if (this.quantity <= 0) {
     this.isActive = false;
     this.quantity = 0;
-  } else if (this.quantity > 0 && !this.isActive) {
-    this.isActive = true;
   }
   next();
 });
+
 
 export default mongoose.model("Product", productSchema);

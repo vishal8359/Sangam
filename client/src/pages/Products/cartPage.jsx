@@ -57,12 +57,17 @@ const CartPage = () => {
       };
 
       if (paymentOption === "COD") {
-        const { data } = await axios.post("/api/order/cod", payload);
+        const { data } = await axios.post("/api/users/order/create", payload, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
         if (data.success) {
           toast.success(data.message);
           setCartItems({});
           localStorage.removeItem("sangam-cart");
-          navigate("/my-orders");
+          navigate("/reports/user_products");
         } else {
           toast.error(data.message);
         }
@@ -103,10 +108,6 @@ const CartPage = () => {
       loadAddress();
     }
   }, [user, addresses.length, selectedAddress]);
-
-  useEffect(() => {
-    console.log("🧾 user object:", user);
-  }, [user]);
 
   if (productsLoading) {
     return (

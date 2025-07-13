@@ -22,9 +22,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import soaps from "../../assets/soaps.jpg";
-import pickels from "../../assets/pickels.jpg";
-import honey from "../../assets/honey.jpeg";
 import { toast } from "react-hot-toast";
 import { useAppContext } from "../../context/AppContext";
 
@@ -43,6 +42,7 @@ const COLORS = ["#00C49F", "#FF8042"];
 const YourProductsPage = () => {
   const { axios, token } = useAppContext();
   const [products, setProducts] = useState([]);
+  const [purchasedProducts, setPurchasedProducts] = useState([]);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isDark = theme.palette.mode === "dark";
@@ -87,6 +87,41 @@ const YourProductsPage = () => {
     };
 
     fetchMyProducts();
+  }, [token]);
+
+  useEffect(() => {
+    const fetchMyOrders = async () => {
+      try {
+        const { data } = await axios.get("/api/users/order/my-orders", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const flattenedProducts = data.orders.flatMap((order) =>
+          order.items.map((item) => ({
+            id: item.product._id,
+            name: item.product.name,
+            image: item.product.images?.[0]?.url || "/default.jpg",
+            date: new Date(order.createdAt || order.placedAt).toLocaleString(
+              "en-IN",
+              {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+              }
+            ),
+          }))
+        );
+
+        setPurchasedProducts(flattenedProducts);
+      } catch (err) {
+        console.error("❌ Failed to fetch purchased products:", err);
+      }
+    };
+
+    if (token) fetchMyOrders();
   }, [token]);
 
   const pieData = [
@@ -143,12 +178,23 @@ const YourProductsPage = () => {
         >
           Sell Product
         </Button>
+        <Button
+          component={RouterLink}
+          to="/reports/orders"
+          variant="contained"
+          color="primary"
+          startIcon={<ReceiptLongIcon />}
+          size="large"
+          sx={{ px: 4, borderRadius: 3, mt: { xs: 2, sm: 0 } }}
+        >
+          Orders
+        </Button>
       </Box>
 
       {/* Uploaded Products Section */}
       <Grid container spacing={3} mb={4}>
         {products.map((product) => (
-          <Grid item xs={12} sm={6} md={4} key={product.id}>
+          <Grid item xs={12} sm={6} md={4} key={product._id}>
             <Card
               sx={{
                 borderRadius: isMobile ? 2 : 3,
@@ -259,7 +305,7 @@ const YourProductsPage = () => {
                   borderRadius: 3,
                   boxShadow: theme.shadows[3],
                   width: 160,
-                  height: 310,
+                  height: 280,
                 }}
               >
                 <CardMedia

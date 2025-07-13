@@ -68,6 +68,7 @@ import {
   sendMessage,
   uploadChatFile,
 } from "../Controllers/chatsController.js";
+import { createOrder, getMyOrders, getSellerOrders } from "../Controllers/orderController.js";
 
 const router = express.Router();
 // first register
@@ -128,6 +129,11 @@ router.patch(
   verifyUser, 
   toggleProductActiveStatus
 );
+
+router.post("/order/create", verifyUser, createOrder);
+router.get("/order/seller", verifyUser, getSellerOrders);
+router.get("/order/my-orders", verifyUser, getMyOrders);
+
 // Complaint
 
 router.post(

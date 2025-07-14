@@ -206,7 +206,7 @@ export const getProductById = async (req, res) => {
     }
 
     const product = await Product.findById(productId)
-      .populate("seller", "user_name address") // Optional: get seller info
+      .populate("seller", "name address")
       .lean();
 
     if (!product) {
@@ -214,7 +214,7 @@ export const getProductById = async (req, res) => {
     }
 
     // Add seller info
-    product.sellerName = product.seller?.user_name || "N/A";
+    product.sellerName = product.seller?.name || "N/A";
     product.sellerAddress = product.seller?.address || "Not Provided";
 
     res.status(200).json({ product });
@@ -243,11 +243,19 @@ export const getRelatedProducts = async (req, res) => {
     }
 
     const products = await Product.find(query)
+      .populate("seller", "name address") 
       .sort({ createdAt: -1 })
       .limit(10)
       .select("-__v");
 
-    res.status(200).json({ products });
+    const formatted = products.map((p) => ({
+      ...p._doc,
+      image: p.images?.[0]?.url || "",
+      sellerName: p.seller?.name || "Unknown",
+      sellerAddress: p.seller?.address || "N/A",
+    }));
+
+    res.status(200).json({ products: formatted });
   } catch (error) {
     console.error("❌ Error in getRelatedProducts:", error);
     res.status(500).json({ message: "Server error" });

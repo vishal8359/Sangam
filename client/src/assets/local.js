@@ -309,7 +309,7 @@ export const dummyProducts = [
     sellerAddress: "Sector 21, Noida",
     description: [
       "Handwoven rattan with cotton liner",
-      "Perfect for toys, laundry, or books",
+      "Perfect for toys, laundry or books",
       "Lightweight yet durable design",
       "Natural look suits all decor styles",
       "Includes handles for easy movement",

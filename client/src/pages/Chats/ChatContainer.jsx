@@ -914,7 +914,7 @@ export default function ChatContainer({
               top: contextMenu.mouseY,
               left: contextMenu.mouseX,
               zIndex: 9999,
-              bgcolor: "#fff",
+              bgcolor: isDark ? "#121212" : "#ccc",
               boxShadow: 3,
               borderRadius: 1,
               overflow: "hidden",

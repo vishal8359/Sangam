@@ -764,7 +764,7 @@ export default function SocietyBuzz() {
                                 bgcolor:
                                   msg.sender === userId
                                     ? theme.palette.grey[300]
-                                    : theme.palette.primary.main,
+                                    : "#121212",
                                 color: msg.sender === userId ? "#000" : "#fff",
                                 mx: 2,
                                 p: 1.5,
@@ -1194,6 +1194,7 @@ export default function SocietyBuzz() {
             ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
             : undefined
         }
+        
       >
         <MenuItem
           onClick={async () => {
@@ -1201,7 +1202,7 @@ export default function SocietyBuzz() {
             setContextMenu(null);
           }}
         >
-          Delete for Me
+          🧍Delete for Me
         </MenuItem>
 
         {contextMenu?.isSender && (
@@ -1211,7 +1212,7 @@ export default function SocietyBuzz() {
               setContextMenu(null);
             }}
           >
-            Delete for Everyone
+            🌐 Delete for Everyone
           </MenuItem>
         )}
       </Menu>

@@ -209,7 +209,7 @@ const YourProductsPage = () => {
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "stretch",
-                width: isMobile ? 175 : 250,
+                width: isMobile ? 170 : 250,
               }}
             >
               {/* Product Image */}
@@ -260,6 +260,22 @@ const YourProductsPage = () => {
                 <Box mt={1} display="flex" alignItems="center" gap={1}>
                   <Typography variant="body2">Listed</Typography>
                   <Switch
+                    sx={{
+                      "& .MuiSwitch-thumb": {
+                        backgroundColor: product.isActive
+                          ? theme.palette.mode === "dark"
+                            ? "#1976d2" 
+                            : "" 
+                          : undefined,
+                      },
+                      "& .MuiSwitch-track": {
+                        backgroundColor: product.isActive
+                          ? theme.palette.mode === "dark"
+                            ? "#90caf9"
+                            : ""
+                          : undefined,
+                      },
+                    }}
                     checked={product.isActive}
                     onChange={() => handleToggle(product._id)}
                   />

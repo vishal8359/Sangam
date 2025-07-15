@@ -26,6 +26,7 @@ import CreateSociety from "./pages/Society/CreateSoc";
 import VerifyOtp from "./pages/Auth/VerifyOTP";
 import ApprovalPanel from "./pages/Society/AprrovalPanel";
 import OrderReceiptPage from "./pages/Reports/OrderReceiptPage";
+import MyReelsPage from "./pages/Gallery/MyReelsPage";
 
 const App = () => {
   return (
@@ -68,6 +69,7 @@ const App = () => {
         <Route path="/verify-otp" element={<VerifyOtp />} />
         <Route path="my-society/admin/panel" element={<ApprovalPanel />} />
         <Route path="/reports/orders" element={<OrderReceiptPage />} />
+        <Route path="/gallery/upload-reel/myreels" element={<MyReelsPage/>}/>
         <Route path="/*" element={<DashboardLayoutBasic />} />
       </Routes>
     </div>

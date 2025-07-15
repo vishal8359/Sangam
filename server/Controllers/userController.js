@@ -401,3 +401,17 @@ export const getCurrentUser = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch current user" });
   }
 };
+
+export const getUserById = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id)
+      .populate("followers", "_id") // just count, not full data
+      .select("name avatar address followers"); // only what's needed
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json(user);
+  } catch (err) {
+    console.error("❌ Error fetching user:", err);
+    res.status(500).json({ message: "Failed to fetch user" });
+  }
+};

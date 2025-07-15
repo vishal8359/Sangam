@@ -73,8 +73,8 @@ export default function SocietyGalleryPage() {
           backgroundRepeat: "repeat-y",
           backgroundPosition: "center bottom",
           animation: `${backgroundMove} 60s linear infinite`,
-          filter: "blur(6px)",
-          opacity: 0.6,
+          filter: "blur(0px)",
+          opacity: 0.2,
         }}
       />
 
@@ -104,7 +104,7 @@ export default function SocietyGalleryPage() {
             textAlign: "center",
             mb: 4,
             fontSize: "2rem",
-            color: isDark ?"#f5f5ff" : "#121212",
+            color: "#121212",
           }}
         >
           Society Gallery Hub

@@ -21,6 +21,7 @@ const reelSchema = new mongoose.Schema({
   likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   comments: [commentSchema],
   views: { type: Number, default: 0 },
+  viewedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   createdAt: { type: Date, default: Date.now },
 });
 

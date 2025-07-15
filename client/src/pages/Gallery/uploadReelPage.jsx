@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -45,7 +45,45 @@ const UploadReelPage = () => {
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState("");
   const [file, setFile] = useState(null);
-  const { userProfile, userReels, setUserReels } = useAppContext();
+  const [desc, setDesc] = useState("");
+  const [stats, setStats] = useState(null);
+  const [userData, setUserData] = useState(null);
+  const { userProfile, userReels, setUserReels, axios, userId, token } =
+    useAppContext();
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const { data } = await axios.get(`/api/users/user/${userId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setUserData(data);
+      } catch (err) {
+        console.error("❌ Failed to fetch user info:", err);
+      }
+    };
+
+    if (userId && token) fetchUserData();
+  }, [userId, token]);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await axios.get(`/api/users/${userId}/reel-stats`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setStats(res.data);
+      } catch (err) {
+        console.error("❌ Failed to fetch reel stats:", err);
+      }
+    };
+
+    if (userId && token) fetchStats();
+  }, [userId, token]);
 
   const handleTagAdd = () => {
     if (tagInput.trim() && !tags.includes(tagInput.trim())) {
@@ -88,27 +126,34 @@ const UploadReelPage = () => {
     formData.append("video", file);
     formData.append("tags", JSON.stringify(tags));
     formData.append("description", desc);
-    formData.append("user_name", userProfile?.name || "Anonymous");
-    formData.append("user_img", userProfile?.img || "/user_photo.jpg");
 
     try {
-      toast.loading("Uploading reel...", { id: "upload" });
+      const toastId = toast.loading("Uploading reel...");
 
-      const response = await axios.post("/api/reels", formData);
-      const savedReel = response.data;
+      const response = await axios.post(
+        "/api/users/gallery/reels/upload",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      const savedReel = response.data.reel; 
 
       if (!savedReel || !savedReel.videoUrl) {
         throw new Error("Invalid reel data returned from server");
       }
 
-      // Update context so gallery reflects it immediately
       setUserReels((prev) => [savedReel, ...prev]);
 
-      toast.success("Reel uploaded successfully!", { id: "upload" });
+      toast.success(" Reel uploaded successfully!", { id: toastId });
       navigate("/gallery");
     } catch (error) {
-      console.error("Reel upload failed:", error);
-      toast.error("Failed to upload reel", { id: "upload" });
+      console.error("❌ Reel upload failed:", error);
+      toast.dismiss();
+      toast.error("Failed to upload reel");
     }
   };
 
@@ -121,34 +166,50 @@ const UploadReelPage = () => {
           p={2}
           borderRadius={2}
           bgcolor={theme.palette.background.paper}
+          sx={{
+            border: `1px solid ${theme.palette.divider}`,
+            boxShadow: 2,
+          }}
         >
-          <Stack direction="row" spacing={2} alignItems="center" mb={2}>
-            <Avatar src="/user_photo.jpg" sx={{ width: 56, height: 56 }} />
+          <div className="flex justify-between gap-1">
+            <Stack direction="row" spacing={2} alignItems="center" mb={2}>
+            <Avatar
+              src={userData?.avatar || "/user_photo.jpg"}
+              sx={{ width: 56, height: 56 }}
+            />
             <Box>
-              <Typography variant="h6">Vishal Gupta</Typography>
+              <Typography variant="h6">{userData?.name}</Typography>
               <Typography variant="body2" color="text.secondary">
-                Sangam Society, Ghaziabad
+                {userData?.address}
               </Typography>
             </Box>
           </Stack>
+          <button onClick={() => {
+            navigate('./myreels')
+          }} className="border-1 rounded-2xl p-2 cursor-pointer bg-gray-300 hover:bg-gray-100">My reels</button>
+          </div>
 
           <Typography fontWeight="bold" mt={2}>
             Reel Stats
           </Typography>
           <Stack spacing={1} my={2}>
-            <Typography>Total Reels Uploaded: {dummyStats.uploads}</Typography>
-            <Typography>Total Views: {dummyStats.totalViews}</Typography>
-            <Typography>Followers: {dummyStats.followers}</Typography>
-            <Typography>Expected Earnings: ₹{dummyStats.earnings}</Typography>
+            <Typography>Total Reels Uploaded: {stats?.uploads ?? 0}</Typography>
+            <Typography>Total Views: {stats?.totalViews ?? 0}</Typography>
+            <Typography>Followers: {stats?.followers ?? 0}</Typography>
+            <Typography>Expected Earnings: ₹{stats?.earnings ?? 0}</Typography>
           </Stack>
 
           <Typography mt={3} fontWeight="bold">
             Viewer Type Distribution
           </Typography>
           <ResponsiveContainer width="100%" height={200}>
-            <PieChart width={300} height={300}>
+            <PieChart>
               <Pie
-                data={dummyStats.viewerTypes}
+                data={[
+                  { name: "Residents", value: 60 },
+                  { name: "Other Societies", value: 30 },
+                  { name: "Guests", value: 10 },
+                ]}
                 dataKey="value"
                 nameKey="name"
                 outerRadius={80}
@@ -156,11 +217,8 @@ const UploadReelPage = () => {
                 labelLine={false}
                 label={renderCustomLabel}
               >
-                {dummyStats.viewerTypes.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={COLORS[index % COLORS.length]}
-                  />
+                {COLORS.map((color, index) => (
+                  <Cell key={index} fill={color} />
                 ))}
               </Pie>
               <Tooltip />
@@ -174,7 +232,7 @@ const UploadReelPage = () => {
             <RadialBarChart
               innerRadius="70%"
               outerRadius="100%"
-              data={[{ name: "Reach", value: dummyStats.reach }]}
+              data={[{ name: "Reach", value: stats?.reach || 0 }]}
             >
               <RadialBar
                 minAngle={15}
@@ -189,7 +247,8 @@ const UploadReelPage = () => {
         </Box>
 
         {/* Right Upload Section */}
-        <Box
+        <div className="w-110">
+          <Box
           flex={1}
           p={3}
           borderRadius={3}
@@ -221,6 +280,8 @@ const UploadReelPage = () => {
             rows={3}
             variant="outlined"
             sx={{ mb: 2 }}
+            value={desc}
+            onChange={(e) => setDesc(e.target.value)}
           />
 
           <div className="mb-2">
@@ -365,6 +426,7 @@ const UploadReelPage = () => {
             </Box>
           )}
         </Box>
+        </div>
       </Stack>
     </Box>
   );

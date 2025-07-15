@@ -7,6 +7,7 @@ import {
   verifyOtp,
   getEventInvitations,
   getCurrentUser,
+  getUserById,
 } from "../Controllers/userController.js";
 import multer from "../Configs/multer.js";
 import {
@@ -19,9 +20,7 @@ import {
 } from "../Controllers/pollController.js";
 import { getNoticesBySociety } from "../Controllers/noticeController.js";
 import {
-  getGroupsBySociety,
   getGroupDetails,
-  postInGroup,
   getMessages,
   uploadVoiceMessage,
   uploadBuzzFile,
@@ -43,17 +42,7 @@ import {
   getNeighbouringSocieties,
   getSocietyById,
 } from "../Controllers/societyController.js";
-import { getReelEngagement } from "../Controllers/reelEngagementController.js";
 
-import {
-  uploadReel,
-  getAllReels,
-  likeReel,
-  addComment,
-  addReply,
-  uploadImage,
-  getSocietyImages,
-} from "../Controllers/galleryController.js";
 import {
   createEvent,
   getEvents,
@@ -69,6 +58,7 @@ import {
   uploadChatFile,
 } from "../Controllers/chatsController.js";
 import { createOrder, getMyOrders, getSellerOrders } from "../Controllers/orderController.js";
+import { addComment, addReply, deleteReelById, getAllReels, getEngagementStats, getReelsByUserId, getUserReelStats, incrementView, likeReel, uploadReel } from "../Controllers/galleryController.js";
 
 const router = express.Router();
 // first register
@@ -82,6 +72,7 @@ router.post("/society/create", createSociety);
 
 router.post("/society/:id/join", verifyUser, requestJoinSociety);
 router.get("/society/:id/details", verifyUserOrAdmin, getSocietyById);
+
 // Polls
 router.get("/polls/:societyId", verifyUser, getPollsBySociety);
 router.post("/polls/:pollId/vote", verifyUser, voteInPoll);
@@ -166,19 +157,20 @@ router.get("/homes/neighbours", verifyUser, getNeighbourHomes);
 router.get("/society/:id/neighbours/", verifyUser, getNeighbouringSocieties);
 
 // Reels
-router.post("/gallery/reels", verifyUser, upload.single("video"), uploadReel);
-router.get("/gallery/reels", verifyUser, getAllReels);
+router.post("/gallery/reels/upload", verifyUser, upload.single("video"), uploadReel);
 router.put("/gallery/reels/:reelId/like", verifyUser, likeReel);
 router.post("/gallery/reels/:reelId/comment", verifyUser, addComment);
-router.post(
-  "/gallery/reels/:reelId/comment/:commentIndex/reply",
-  verifyUser,
-  addReply
-);
-router.get("/gallery/reels/engagement", verifyUser, getReelEngagement);
+router.post("/gallery/reels/:reelId/comment/:commentIndex/reply", verifyUser, addReply);
+router.put("/gallery/reels/:reelId/view", verifyUser, incrementView);
+router.get("/gallery/reels/engagement", verifyUser, getEngagementStats);
+router.get("/:userId/reel-stats", verifyUser, getUserReelStats);
+router.get("/user/:id/reels", verifyUser, getReelsByUserId);
+router.delete("/gallery/reels/:reelId", verifyUser, deleteReelById);
+router.get("/gallery/reels", getAllReels);
 
+
+
+router.get("/user/:id", verifyUser, getUserById);
 // Images
-router.post("/gallery/image", verifyUser, upload.single("image"), uploadImage);
-router.get("/gallery/image", verifyUser, getSocietyImages);
 
 export default router;

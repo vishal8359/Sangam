@@ -21,29 +21,6 @@ import DownloadIcon from "@mui/icons-material/Download";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import { useAppContext } from "../../context/AppContext";
 
-import dummyReel from "../../assets/dummy2.mp4";
-
-const initialReels = [
-  {
-    id: 1,
-    user: { name: "Vishal", avatar: "/user_photo.jpg" },
-    videoUrl: dummyReel,
-    likes: 10,
-    liked: false,
-    following: false,
-    comments: [
-      {
-        user: "Aman",
-        avatar: "/user_photo.jpg",
-        text: "Nice video!",
-        replies: [
-          { user: "Vishal", text: "Thanks!", avatar: "/user_photo.jpg" },
-        ],
-      },
-    ],
-  },
-];
-
 export default function ScrollReelsPage() {
   const [commentModal, setCommentModal] = useState({
     open: false,
@@ -51,29 +28,111 @@ export default function ScrollReelsPage() {
   });
   const { userReels } = useAppContext();
   const [reels, setReels] = useState(userReels || []);
-
-
   const [newComment, setNewComment] = useState("");
   const [replyInput, setReplyInput] = useState({ index: null, text: "" });
   const videoRefs = useRef({});
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const [activeReelId, setActiveReelId] = useState(null);
+  const { token, axios, userId } = useAppContext();
+  const currentReel = reels.find((r) => r.id === commentModal.reelId);
+
+  useEffect(() => {
+    const fetchReels = async () => {
+      try {
+        const res = await axios.get("/api/users/gallery/reels");
+
+        const updated = res.data.map((reel) => ({
+          ...reel,
+          id: reel._id,
+          liked: reel.likes.some(
+            (id) => id === userId || id === String(userId)
+          ),
+          likesCount: reel.likes.length,
+        }));
+
+        setReels(updated);
+      } catch (error) {
+        console.error("❌ Failed to load reels:", error);
+      }
+    };
+
+    fetchReels();
+  }, [userId]);
+
+  useEffect(() => {
+    const observerOptions = {
+      root: null,
+      rootMargin: "0px",
+      threshold: 0.9,
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        const reelId = entry.target.getAttribute("data-id");
+
+        if (entry.isIntersecting) {
+          setActiveReelId(reelId);
+
+          // ✅ Update views only when it becomes visible
+          axios
+            .put(`/api/users/gallery/reels/${reelId}/view`)
+            .catch((err) => console.error("View update failed:", err));
+        }
+      });
+    }, observerOptions);
+
+    Object.values(videoRefs.current).forEach((video) => {
+      if (video) observer.observe(video);
+    });
+
+    return () => {
+      Object.values(videoRefs.current).forEach((video) => {
+        if (video) observer.unobserve(video);
+      });
+    };
+  }, [reels]);
+
+  useEffect(() => {
+    Object.entries(videoRefs.current).forEach(([id, video]) => {
+      if (!video) return;
+      if (id === activeReelId) {
+        video.play().catch(() => {});
+        video.muted = false;
+      } else {
+        video.pause();
+      }
+    });
+  }, [activeReelId]);
 
   const handleToggleMute = (id) => {
     const video = videoRefs.current[id];
-    if (video) video.muted = !video.muted;
+    if (video) {
+      video.muted = !video.muted;
+      if (video.paused) video.play().catch(() => {});
+    }
   };
 
-  const handleDoubleClick = (id) => {
-    setReels((prev) =>
-      prev.map((reel) =>
-        reel.id === id
-          ? {
-              ...reel,
-              liked: !reel.liked,
-              likes: reel.liked ? reel.likes - 1 : reel.likes + 1,
-            }
-          : reel
-      )
-    );
+  const handleDoubleClick = async (id) => {
+    try {
+      const res = await axios.put(
+        `/api/users/gallery/reels/${id}/like`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      setReels((prev) =>
+        prev.map((r) =>
+          r.id === id
+            ? { ...r, liked: res.data.liked, likesCount: res.data.likesCount }
+            : r
+        )
+      );
+    } catch (err) {
+      console.error("Failed to like reel:", err);
+    }
   };
 
   const toggleFollow = (id) => {
@@ -84,61 +143,67 @@ export default function ScrollReelsPage() {
     );
   };
 
-  const addComment = () => {
+  const addComment = async () => {
     if (!newComment.trim()) return;
-    setReels((prev) =>
-      prev.map((reel) =>
-        reel.id === commentModal.reelId
-          ? {
-              ...reel,
-              comments: [
-                ...reel.comments,
-                {
-                  user: "You",
-                  avatar: "/user_photo.jpg",
-                  text: newComment,
-                  replies: [],
-                },
-              ],
-            }
-          : reel
-      )
-    );
-    setNewComment("");
+
+    try {
+      const res = await axios.post(
+        `/api/users/gallery/reels/${commentModal.reelId}/comment`,
+        { text: newComment },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      setReels((prev) =>
+        prev.map((r) =>
+          r.id === commentModal.reelId
+            ? { ...r, comments: res.data.comments }
+            : r
+        )
+      );
+      setNewComment("");
+    } catch (error) {
+      console.error("Failed to add comment:", error);
+    }
   };
 
-  const addReply = (index) => {
+  const addReply = async (index) => {
     if (!replyInput.text.trim()) return;
-    setReels((prev) =>
-      prev.map((reel) => {
-        if (reel.id !== commentModal.reelId) return reel;
-        const updatedComments = [...reel.comments];
-        updatedComments[index].replies.push({
-          user: "You",
-          text: replyInput.text,
-          avatar: "/user_photo.jpg",
-        });
-        return { ...reel, comments: updatedComments };
-      })
-    );
-    setReplyInput({ index: null, text: "" });
+
+    try {
+      const res = await axios.post(
+        `/api/users/gallery/reels/${commentModal.reelId}/comment/${index}/reply`,
+        { text: replyInput.text },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      setReels((prev) =>
+        prev.map((r) =>
+          r.id === commentModal.reelId
+            ? { ...r, comments: res.data.comments }
+            : r
+        )
+      );
+      setReplyInput({ index: null, text: "" });
+    } catch (error) {
+      console.error("Failed to reply:", error);
+    }
   };
-
-  useEffect(() => {
-  console.log("userReels from context:", userReels);
-  if (Array.isArray(userReels)) {
-    setReels(userReels);
-  }
-}, [userReels]);
-
-
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-
-  const currentReel = reels.find((r) => r.id === commentModal.reelId);
 
   return (
-    <Box sx={{ height: "100vh", overflowY: "auto", bgcolor: "#f9f9f9", p: 0 }}>
+    <Box
+      sx={{
+        height: "100vh",
+        overflowY: "auto",
+        bgcolor: "#f9f9f9",
+        p: 0,
+        scrollSnapType: "y mandatory",
+        scrollBehavior: "smooth",
+      }}
+    >
       {reels.map((reel) => (
         <Box
           key={reel.id}
@@ -155,9 +220,11 @@ export default function ScrollReelsPage() {
             display: "flex",
             flexDirection: "row",
             position: "relative",
+            scrollSnapAlign: "start",
           }}
         >
           <video
+            data-id={reel.id}
             ref={(el) => (videoRefs.current[reel.id] = el)}
             src={reel.videoUrl}
             autoPlay
@@ -182,15 +249,17 @@ export default function ScrollReelsPage() {
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              gap: 2,
+              gap: 1,
               px: 1,
+              py: 30,
             }}
           >
             <IconButton onClick={() => handleDoubleClick(reel.id)}>
               <FavoriteIcon sx={{ color: reel.liked ? "red" : "white" }} />
             </IconButton>
+
             <Typography color="white" fontSize={12}>
-              {reel.likes}
+              {reel.likesCount}
             </Typography>
 
             <IconButton

@@ -45,6 +45,7 @@ export default function ChatContainer({
     token,
     onlineStatus,
     setMessageHandler,
+    navigate
   } = useAppContext();
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const emojiPickerRef = useRef(null);
@@ -59,15 +60,7 @@ export default function ChatContainer({
   const [selectedMsg, setSelectedMsg] = useState(null);
   const scrollRef = useRef(null);
   const contextMenuRef = useRef(null);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState("");
-  const [previewType, setPreviewType] = useState("");
-
-  const closePreview = () => {
-    setPreviewOpen(false);
-    setPreviewUrl("");
-    setPreviewType("");
-  };
+  
 
   const MAX_SIZE = 10 * 1024 * 1024;
 
@@ -722,14 +715,38 @@ export default function ChatContainer({
                     >
                       {msg.fileUrl ? (
                         <>
-                          {msg.fileType?.startsWith("video") ? (
-                            <video
-                              src={msg.fileUrl}
-                              controls
-                              style={{ maxWidth: "100%", borderRadius: 8, maxHeight:360 }}
-                            />
+                          {msg.fileType?.startsWith("video") ||
+                          msg.fileUrl.endsWith(".mp4") ? (
+                            <div
+                              onClick={() =>
+                                navigate(`/gallery/reels?reelId=${msg._id}`)
+                              }
+                              style={{
+                                cursor: "pointer",
+                                maxWidth: "100%",
+                                maxHeight: 360,
+                                borderRadius: 8,
+                                overflow: "hidden",
+                              }}
+                            >
+                              <video
+                                src={msg.fileUrl}
+                                muted
+                                loop
+                                playsInline
+                                controls
+                                style={{
+                                  width: "100%",
+                                  height: "auto",
+                                  display: "block",
+                                }}
+                              />
+                            </div>
                           ) : msg.fileType?.startsWith("audio") ? (
-                            <WaveformPlayer audioUrl={msg.fileUrl} fromSender={isYou} />
+                            <WaveformPlayer
+                              audioUrl={msg.fileUrl}
+                              fromSender={isYou}
+                            />
                           ) : msg.fileType === "application/pdf" ? (
                             <a
                               href={msg.fileUrl}
@@ -985,7 +1002,6 @@ export default function ChatContainer({
             )}
           </Box>
         )}
-        
       </Box>
     </Box>
   );

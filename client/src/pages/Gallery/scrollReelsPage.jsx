@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import Picker from "@emoji-mart/react";
 import data from "@emoji-mart/data";
+import { useSearchParams } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -62,6 +63,20 @@ export default function ScrollReelsPage() {
   const [buzzGroups, setBuzzGroups] = useState([]);
   const [selectedChats, setSelectedChats] = useState([]);
   const [selectedGroups, setSelectedGroups] = useState([]);
+
+  const [searchParams] = useSearchParams();
+const reelIdFromUrl = searchParams.get("reel");
+
+
+  useEffect(() => {
+    if (reelIdFromUrl && videoRefs.current[reelIdFromUrl]) {
+      videoRefs.current[reelIdFromUrl].scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, [reelIdFromUrl]);
+
   useEffect(() => {
     const fetchShareData = async () => {
       try {
@@ -87,10 +102,10 @@ export default function ScrollReelsPage() {
     }
   }, [token, societyId]);
 
-  useEffect(() => {
-    console.log("👥 Members:", members);
-    console.log("📢 Buzz Groups:", buzzGroups);
-  }, [members, buzzGroups]);
+  // useEffect(() => {
+  //   console.log("👥 Members:", members);
+  //   console.log("📢 Buzz Groups:", buzzGroups);
+  // }, [members, buzzGroups]);
 
   useEffect(() => {
     const fetchReels = async () => {
@@ -344,23 +359,51 @@ export default function ScrollReelsPage() {
     });
   };
 
+  const shareReel = async (reelId, receiverId, groupId) => {
+    try {
+      await axios.post(
+        `/api/users/gallery/reels/send`,
+        {
+          senderId: userId,
+          receiverId: type === "user" ? targetId : null,
+          groupId: type === "group" ? targetId : null,
+          reelUrl: reels.find((r) => r.id === reelId)?.videoUrl,
+          societyId,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      toast.success("Reel shared!");
+    } catch (err) {
+      toast.error("Failed to share reel.");
+    }
+  };
+
   const handleShare = async (reelId, targetId, type) => {
     try {
-      const payload = {
-        targetUserIds: type === "user" ? [targetId] : [],
-        buzzGroupIds: type === "group" ? [targetId] : [],
-      };
+      const reel = reels.find((r) => r.id === reelId);
+      if (!reel) throw new Error("Reel not found");
 
-      await axios.post(`/api/users/gallery/reels/${reelId}/share`, payload, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.post(
+        `/api/users/gallery/reels/send`,
+        {
+          senderId: userId,
+          receiverId: type === "user" ? targetId : null,
+          groupId: type === "group" ? targetId : null,
+          reelUrl: reel.videoUrl,
+          societyId,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
+      toast.success("Reel shared!");
       setShareAnchorEl(null);
     } catch (err) {
-      console.error(
-        "❌ Error sharing reel:",
-        err.response?.data || err.message
-      );
+      console.error("❌ Error sharing reel:", err);
       toast.error("Failed to share reel");
     }
   };
@@ -384,7 +427,7 @@ export default function ScrollReelsPage() {
     selectedChats.forEach((id) => handleShare(selectedReelId, id, "user"));
     selectedGroups.forEach((id) => handleShare(selectedReelId, id, "group"));
 
-    toast.success("Shared successfully!");
+    // toast.success("Shared successfully!");
     setSelectedChats([]);
     setSelectedGroups([]);
     setShareAnchorEl(null);

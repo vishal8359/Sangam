@@ -595,7 +595,11 @@ export default function SocietyBuzz() {
               <Tab
                 key={g._id}
                 label={
-                  <Box display="flex" alignItems="center" sx={{color: isDark? "#fff" : ""}}>
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    sx={{ color: isDark ? "#fff" : "" }}
+                  >
                     <Groups2Icon />
                     &nbsp;{g.groupName}
                   </Box>
@@ -604,13 +608,13 @@ export default function SocietyBuzz() {
             ))}
           </Tabs>
 
-          {(
+          {
             <Tooltip title="New Group">
               <IconButton onClick={() => setOpenDialog(true)}>
                 <AddIcon />
               </IconButton>
             </Tooltip>
-          )}
+          }
         </Box>
 
         {/* Message area */}
@@ -736,28 +740,20 @@ export default function SocietyBuzz() {
                             />
                           ) : msg.fileUrl &&
                             msg.fileType?.startsWith("video") ? (
-                            <Box
-                              onClick={() => openPreview("video", msg.fileUrl)}
-                              sx={{
-                                cursor: "pointer",
-                                mt: 0.5,
+                            <video
+                              src={msg.fileUrl}
+                              style={{
                                 width: "300px",
-                                borderRadius: 2,
-                                overflow: "hidden",
+                                borderRadius: 15,
+                                display: "block",
+                                marginTop: "4px",
+                                cursor: "pointer",
                               }}
-                            >
-                              <video
-                                src={msg.fileUrl}
-                                style={{
-                                  width: "100%",
-                                  borderRadius: 15,
-                                  display: "block",
-                                }}
-                                muted
-                                autoPlay
-                                loop
-                              />
-                            </Box>
+                              muted
+                              autoPlay
+                              loop
+                              onClick={() => openPreview("video", msg.fileUrl)}
+                            />
                           ) : (
                             <Box
                               sx={{
@@ -786,7 +782,21 @@ export default function SocietyBuzz() {
                                   fromSender={msg.sender === userId}
                                 />
                               ) : msg.fileUrl ? (
-                                msg.fileType?.includes("pdf") ? (
+                                msg.fileUrl.endsWith(".mp4") ? (
+                                  <video
+                                    src={msg.fileUrl}
+                                    controls
+                                    muted
+                                    loop
+                                    playsInline
+                                    style={{
+                                      width: "100%",
+                                      maxHeight: 360,
+                                      borderRadius: 8,
+                                      marginTop: 8,
+                                    }}
+                                  />
+                                ) : msg.fileType?.includes("pdf") ? (
                                   <Typography
                                     onClick={() =>
                                       openPreview("pdf", msg.fileUrl)
@@ -1194,7 +1204,6 @@ export default function SocietyBuzz() {
             ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
             : undefined
         }
-        
       >
         <MenuItem
           onClick={async () => {

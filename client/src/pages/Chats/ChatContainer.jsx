@@ -14,11 +14,14 @@ import {
   TextField,
   Paper,
   useTheme,
+  Dialog,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import SendIcon from "@mui/icons-material/Send";
 import { useAppContext } from "../../context/AppContext";
 import Fab from "@mui/material/Fab";
+import MediaUpload from "./MediaPreview";
+import WaveformPlayer from "../../components/WaveformPlayer";
 
 export default function ChatContainer({
   isMobile,
@@ -56,11 +59,18 @@ export default function ChatContainer({
   const [selectedMsg, setSelectedMsg] = useState(null);
   const scrollRef = useRef(null);
   const contextMenuRef = useRef(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [previewType, setPreviewType] = useState("");
 
-  // function isEmojiOnlyMessage(text) {
-  //   const emojiRegex = /^[\p{Emoji}\s]+$/u;
-  //   return emojiRegex.test(text.trim());
-  // }
+  const closePreview = () => {
+    setPreviewOpen(false);
+    setPreviewUrl("");
+    setPreviewType("");
+  };
+
+  const MAX_SIZE = 10 * 1024 * 1024;
+
   const formatTime = (timestamp) => {
     try {
       const date = new Date(timestamp);
@@ -93,9 +103,15 @@ export default function ChatContainer({
       return "";
     }
   };
-
   const handleFileChange = (e) => {
     const file = e.target.files[0];
+
+    if (!file) return;
+
+    // if (file.size > MAX_SIZE) {
+    //   alert("File too large. Max allowed size is 10MB.");
+    //   return;
+    // }
     if (file) {
       handleSend(file);
     }
@@ -693,11 +709,10 @@ export default function ChatContainer({
                       </Box>
                     </Box>
                   ) : (
-                    // TEXT/FILE MESSAGES: With background
                     <Box
-                      px={1.7}
+                      px={1}
                       py={1}
-                      maxWidth="75%"
+                      maxWidth="55%"
                       borderRadius={2}
                       bgcolor={isYou ? "#f5f5f5" : "#000"}
                       sx={{
@@ -706,17 +721,41 @@ export default function ChatContainer({
                       }}
                     >
                       {msg.fileUrl ? (
-                        <a
-                          href={msg.fileUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            color: isYou ? "#000" : "#f5f5ff",
-                            textDecoration: "underline",
-                          }}
-                        >
-                          📎 View File
-                        </a>
+                        <>
+                          {msg.fileType?.startsWith("video") ? (
+                            <video
+                              src={msg.fileUrl}
+                              controls
+                              style={{ maxWidth: "100%", borderRadius: 8, maxHeight:360 }}
+                            />
+                          ) : msg.fileType?.startsWith("audio") ? (
+                            <WaveformPlayer audioUrl={msg.fileUrl} fromSender={isYou} />
+                          ) : msg.fileType === "application/pdf" ? (
+                            <a
+                              href={msg.fileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                color: isYou ? "#000" : "#f5f5ff",
+                                textDecoration: "underline",
+                              }}
+                            >
+                              📄 View PDF
+                            </a>
+                          ) : (
+                            <a
+                              href={msg.fileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                color: isYou ? "#000" : "#f5f5ff",
+                                textDecoration: "underline",
+                              }}
+                            >
+                              📎 View File
+                            </a>
+                          )}
+                        </>
                       ) : (
                         <Typography variant="body2">{msg.text}</Typography>
                       )}
@@ -801,9 +840,9 @@ export default function ChatContainer({
           </IconButton>
           <input
             type="file"
-            accept="image/*,application/pdf,.doc,.docx"
-            style={{ display: "none" }}
+            accept="image/*,video/*,audio/*"
             ref={fileInputRef}
+            style={{ display: "none" }}
             onChange={handleFileChange}
           />
 
@@ -905,6 +944,7 @@ export default function ChatContainer({
             </Box>
           </Box>
         )}
+
         {/* Right-click Context Menu */}
         {contextMenu && selectedMsg && (
           <Box
@@ -945,6 +985,7 @@ export default function ChatContainer({
             )}
           </Box>
         )}
+        
       </Box>
     </Box>
   );

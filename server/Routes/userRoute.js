@@ -27,6 +27,8 @@ import {
   deleteBuzzMessageForMe,
   deleteBuzzMessageForEveryone,
   getBuzzGroups,
+  createBuzzGroup,
+  getGroupsBySociety,
 } from "../Controllers/buzzController.js";
 import upload from "../Configs/multer.js";
 import { requestToJoinGroup } from "../Controllers/groupJoinController.js";
@@ -58,7 +60,7 @@ import {
   uploadChatFile,
 } from "../Controllers/chatsController.js";
 import { createOrder, getMyOrders, getSellerOrders } from "../Controllers/orderController.js";
-import { addComment, addReply, deleteReelById, getAllReels, getEngagementStats, getReelsByUserId, getUserReelStats, incrementView, likeReel, uploadReel } from "../Controllers/galleryController.js";
+import { addComment, addReply, deleteReelById, getAllReels, getEngagementStats, getReelsByUserId, getUserReelStats, incrementView, likeReel, shareReel, toggleFollowUser, uploadReel } from "../Controllers/galleryController.js";
 
 const router = express.Router();
 // first register
@@ -96,13 +98,17 @@ router.post(
   upload.single("audio"),
   uploadVoiceMessage
 );
-
+router.post("/buzz/create-group", verifyUser, createBuzzGroup);
 router.get("/buzz/group/:groupId", verifyUser, getGroupDetails);
 router.post(
   "/buzz/groups/:groupId/join-request",
   verifyUser,
   requestToJoinGroup
 );
+router.get("/buzz/members/:societyId", verifyUser, getSocietyMembers);
+
+// router.get("/buzz/groups/:societyId", verifyUser, getGroupsBySociety);
+// router.get("/buzz/group/:groupId", verifyUser, getGroupDetails);
 router.get("/buzz/groups/:societyId", getBuzzGroups);
 router.delete("/buzz/message/:messageId/me", verifyUser, deleteBuzzMessageForMe);
 router.delete("/buzz/message/:messageId/all", verifyUser, deleteBuzzMessageForEveryone);
@@ -167,7 +173,12 @@ router.get("/:userId/reel-stats", verifyUser, getUserReelStats);
 router.get("/user/:id/reels", verifyUser, getReelsByUserId);
 router.delete("/gallery/reels/:reelId", verifyUser, deleteReelById);
 router.get("/gallery/reels", getAllReels);
-
+router.put("/user/:id/follow", verifyUser, toggleFollowUser);
+router.post(
+  "/gallery/reels/:reelId/share",
+  verifyUser,
+  shareReel
+);
 
 
 router.get("/user/:id", verifyUser, getUserById);

@@ -55,6 +55,7 @@ const userSchema = new mongoose.Schema(
       ref: "Society",
     },
     followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    following: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 
     is_approved: { type: Boolean, default: true },
     otp: String,

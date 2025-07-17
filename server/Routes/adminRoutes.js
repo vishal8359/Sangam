@@ -46,10 +46,7 @@ router.get("/chats/me", verifyAdmin, getMyChats);
 // Buzz group routes
 router.post("/buzz/create-group", verifyAdmin, createBuzzGroup);
 // routes/adminRoutes.js
-router.get("/buzz/members/:societyId", verifyAdmin, getSocietyMembers);
 
-router.get("/buzz/groups/:societyId", verifyUser, getGroupsBySociety);
-router.get("/buzz/group/:groupId", verifyUser, getGroupDetails);
 router.post("/buzz/group/:groupId/post", verifyUser, postInGroup);
 router.post("/buzz/groups/requests/:requestId/approve", verifyAdmin, approveGroupJoinRequest);
 router.post("/buzz/groups/requests/:requestId/reject", verifyAdmin, rejectGroupJoinRequest);

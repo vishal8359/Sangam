@@ -3,6 +3,7 @@ import { uploadToCloudinary } from "../Utils/cloudinaryUpload.js";
 import Reel from "../Models/Reel.js";
 import User from "../Models/User.js";
 import mongoose from "mongoose";
+import BuzzGroup from "../Models/BuzzGroup.js";
 
 export const uploadReel = async (req, res) => {
   try {
@@ -36,11 +37,14 @@ export const uploadReel = async (req, res) => {
   }
 };
 
+// GET /api/users/gallery/reels
 export const getAllReels = async (req, res) => {
   try {
     const reels = await Reel.find()
-      .populate("user", "user_name user_img") // only select basic user info
-      .sort({ createdAt: -1 }); // latest first
+      .populate("user", "name avatar followers")
+      .populate("comments.user", "name avatar")
+      .populate("comments.replies.user", "name avatar")
+      .sort({ createdAt: -1 });
 
     res.status(200).json(reels);
   } catch (error) {
@@ -84,17 +88,40 @@ export const likeReel = async (req, res) => {
 export const addComment = async (req, res) => {
   const { text } = req.body;
   const { reelId } = req.params;
-  const userId = req.user.userId;
+  const userId = req.user._id; // From middleware
 
   try {
+    // Validate input
+    if (!text?.trim()) {
+      return res.status(400).json({ message: "Comment text is required" });
+    }
+
+    // Find reel
     const reel = await Reel.findById(reelId);
-    if (!reel) return res.status(404).json({ message: "Reel not found" });
+    if (!reel) {
+      return res.status(404).json({ message: "Reel not found" });
+    }
 
-    reel.comments.push({ user: userId, text });
-    await reel.save();
+    // Add comment (store user as ObjectId)
+    reel.comments.push({
+      user: userId,
+      text,
+      replies: [],
+    });
 
-    res.status(200).json({ message: "Comment added", comments: reel.comments });
+    // Save and re-fetch with population
+    const savedReel = await reel.save();
+
+    const populatedReel = await Reel.findById(savedReel._id)
+      .populate("comments.user", "name avatar")
+      .populate("comments.replies.user", "name avatar");
+
+    res.status(200).json({
+      message: "Comment added",
+      comments: populatedReel.comments,
+    });
   } catch (error) {
+    console.error("❌ Error in addComment:", error);
     res.status(500).json({ message: "Failed to add comment" });
   }
 };
@@ -103,7 +130,7 @@ export const addComment = async (req, res) => {
 export const addReply = async (req, res) => {
   const { reelId, commentIndex } = req.params;
   const { text } = req.body;
-  const userId = req.user.userId;
+  const userId = req.user._id;
 
   try {
     const reel = await Reel.findById(reelId);
@@ -113,7 +140,13 @@ export const addReply = async (req, res) => {
     reel.comments[commentIndex].replies.push({ user: userId, text });
     await reel.save();
 
-    res.status(200).json({ message: "Reply added", comments: reel.comments });
+    const populatedReel = await Reel.findById(reelId)
+      .populate("comments.user", "name avatar")
+      .populate("comments.replies.user", "name avatar");
+
+    res
+      .status(200)
+      .json({ message: "Reply added", comments: populatedReel.comments });
   } catch (error) {
     res.status(500).json({ message: "Failed to add reply" });
   }
@@ -225,5 +258,73 @@ export const deleteReelById = async (req, res) => {
   } catch (error) {
     console.error("❌ Error deleting reel:", error);
     res.status(500).json({ message: "Failed to delete reel" });
+  }
+};
+
+export const toggleFollowUser = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const targetId = req.params.id;
+
+    const user = await User.findById(userId);
+    const targetUser = await User.findById(targetId);
+
+    if (!targetUser) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const isFollowing = user.following.includes(targetId);
+
+    if (isFollowing) {
+      user.following.pull(targetId);
+      targetUser.followers.pull(userId);
+    } else {
+      user.following.push(targetId);
+      targetUser.followers.push(userId);
+    }
+
+    await user.save();
+    await targetUser.save();
+
+    res.status(200).json({ following: !isFollowing });
+  } catch (error) {
+    console.error("Follow toggle error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const shareReel = async (req, res) => {
+  try {
+    const { reelId } = req.params;
+    const { targetUserIds = [], buzzGroupIds = [] } = req.body;
+
+    const reel = await Reel.findById(reelId);
+    if (!reel) return res.status(404).json({ message: "Reel not found" });
+
+    // Notify target users (optional)
+    for (const userId of targetUserIds) {
+      // Example: createNotification(userId, `A reel was shared with you.`);
+      console.log(`🎯 Reel shared with user: ${userId}`);
+    }
+
+    // Share reel into buzz group posts
+    for (const groupId of buzzGroupIds) {
+      await BuzzGroup.findByIdAndUpdate(groupId, {
+        $push: {
+          posts: {
+            user: req.user._id,
+            content: reel.description,
+            file: reel.cloudinaryUrl,
+            createdAt: new Date(),
+          },
+        },
+      });
+      console.log(`📢 Reel pushed to group: ${groupId}`);
+    }
+
+    res.status(200).json({ success: true, message: "Reel shared successfully" });
+  } catch (err) {
+    console.error("❌ Error sharing reel:", err);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };

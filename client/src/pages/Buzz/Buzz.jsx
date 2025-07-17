@@ -171,7 +171,7 @@ export default function SocietyBuzz() {
     const fetchMembers = async () => {
       try {
         setLoadingMembers(true);
-        const res = await axios.get(`/api/admin/buzz/members/${societyId}`, {
+        const res = await axios.get(`/api/users/buzz/members/${societyId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -491,7 +491,7 @@ export default function SocietyBuzz() {
       const members = [...new Set([...selectedMembers, userId])];
 
       const res = await axios.post(
-        "/api/admin/buzz/create-group",
+        "/api/users/buzz/create-group",
         {
           groupName: newGroupName,
           members,
@@ -604,7 +604,7 @@ export default function SocietyBuzz() {
             ))}
           </Tabs>
 
-          {userRole === "admin" && (
+          {(
             <Tooltip title="New Group">
               <IconButton onClick={() => setOpenDialog(true)}>
                 <AddIcon />

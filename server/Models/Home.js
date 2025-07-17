@@ -5,7 +5,7 @@ const homeSchema = new mongoose.Schema({
 
   residents: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 
-  street: { type: String, required: true },            // Street or block name
+  // street: { type: String, required: true },            // Street or block name
   houseNumber: { type: String, required: true },       // Actual house/flat number
   houseSortOrder: { type: Number, required: true },    
 }, {

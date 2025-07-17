@@ -91,7 +91,7 @@ export const getChatHistory = async (req, res) => {
 
 export const uploadChatFile = async (req, res) => {
   try {
-    await connectCloudinary(); // ✅ MUST call this to config cloudinary
+    await connectCloudinary(); 
 
     const { sender, receiver, societyId } = req.body;
     const file = req.file;
@@ -103,7 +103,10 @@ export const uploadChatFile = async (req, res) => {
     const streamUpload = (buffer) =>
       new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
-          { folder: "chat_files" },
+          {
+            folder: "chat_files",
+            resource_type: "auto", 
+          },
           (error, result) => {
             if (result) resolve(result);
             else reject(error);
@@ -129,6 +132,7 @@ export const uploadChatFile = async (req, res) => {
     res.status(500).json({ error: error.message || "Internal Server Error" });
   }
 };
+
 
 // DELETE /api/users/chats/:id
 export const deleteMessage = async (req, res) => {

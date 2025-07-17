@@ -65,8 +65,7 @@ export default function ScrollReelsPage() {
   const [selectedGroups, setSelectedGroups] = useState([]);
 
   const [searchParams] = useSearchParams();
-const reelIdFromUrl = searchParams.get("reel");
-
+  const reelIdFromUrl = searchParams.get("reel");
 
   useEffect(() => {
     if (reelIdFromUrl && videoRefs.current[reelIdFromUrl]) {
@@ -91,7 +90,10 @@ const reelIdFromUrl = searchParams.get("reel");
             headers: { Authorization: `Bearer ${token}` },
           }
         );
-        setBuzzGroups(groupRes.data.groups);
+        setBuzzGroups([
+          { _id: "public", name: "Public Group", groupName: "Public Group", },
+          ...groupRes.data.groups,
+        ]);
       } catch (err) {
         console.error("❌ Failed to load members/groups:", err);
       }
@@ -101,11 +103,6 @@ const reelIdFromUrl = searchParams.get("reel");
       fetchShareData();
     }
   }, [token, societyId]);
-
-  // useEffect(() => {
-  //   console.log("👥 Members:", members);
-  //   console.log("📢 Buzz Groups:", buzzGroups);
-  // }, [members, buzzGroups]);
 
   useEffect(() => {
     const fetchReels = async () => {
@@ -190,7 +187,7 @@ const reelIdFromUrl = searchParams.get("reel");
         if (entry.isIntersecting) {
           setActiveReelId(reelId);
 
-          // ✅ Update views only when it becomes visible
+          //Update views only when it becomes visible
           axios
             .put(`/api/users/gallery/reels/${reelId}/view`)
             .catch((err) => console.error("View update failed:", err));
@@ -359,28 +356,6 @@ const reelIdFromUrl = searchParams.get("reel");
     });
   };
 
-  const shareReel = async (reelId, receiverId, groupId) => {
-    try {
-      await axios.post(
-        `/api/users/gallery/reels/send`,
-        {
-          senderId: userId,
-          receiverId: type === "user" ? targetId : null,
-          groupId: type === "group" ? targetId : null,
-          reelUrl: reels.find((r) => r.id === reelId)?.videoUrl,
-          societyId,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      toast.success("Reel shared!");
-    } catch (err) {
-      toast.error("Failed to share reel.");
-    }
-  };
-
   const handleShare = async (reelId, targetId, type) => {
     try {
       const reel = reels.find((r) => r.id === reelId);
@@ -434,8 +409,11 @@ const reelIdFromUrl = searchParams.get("reel");
     setShareTab(0);
   };
 
-  const userGroups = buzzGroups.filter((group) =>
-    group.members.some((m) => m === userId || m._id === userId)
+  const userGroups = buzzGroups.filter(
+    (group) =>
+      group._id === "public" ||
+      (Array.isArray(group.members) &&
+        group.members.some((m) => m === userId || m._id === userId))
   );
 
   return (

@@ -336,20 +336,38 @@ export const shareReel = async (req, res) => {
 // SEND REEL TO CHAT OR GROUP
 export const sendReelToChatOrGroup = async (req, res) => {
   try {
-    
     const { senderId, receiverId, groupId, reelUrl, societyId } = req.body;
 
     if (!senderId || !reelUrl || !societyId) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    if (groupId) {
-      // send to buzz group
-      const sender = await User.findById(senderId);
-      if (!sender) {
-        return res.status(404).json({ message: "Sender not found" });
-      }
+    const sender = await User.findById(senderId);
+    if (!sender) {
+      return res.status(404).json({ message: "Sender not found" });
+    }
 
+    // ✅ Send to "Public Group" (virtual)
+    if (groupId === "public") {
+      const message = new BuzzMessage({
+        sender: senderId,
+        senderName: sender.name,
+        content: "Shared a reel",
+        fileUrl: reelUrl,
+        fileType: "reel",
+        group: null, // not linked to a buzzGroup
+        societyId,
+        isPublicGroup: true, // optional flag for UI filtering
+      });
+
+      await message.save();
+      return res
+        .status(200)
+        .json({ message: "Reel sent to Public Group", data: message });
+    }
+
+    // ✅ Send to buzz group (normal)
+    if (groupId) {
       const message = new BuzzMessage({
         sender: senderId,
         senderName: sender.name,
@@ -364,8 +382,10 @@ export const sendReelToChatOrGroup = async (req, res) => {
       return res
         .status(200)
         .json({ message: "Reel sent to group", data: message });
-    } else if (receiverId) {
-      // send to private chat
+    }
+
+    // ✅ Send to private chat
+    if (receiverId) {
       const message = new Message({
         sender: senderId,
         receiver: receiverId,
@@ -374,62 +394,18 @@ export const sendReelToChatOrGroup = async (req, res) => {
         societyId,
         text: "Shared a reel",
       });
+
       await message.save();
       return res
         .status(200)
         .json({ message: "Reel sent to chat", data: message });
-    } else {
-      return res
-        .status(400)
-        .json({ message: "receiverId or groupId must be provided" });
     }
-  } catch (error) {
-    console.error("Error sending reel:", error);
+
     return res
-      .status(500)
-      .json({ message: "Server error", error: error.message });
-  }
-};
-
-// GET REELS IN A CHAT OR GROUP
-export const getReelsInChatOrGroup = async (req, res) => {
-  try {
-    const { userId, otherUserId, groupId } = req.query;
-
-    if (groupId) {
-      // fetch from buzz group
-      const reels = await BuzzMessage.find({
-        group: groupId,
-        fileType: "reel",
-      })
-        .populate("sender", "user_name user_img")
-        .sort({ createdAt: -1 });
-
-      return res.status(200).json({ reels });
-    } else if (userId && otherUserId) {
-      // fetch private chat reels
-      const reels = await Message.find({
-        fileType: "reel",
-        $or: [
-          { sender: userId, receiver: otherUserId },
-          { sender: otherUserId, receiver: userId },
-        ],
-      })
-        .populate("sender", "user_name user_img")
-        .sort({ createdAt: -1 });
-
-      return res.status(200).json({ reels });
-    } else {
-      return res
-        .status(400)
-        .json({
-          message: "Provide either groupId or both userId and otherUserId",
-        });
-    }
+      .status(400)
+      .json({ message: "receiverId or groupId must be provided" });
   } catch (error) {
-    console.error("Error fetching reels:", error);
-    return res
-      .status(500)
-      .json({ message: "Server error", error: error.message });
+    console.error("❌ Error sending reel:", error);
+    return res.status(500).json({ message: "Server error", error: error.message });
   }
 };

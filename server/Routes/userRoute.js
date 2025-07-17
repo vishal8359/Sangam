@@ -60,7 +60,7 @@ import {
   uploadChatFile,
 } from "../Controllers/chatsController.js";
 import { createOrder, getMyOrders, getSellerOrders } from "../Controllers/orderController.js";
-import { addComment, addReply, deleteReelById, getAllReels, getEngagementStats, getReelsByUserId, getReelsInChatOrGroup, getUserReelStats, incrementView, likeReel, sendReelToChatOrGroup, shareReel, toggleFollowUser, uploadReel } from "../Controllers/galleryController.js";
+import { addComment, addReply, deleteReelById, getAllReels, getEngagementStats, getReelsByUserId, getUserReelStats, incrementView, likeReel, sendReelToChatOrGroup, shareReel, toggleFollowUser, uploadReel } from "../Controllers/galleryController.js";
 
 const router = express.Router();
 // first register
@@ -181,7 +181,7 @@ router.post(
   shareReel
 );
 router.post("/gallery/reels/send", verifyUser, sendReelToChatOrGroup);
-router.get("/gallery/reels", verifyUser, getReelsInChatOrGroup);
+
 
 router.get("/user/:id", verifyUser, getUserById);
 // Images

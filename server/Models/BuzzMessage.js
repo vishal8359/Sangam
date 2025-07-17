@@ -35,10 +35,14 @@ const buzzMessageSchema = new mongoose.Schema(
       type: String,
     },
     fileUrl: {
-      type: String, 
+      type: String,
     },
-    deletedFor: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    isPublicGroup: {
+      type: Boolean,
+      default: false,
+    },
 
+    deletedFor: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   },
 
   { timestamps: true }

@@ -718,9 +718,7 @@ export default function ChatContainer({
                           {msg.fileType?.startsWith("video") ||
                           msg.fileUrl.endsWith(".mp4") ? (
                             <div
-                              onClick={() =>
-                                navigate(`/gallery/reels?reelId=${msg._id}`)
-                              }
+                              
                               style={{
                                 cursor: "pointer",
                                 maxWidth: "100%",

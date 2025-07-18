@@ -705,7 +705,7 @@ export default function ChatContainer({
                     <Box
                       px={1}
                       py={1}
-                      maxWidth="55%"
+                      maxWidth= {isMobile ? "55%" : "30%"}
                       borderRadius={2}
                       bgcolor={isYou ? "#f5f5f5" : "#000"}
                       sx={{
@@ -722,7 +722,7 @@ export default function ChatContainer({
                               style={{
                                 cursor: "pointer",
                                 maxWidth: "100%",
-                                maxHeight: 360,
+                                // maxHeight: 360,
                                 borderRadius: 8,
                                 overflow: "hidden",
                               }}

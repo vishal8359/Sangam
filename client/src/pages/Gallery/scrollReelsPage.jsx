@@ -20,6 +20,10 @@ import {
   ListItem,
   ListItemAvatar,
   ListItemText,
+  createTheme,
+  ThemeProvider,
+  Slide,
+  Zoom,
 } from "@mui/material";
 import { useTheme, useMediaQuery } from "@mui/material";
 
@@ -30,9 +34,80 @@ import DownloadIcon from "@mui/icons-material/Download";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
+import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+import PauseIcon from "@mui/icons-material/Pause";
 import ListItemSecondaryAction from "@mui/material/ListItemSecondaryAction";
 import { useAppContext } from "../../context/AppContext";
 import { toast } from "react-hot-toast";
+import VolumeUpIcon from "@mui/icons-material/VolumeUp";
+import VolumeOffIcon from "@mui/icons-material/VolumeOff";
+
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: "#FF4081",
+    },
+    secondary: {
+      main: "#4CAF50",
+    },
+    background: {
+      default: "#f0f2f5",
+      paper: "#ffffff",
+    },
+    text: {
+      primary: "#333333",
+      secondary: "#666666",
+    },
+  },
+  typography: {
+    fontFamily: "Roboto, sans-serif",
+    h6: {
+      fontWeight: 600,
+      fontSize: "1.2rem",
+    },
+    body1: {
+      fontSize: "1rem",
+    },
+    body2: {
+      fontSize: "0.875rem",
+    },
+    caption: {
+      fontSize: "0.75rem",
+    },
+  },
+  shape: {
+    borderRadius: 12,
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          textTransform: "none",
+          borderRadius: 8,
+        },
+      },
+    },
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.1)",
+        },
+      },
+    },
+    MuiPopover: {
+      styleOverrides: {
+        paper: {
+          borderRadius: 0,
+          boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.1)",
+        },
+      },
+    },
+  },
+});
+
+const Transition = React.forwardRef(function Transition(props, ref) {
+  return <Slide direction="up" ref={ref} {...props} />;
+});
 
 export default function ScrollReelsPage() {
   const [commentModal, setCommentModal] = useState({
@@ -44,8 +119,8 @@ export default function ScrollReelsPage() {
   const [newComment, setNewComment] = useState("");
   const [replyInput, setReplyInput] = useState({ index: null, text: "" });
   const videoRefs = useRef({});
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const muiTheme = useTheme();
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down("sm"));
   const [activeReelId, setActiveReelId] = useState(null);
   const { token, axios, userId, societyId } = useAppContext();
   const currentReel = reels.find((r) => r.id === commentModal.reelId);
@@ -54,6 +129,11 @@ export default function ScrollReelsPage() {
   const emojiPickerRef = useRef();
   const [showEmojiPicker, setShowEmojiPicker] = useState(null);
   const [videoProgress, setVideoProgress] = useState({});
+  const [isLikedAnimating, setIsLikedAnimating] = useState(false);
+  const [showPlayPauseIcon, setShowPlayPauseIcon] = useState({
+    id: null,
+    type: null,
+  });
 
   const [shareAnchorEl, setShareAnchorEl] = useState(null);
   const [shareTab, setShareTab] = useState(0);
@@ -91,7 +171,7 @@ export default function ScrollReelsPage() {
           }
         );
         setBuzzGroups([
-          { _id: "public", name: "Public Group", groupName: "Public Group", },
+          { _id: "public", name: "Public Group", groupName: "Public Group" },
           ...groupRes.data.groups,
         ]);
       } catch (err) {
@@ -133,6 +213,7 @@ export default function ScrollReelsPage() {
 
     fetchReels();
   }, [userId]);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -149,7 +230,6 @@ export default function ScrollReelsPage() {
       document.removeEventListener("mousedown", handleClickOutside);
     }
 
-    // Cleanup
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
@@ -187,7 +267,6 @@ export default function ScrollReelsPage() {
         if (entry.isIntersecting) {
           setActiveReelId(reelId);
 
-          //Update views only when it becomes visible
           axios
             .put(`/api/users/gallery/reels/${reelId}/view`)
             .catch((err) => console.error("View update failed:", err));
@@ -222,11 +301,15 @@ export default function ScrollReelsPage() {
     const video = videoRefs.current[id];
     if (video) {
       video.muted = !video.muted;
+      -setShowPlayPauseIcon({ id, type: video.muted ? "paused" : "playing" });
+      +setShowPlayPauseIcon({ id, type: video.muted ? "muted" : "unmuted" });
+      setTimeout(() => setShowPlayPauseIcon({ id: null, type: null }), 1000);
       if (video.paused) video.play().catch(() => {});
     }
   };
 
   const handleDoubleClick = async (id) => {
+    setIsLikedAnimating(true);
     try {
       const res = await axios.put(
         `/api/users/gallery/reels/${id}/like`,
@@ -245,6 +328,8 @@ export default function ScrollReelsPage() {
       );
     } catch (err) {
       console.error("Failed to like reel:", err);
+    } finally {
+      setTimeout(() => setIsLikedAnimating(false), 300);
     }
   };
 
@@ -286,6 +371,7 @@ export default function ScrollReelsPage() {
         )
       );
       setNewComment("");
+      setShowEmojiPicker(false);
     } catch (error) {
       console.error("Failed to add comment:", error);
     }
@@ -311,6 +397,7 @@ export default function ScrollReelsPage() {
         )
       );
       setReplyInput({ index: null, text: "" });
+      setReplyEmojiPickers({});
     } catch (error) {
       console.error("Failed to reply:", error);
     }
@@ -397,12 +484,11 @@ export default function ScrollReelsPage() {
     );
   };
 
-  // Final share
   const handleBatchShare = () => {
     selectedChats.forEach((id) => handleShare(selectedReelId, id, "user"));
     selectedGroups.forEach((id) => handleShare(selectedReelId, id, "group"));
 
-    // toast.success("Shared successfully!");
+    toast.success("Shared successfully!");
     setSelectedChats([]);
     setSelectedGroups([]);
     setShareAnchorEl(null);
@@ -417,509 +503,666 @@ export default function ScrollReelsPage() {
   );
 
   return (
-    <Box
-      sx={{
-        height: "100vh",
-        overflowY: "auto",
-        bgcolor: "#f9f9f9",
-        p: 0,
-        scrollSnapType: "y mandatory",
-        scrollBehavior: "smooth",
-      }}
-    >
-      {reels.map((reel) => (
-        <Box
-          key={reel.id}
-          sx={{
-            mb: 0,
-            borderRadius: isMobile ? 0 : 4,
-            overflow: "hidden",
-            position: "relative",
-            bgcolor: "black",
-            width: isMobile ? "100vw" : "420",
-            maxWidth: 430,
-            mx: "auto",
-            height: "100vh",
-            display: "flex",
-            flexDirection: "row",
-            position: "relative",
-            scrollSnapAlign: "start",
-          }}
-        >
-          <video
-            data-id={reel.id}
-            ref={(el) => (videoRefs.current[reel.id] = el)}
-            src={reel.videoUrl}
-            autoPlay
-            loop
-            muted
-            playsInline
-            onClick={() => handleToggleMute(reel.id)}
-            onDoubleClick={() => handleDoubleClick(reel.id)}
-            onTimeUpdate={(e) => {
-              const current = e.target.currentTime;
-              const duration = e.target.duration;
-              setVideoProgress((prev) => ({
-                ...prev,
-                [reel.id]: (current / duration) * 100,
-              }));
-            }}
-            onLoadedMetadata={(e) => {
-              const current = e.target.currentTime;
-              const duration = e.target.duration;
-              setVideoProgress((prev) => ({
-                ...prev,
-                [reel.id]: (current / duration) * 100,
-              }));
-            }}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              borderRadius: "0px",
-            }}
-          />
+    <ThemeProvider theme={theme}>
+      <Box
+        sx={{
+          height: "100vh",
+          overflowY: "auto",
+          bgcolor: theme.palette.background.default,
+          scrollSnapType: "y mandatory",
+          scrollBehavior: "smooth",
+          "&::-webkit-scrollbar": {
+            display: "none",
+          },
+          msOverflowStyle: "none",
+          scrollbarWidth: "none",
+        }}
+      >
+        {reels.map((reel) => (
           <Box
-            onClick={(e) => {
-              const rect = e.currentTarget.getBoundingClientRect();
-              const clickX = e.clientX - rect.left;
-              const width = rect.width;
-              const percent = clickX / width;
-
-              const video = videoRefs.current[reel.id];
-              if (video && video.duration) {
-                video.currentTime = percent * video.duration;
-              }
-            }}
+            key={reel.id}
             sx={{
-              position: "absolute",
-              bottom: 0,
-              left: 0,
-              width: "100%",
-              height: 6,
-              backgroundColor: "rgba(255, 255, 255, 0.2)",
-              cursor: "pointer",
-              zIndex: 10,
+              mb: 0,
+              borderRadius: isMobile ? 0 : 4,
+              overflow: "hidden",
+              position: "relative",
+              bgcolor: "black",
+              width: isMobile ? "100vw" : "420px",
+              maxWidth: 430,
+              mx: "auto",
+              height: "100vh",
+              display: "flex",
+              flexDirection: "row",
+              scrollSnapAlign: "start",
+              boxShadow: isMobile ? "none" : "0px 8px 24px rgba(0,0,0,0.2)",
+              transition:
+                "width 0.3s ease-in-out, border-radius 0.3s ease-in-out",
             }}
           >
-            <Box
-              sx={{
+            <video
+              data-id={reel.id}
+              ref={(el) => (videoRefs.current[reel.id] = el)}
+              src={reel.videoUrl}
+              autoPlay
+              loop
+              muted
+              playsInline
+              onClick={() => handleToggleMute(reel.id)}
+              onDoubleClick={() => handleDoubleClick(reel.id)}
+              onTimeUpdate={(e) => {
+                const current = e.target.currentTime;
+                const duration = e.target.duration;
+                setVideoProgress((prev) => ({
+                  ...prev,
+                  [reel.id]: (current / duration) * 100,
+                }));
+              }}
+              onLoadedMetadata={(e) => {
+                const current = e.target.currentTime;
+                const duration = e.target.duration;
+                setVideoProgress((prev) => ({
+                  ...prev,
+                  [reel.id]: (current / duration) * 100,
+                }));
+              }}
+              style={{
+                width: "100%",
                 height: "100%",
-                width: `${videoProgress[reel.id] || 0}%`,
-                backgroundColor: "white",
-                transition: "width 0.1s linear",
+                objectFit: "cover",
+                borderRadius: isMobile ? "0px" : "12px",
+                cursor: "pointer",
               }}
             />
-          </Box>
 
-          <Box
-            sx={{
-              position: "absolute",
-              right: 0,
-              top: "30%",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 1,
-              px: 1,
-              py: 25,
-            }}
-          >
-            <IconButton onClick={() => handleDoubleClick(reel.id)}>
-              <FavoriteIcon sx={{ color: reel.liked ? "red" : "white" }} />
-            </IconButton>
+            {showPlayPauseIcon.id === reel.id && (
+              <Zoom in={true} timeout={300}>
+                <Box
+                  sx={{
+                    position: "absolute",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    zIndex: 20,
+                    color: "white",
+                    fontSize: 80,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    bgcolor: "rgba(0,0,0,0.4)",
+                    borderRadius: "50%",
+                    p: 2,
+                  }}
+                >
+                  {showPlayPauseIcon.type === "muted" ? (
+                    <VolumeOffIcon fontSize="inherit" />
+                  ) : (
+                    <VolumeUpIcon fontSize="inherit" />
+                  )}
+                </Box>
+              </Zoom>
+            )}
 
-            <Typography color="white" fontSize={12}>
-              {reel.likesCount}
-            </Typography>
-
-            <IconButton
-              onClick={() => setCommentModal({ open: true, reelId: reel.id })}
-            >
-              <CommentIcon sx={{ color: "white" }} />
-            </IconButton>
-            <Typography color="white" fontSize={12}>
-              {reel.comments.length}
-            </Typography>
-
-            <IconButton
+            <Box
               onClick={(e) => {
-                setShareAnchorEl(e.currentTarget);
-                setSelectedReelId(reel.id);
+                const rect = e.currentTarget.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const width = rect.width;
+                const percent = clickX / width;
+
+                const video = videoRefs.current[reel.id];
+                if (video && video.duration) {
+                  video.currentTime = percent * video.duration;
+                }
+              }}
+              sx={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                width: "100%",
+                height: 6,
+                backgroundColor: "rgba(255, 255, 255, 0.3)",
+                cursor: "pointer",
+                zIndex: 10,
               }}
             >
-              <ShareIcon sx={{ color: "white" }} />
-            </IconButton>
+              <Box
+                sx={{
+                  height: "100%",
+                  width: `${videoProgress[reel.id] || 0}%`,
+                  backgroundColor: theme.palette.primary.main,
+                  transition: "width 0.1s linear",
+                }}
+              />
+            </Box>
 
-            <div className="cursor-pointer">
+            <Box
+              sx={{
+                position: "absolute",
+                right: 0,
+                top: "30%",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 1,
+                px: 1,
+                py: 20,
+              }}
+            >
+              <IconButton onClick={() => handleDoubleClick(reel.id)}>
+                <Zoom in={reel.liked && isLikedAnimating} timeout={300}>
+                  <FavoriteIcon
+                    sx={{ color: reel.liked ? "red" : "white", fontSize: 30 }}
+                  />
+                </Zoom>
+                {!isLikedAnimating && (
+                  <FavoriteIcon
+                    sx={{
+                      color: reel.liked ? "red" : "white",
+                      fontSize: 30,
+                      position: "absolute",
+                      opacity: reel.liked ? 1 : 0.7,
+                    }}
+                  />
+                )}
+              </IconButton>
+              <Typography color="white" fontSize={12}>
+                {reel.likesCount}
+              </Typography>
+
+              <IconButton
+                onClick={() => setCommentModal({ open: true, reelId: reel.id })}
+              >
+                <CommentIcon sx={{ color: "white", fontSize: 30 }} />
+              </IconButton>
+              <Typography color="white" fontSize={12}>
+                {reel.comments.length}
+              </Typography>
+
+              <IconButton
+                onClick={(e) => {
+                  setShareAnchorEl(e.currentTarget);
+                  setSelectedReelId(reel.id);
+                }}
+              >
+                <ShareIcon sx={{ color: "white", fontSize: 30 }} />
+              </IconButton>
+
               <IconButton
                 onClick={() =>
                   handleDownload(reel.videoUrl, `reel-${reel.id}.mp4`)
                 }
               >
-                <DownloadIcon sx={{ color: "white" }} />
+                <DownloadIcon sx={{ color: "white", fontSize: 30 }} />
               </IconButton>
-            </div>
+            </Box>
+
+            <Box
+              sx={{
+                position: "absolute",
+                bottom: 0,
+                width: "100%",
+                p: 2,
+                background:
+                  "linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0))",
+              }}
+            >
+              <Stack direction="column" spacing={1}>
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <Avatar
+                    src={reel.user.avatar}
+                    sx={{ width: 48, height: 48, border: "2px solid white" }}
+                  />
+                  <Typography
+                    color="white"
+                    fontWeight="bold"
+                    variant="body1"
+                    sx={{ textShadow: "1px 1px 3px rgba(0,0,0,0.5)" }}
+                  >
+                    {reel.user.name}
+                  </Typography>
+                  {reel.user._id !== userId && (
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      sx={{
+                        ml: "auto",
+                        color: "white",
+                        borderColor: "white",
+                        "&:hover": {
+                          backgroundColor: "rgba(255,255,255,0.1)",
+                          borderColor: theme.palette.primary.light,
+                        },
+                      }}
+                      onClick={() => toggleFollow(reel.id, reel.user._id)}
+                    >
+                      {reel.following ? "Following" : "Follow"}
+                    </Button>
+                  )}
+                </Stack>
+
+                {reel.description && (
+                  <Typography
+                    color="white"
+                    fontSize={14}
+                    sx={{ ml: 7, textShadow: "1px 1px 3px rgba(0,0,0,0.5)" }}
+                  >
+                    {reel.description}
+                  </Typography>
+                )}
+              </Stack>
+            </Box>
+          </Box>
+        ))}
+
+        <Dialog
+          open={commentModal.open}
+          onClose={() => setCommentModal({ open: false })}
+          fullWidth
+          maxWidth="sm"
+          TransitionComponent={Transition}
+          PaperProps={{
+            sx: {
+              position: "fixed",
+              bottom: 0,
+              m: 0,
+              width: "100%",
+              height: "66vh",
+              borderTopLeftRadius: theme.shape.borderRadius,
+              borderTopRightRadius: theme.shape.borderRadius,
+              display: "flex",
+              flexDirection: "column",
+              boxShadow: "0px -4px 20px rgba(0, 0, 0, 0.1)",
+              bgcolor: theme.palette.background.paper,
+            },
+          }}
+        >
+          <Box
+            sx={{
+              p: 2,
+              borderBottom: `1px solid ${theme.palette.divider}`,
+              backgroundColor: theme.palette.background.paper,
+              position: "sticky",
+              top: 0,
+              zIndex: 2,
+            }}
+          >
+            <Stack direction="row" spacing={1} alignItems="center">
+              <ChatBubbleOutlineIcon color="primary" />
+              <Typography variant="h6" color="text.primary">
+                Comments
+              </Typography>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ ml: "auto" }}
+              >
+                {currentReel?.comments.length || 0} comments
+              </Typography>
+            </Stack>
+          </Box>
+
+          <DialogContent
+            sx={{
+              flexGrow: 1,
+              overflowY: "auto",
+              px: 2,
+              py: 1,
+              "&::-webkit-scrollbar": {
+                width: "8px",
+              },
+              "&::-webkit-scrollbar-thumb": {
+                backgroundColor: theme.palette.primary.light,
+                borderRadius: "4px",
+              },
+              "&::-webkit-scrollbar-track": {
+                backgroundColor: theme.palette.background.default,
+              },
+            }}
+          >
+            {currentReel?.comments.length === 0 ? (
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  height: "100%",
+                  color: theme.palette.text.secondary,
+                }}
+              >
+                <Typography variant="body1">
+                  No comments yet. Be the first!
+                </Typography>
+              </Box>
+            ) : (
+              currentReel?.comments.map((c, i) => (
+                <Box key={i} sx={{ mb: 2 }}>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Avatar src={c.user?.avatar} />
+                    <Typography fontWeight="bold" color="text.primary">
+                      {c.user?.name}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {getTimeAgo(c.createdAt)}
+                    </Typography>
+                  </Stack>
+                  <Typography sx={{ ml: 6, mt: 0.5 }} color="text.primary">
+                    {c.text}
+                  </Typography>
+
+                  <Box sx={{ ml: 7, mt: 1 }}>
+                    {c.replies.map((r, j) => (
+                      <Stack
+                        key={j}
+                        direction="row"
+                        spacing={1}
+                        alignItems="center"
+                        mb={0.5}
+                      >
+                        <Avatar
+                          src={r.user?.avatar}
+                          sx={{ width: 28, height: 28 }}
+                        />
+                        <Typography variant="body2" color="text.primary">
+                          <strong>{r.user?.name}</strong>: {r.text}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {getTimeAgo(r.createdAt)}
+                        </Typography>
+                      </Stack>
+                    ))}
+
+                    {replyInput.index === i ? (
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        mt={1}
+                        position="relative"
+                        alignItems="center"
+                      >
+                        <TextField
+                          size="small"
+                          value={replyInput.text}
+                          onChange={(e) =>
+                            setReplyInput({
+                              ...replyInput,
+                              text: e.target.value,
+                            })
+                          }
+                          placeholder="Reply..."
+                          fullWidth
+                          variant="outlined"
+                          sx={{ borderRadius: 2 }}
+                        />
+                        <Button
+                          variant="outlined"
+                          onClick={() =>
+                            setReplyEmojiPickers((prev) => ({
+                              ...prev,
+                              [i]: !prev[i],
+                            }))
+                          }
+                          sx={{ minWidth: 40, p: 1 }}
+                        >
+                          😀
+                        </Button>
+                        <Button
+                          variant="contained"
+                          onClick={() => addReply(i)}
+                          disabled={!replyInput.text.trim()}
+                        >
+                          Send
+                        </Button>
+
+                        {replyEmojiPickers[i] && (
+                          <Box
+                            ref={(el) => (replyEmojiRefs.current[i] = el)}
+                            sx={{
+                              position: "absolute",
+                              bottom: 50,
+                              right: 10,
+                              zIndex: 1000,
+                              boxShadow: theme.shadows[4],
+                              borderRadius: theme.shape.borderRadius,
+                              overflow: "hidden",
+                            }}
+                          >
+                            <Picker
+                              data={data}
+                              onEmojiSelect={(emoji) =>
+                                setReplyInput((prev) => ({
+                                  ...prev,
+                                  text: prev.text + emoji.native,
+                                }))
+                              }
+                              theme="light"
+                            />
+                          </Box>
+                        )}
+                      </Stack>
+                    ) : (
+                      <Button
+                        size="small"
+                        onClick={() => setReplyInput({ index: i, text: "" })}
+                        sx={{ mt: 1, color: theme.palette.text.secondary }}
+                      >
+                        Reply
+                      </Button>
+                    )}
+                  </Box>
+
+                  <Divider sx={{ mt: 2, borderColor: theme.palette.divider }} />
+                </Box>
+              ))
+            )}
+          </DialogContent>
+
+          <Box
+            sx={{
+              p: 2,
+              borderTop: `1px solid ${theme.palette.divider}`,
+              backgroundColor: theme.palette.background.paper,
+            }}
+          >
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Avatar src="/user_photo.jpg" />
+              <TextField
+                fullWidth
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Add a comment..."
+                size="small"
+                variant="outlined"
+                sx={{ borderRadius: 2 }}
+                onFocus={() => setShowEmojiPicker(false)}
+              />
+              <Button
+                variant="outlined"
+                onClick={() => setShowEmojiPicker((prev) => !prev)}
+                sx={{ minWidth: 40, p: 1 }}
+              >
+                😀
+              </Button>
+              <Button
+                variant="contained"
+                onClick={addComment}
+                disabled={!newComment.trim()}
+              >
+                Post
+              </Button>
+            </Stack>
+
+            {showEmojiPicker && (
+              <Box
+                ref={emojiPickerRef}
+                sx={{
+                  position: "absolute",
+                  bottom: 70,
+                  left: 60,
+                  zIndex: 9999,
+                  boxShadow: theme.shadows[4],
+                  borderRadius: theme.shape.borderRadius,
+                  overflow: "hidden",
+                }}
+              >
+                <Picker
+                  data={data}
+                  onEmojiSelect={(emoji) =>
+                    setNewComment((prev) => prev + emoji.native)
+                  }
+                  theme="light"
+                />
+              </Box>
+            )}
+          </Box>
+        </Dialog>
+
+        <Popover
+          open={Boolean(shareAnchorEl)}
+          anchorEl={shareAnchorEl}
+          onClose={() => {
+            setShareAnchorEl(null);
+            setShareTab(0);
+            setSelectedChats([]);
+            setSelectedGroups([]);
+          }}
+          anchorOrigin={{ vertical: "top", horizontal: "left" }}
+          transformOrigin={{ vertical: "top", horizontal: "right" }}
+          PaperProps={{ sx: { width: 300, borderRadius: 0 } }}
+        >
+          <Tabs
+            value={shareTab}
+            onChange={(_, newVal) => setShareTab(newVal)}
+            variant="fullWidth"
+            indicatorColor="primary"
+            textColor="primary"
+            sx={{ borderBottom: `1px solid ${theme.palette.divider}` }}
+          >
+            <Tab label="Chats" />
+            <Tab label="Groups" />
+          </Tabs>
+
+          <Box sx={{ maxHeight: 300, overflowY: "auto" }}>
+            {shareTab === 0 && (
+              <List disablePadding>
+                {members.map((member) => {
+                  const isSelected = selectedChats.includes(member._id);
+                  return (
+                    <ListItem
+                      key={member._id}
+                      button
+                      selected={isSelected}
+                      onClick={() => toggleChatSelection(member._id)}
+                      sx={{
+                        "&.Mui-selected": {
+                          backgroundColor: theme.palette.action.selected,
+                        },
+                        "&:hover": {
+                          backgroundColor: theme.palette.action.hover,
+                        },
+                      }}
+                    >
+                      <ListItemAvatar>
+                        <Avatar src={member.avatar} />
+                      </ListItemAvatar>
+                      <ListItemText primary={member.name} />
+                      <ListItemSecondaryAction>
+                        <IconButton
+                          edge="end"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleChatSelection(member._id);
+                          }}
+                          sx={{
+                            color: isSelected
+                              ? theme.palette.primary.main
+                              : theme.palette.text.secondary,
+                          }}
+                        >
+                          {isSelected ? (
+                            <CheckCircleIcon />
+                          ) : (
+                            <RadioButtonUncheckedIcon />
+                          )}
+                        </IconButton>
+                      </ListItemSecondaryAction>
+                    </ListItem>
+                  );
+                })}
+              </List>
+            )}
+
+            {shareTab === 1 && (
+              <List disablePadding>
+                {userGroups.map((group) => {
+                  const isSelected = selectedGroups.includes(group._id);
+                  return (
+                    <ListItem
+                      key={group._id}
+                      button
+                      selected={isSelected}
+                      onClick={() => toggleGroupSelection(group._id)}
+                      sx={{
+                        "&.Mui-selected": {
+                          backgroundColor: theme.palette.action.selected,
+                        },
+                        "&:hover": {
+                          backgroundColor: theme.palette.action.hover,
+                        },
+                      }}
+                    >
+                      <ListItemAvatar>
+                        <Avatar src={group.image || "/group-icon.png"} />
+                      </ListItemAvatar>
+                      <ListItemText primary={group.groupName} />
+                      <ListItemSecondaryAction>
+                        <IconButton
+                          edge="end"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleGroupSelection(group._id);
+                          }}
+                          sx={{
+                            color: isSelected
+                              ? theme.palette.primary.main
+                              : theme.palette.text.secondary,
+                          }}
+                        >
+                          {isSelected ? (
+                            <CheckCircleIcon />
+                          ) : (
+                            <RadioButtonUncheckedIcon />
+                          )}
+                        </IconButton>
+                      </ListItemSecondaryAction>
+                    </ListItem>
+                  );
+                })}
+              </List>
+            )}
           </Box>
 
           <Box
             sx={{
-              position: "absolute",
-              bottom: 0,
-              width: "100%",
+              display: "flex",
+              justifyContent: "center",
               p: 2,
-              background:
-                "linear-gradient(to top, rgba(0,0,0,0.7), rgba(0,0,0,0))",
+              borderTop: `1px solid ${theme.palette.divider}`,
             }}
           >
-            <Stack direction="column" spacing={1}>
-              {/* Top row: Avatar + Name + Follow */}
-              <Stack direction="row" alignItems="center" spacing={2}>
-                <Avatar src={reel.user.avatar} />
-                <Typography color="white" fontWeight="bold">
-                  {reel.user.name}
-                </Typography>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  sx={{
-                    ml: "auto",
-                    color: "white",
-                    borderColor: "white",
-                  }}
-                  onClick={() => toggleFollow(reel.id, reel.user._id)}
-                >
-                  {reel.following ? "Following" : "Follow"}
-                </Button>
-              </Stack>
-
-              {/* Description below user info */}
-              {reel.description && (
-                <Typography color="white" fontSize={14} sx={{ ml: 7 }}>
-                  {reel.description}
-                </Typography>
-              )}
-            </Stack>
-          </Box>
-        </Box>
-      ))}
-
-      {/* Comments Modal */}
-
-      <Dialog
-        open={commentModal.open}
-        onClose={() => setCommentModal({ open: false })}
-        fullWidth
-        maxWidth="sm"
-        PaperProps={{
-          sx: {
-            position: "fixed",
-            bottom: 0,
-            m: 0,
-            width: "100%",
-            height: "66vh",
-            borderTopLeftRadius: 16,
-            borderTopRightRadius: 16,
-            display: "flex",
-            flexDirection: "column",
-          },
-        }}
-      >
-        {/* Fixed Header */}
-        <Box
-          sx={{
-            p: 2,
-            borderBottom: "1px solid #ddd",
-            backgroundColor: "#fff",
-            position: "sticky",
-            top: 0,
-            zIndex: 2,
-          }}
-        >
-          <Stack direction="row" spacing={1} alignItems="center">
-            <ChatBubbleOutlineIcon color="primary" />
-            <Typography variant="h6" fontWeight="bold">
-              Comments
-            </Typography>
-          </Stack>
-        </Box>
-
-        {/* Scrollable Comments */}
-        <Box sx={{ flexGrow: 1, overflowY: "auto", px: 2, py: 1 }}>
-          {currentReel?.comments.map((c, i) => (
-            <Box key={i} sx={{ mb: 2 }}>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Avatar src={c.user?.avatar} />
-                <Typography fontWeight="bold">{c.user?.name}</Typography>
-                <Typography
-                  variant="caption"
-                  sx={{ color: "#888", ml: "auto" }}
-                >
-                  {getTimeAgo(c.createdAt)}
-                </Typography>
-              </Stack>
-              <Typography sx={{ ml: 6, mt: 0.5 }}>{c.text}</Typography>
-
-              {/* Replies */}
-              <Box sx={{ ml: 7, mt: 1 }}>
-                {c.replies.map((r, j) => (
-                  <Stack
-                    key={j}
-                    direction="row"
-                    spacing={1}
-                    alignItems="center"
-                    mb={0.5}
-                  >
-                    <Avatar
-                      src={r.user?.avatar}
-                      sx={{ width: 24, height: 24 }}
-                    />
-                    <Typography variant="body2">
-                      <strong>{r.user?.name}</strong>: {r.text}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {getTimeAgo(r.createdAt)}
-                    </Typography>
-                  </Stack>
-                ))}
-
-                {/* Reply Input */}
-                {replyInput.index === i ? (
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    mt={1}
-                    position="relative"
-                    alignItems="center"
-                  >
-                    <TextField
-                      size="small"
-                      value={replyInput.text}
-                      onChange={(e) =>
-                        setReplyInput({ ...replyInput, text: e.target.value })
-                      }
-                      placeholder="Reply..."
-                      fullWidth
-                    />
-                    <Button
-                      variant="outlined"
-                      onClick={() =>
-                        setReplyEmojiPickers((prev) => ({
-                          ...prev,
-                          [i]: !prev[i],
-                        }))
-                      }
-                    >
-                      😀
-                    </Button>
-                    <Button
-                      variant="contained"
-                      onClick={() => addReply(i)}
-                      disabled={!replyInput.text.trim()}
-                    >
-                      Send
-                    </Button>
-
-                    {replyEmojiPickers[i] && (
-                      <Box
-                        ref={(el) => (replyEmojiRefs.current[i] = el)}
-                        sx={{
-                          position: "absolute",
-                          bottom: 50,
-                          right: 10,
-                          zIndex: 1000,
-                        }}
-                      >
-                        <Picker
-                          data={data}
-                          onEmojiSelect={(emoji) =>
-                            setReplyInput((prev) => ({
-                              ...prev,
-                              text: prev.text + emoji.native,
-                            }))
-                          }
-                          theme="light"
-                        />
-                      </Box>
-                    )}
-                  </Stack>
-                ) : (
-                  <Button
-                    size="small"
-                    onClick={() => setReplyInput({ index: i, text: "" })}
-                    sx={{ mt: 1 }}
-                  >
-                    Reply
-                  </Button>
-                )}
-              </Box>
-
-              <Divider sx={{ mt: 2 }} />
-            </Box>
-          ))}
-        </Box>
-
-        {/* Fixed Input Bar */}
-        <Box
-          sx={{ p: 2, borderTop: "1px solid #ddd", backgroundColor: "#fff" }}
-        >
-          <Stack direction="row" spacing={1} alignItems="center">
-            <Avatar src="/user_photo.jpg" />
-            <TextField
-              fullWidth
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Add a comment..."
-              size="small"
-              onFocus={() => setShowEmojiPicker(false)} // optional
-            />
-            <Button
-              variant="outlined"
-              onClick={() => setShowEmojiPicker((prev) => !prev)}
-            >
-              😀
-            </Button>
             <Button
               variant="contained"
-              onClick={addComment}
-              disabled={!newComment.trim()}
+              color="primary"
+              onClick={handleBatchShare}
+              disabled={
+                selectedChats.length === 0 && selectedGroups.length === 0
+              }
+              fullWidth
             >
-              Post
+              Send
             </Button>
-          </Stack>
-
-          {showEmojiPicker && (
-            <Box
-              ref={emojiPickerRef}
-              sx={{
-                position: "absolute",
-                bottom: 70,
-                left: 60,
-                zIndex: 9999,
-              }}
-            >
-              <Picker
-                data={data}
-                onEmojiSelect={(emoji) =>
-                  setNewComment((prev) => prev + emoji.native)
-                }
-                theme="light"
-              />
-            </Box>
-          )}
-        </Box>
-      </Dialog>
-      <Popover
-        open={Boolean(shareAnchorEl)}
-        anchorEl={shareAnchorEl}
-        onClose={() => {
-          setShareAnchorEl(null);
-          setShareTab(0);
-        }}
-        anchorOrigin={{ vertical: "top", horizontal: "left" }}
-        transformOrigin={{ vertical: "top", horizontal: "right" }}
-        PaperProps={{ sx: { width: 300 } }}
-      >
-        <Tabs
-          value={shareTab}
-          onChange={(_, newVal) => setShareTab(newVal)}
-          variant="fullWidth"
-          indicatorColor="primary"
-          textColor="primary"
-        >
-          <Tab label="Chats" />
-          <Tab label="Groups" />
-        </Tabs>
-
-        <Box sx={{ maxHeight: 300, overflowY: "auto" }}>
-          {shareTab === 0 && (
-            <List>
-              {members.map((member) => {
-                const isSelected = selectedChats.includes(member._id);
-                return (
-                  <ListItem
-                    key={member._id}
-                    button
-                    selected={isSelected}
-                    onClick={() => toggleChatSelection(member._id)}
-                  >
-                    <ListItemAvatar>
-                      <Avatar src={member.avatar} />
-                    </ListItemAvatar>
-                    <ListItemText primary={member.name} />
-                    <ListItemSecondaryAction>
-                      <IconButton
-                        edge="end"
-                        onClick={(e) => {
-                          e.stopPropagation(); // prevent ListItem click event
-                          toggleChatSelection(member._id); // or toggleGroupSelection
-                        }}
-                      >
-                        {isSelected ? (
-                          <CheckCircleIcon sx={{ color: "green" }} />
-                        ) : (
-                          <RadioButtonUncheckedIcon
-                            sx={{ color: "grey.500" }}
-                          />
-                        )}
-                      </IconButton>
-                    </ListItemSecondaryAction>
-                  </ListItem>
-                );
-              })}
-            </List>
-          )}
-
-          {shareTab === 1 && (
-            <List>
-              {userGroups.map((group) => {
-                const isSelected = selectedGroups.includes(group._id);
-                return (
-                  <ListItem
-                    key={group._id}
-                    button
-                    selected={isSelected}
-                    onClick={() => toggleGroupSelection(group._id)}
-                  >
-                    <ListItemAvatar>
-                      <Avatar src={group.image || "/group-icon.png"} />
-                    </ListItemAvatar>
-                    <ListItemText primary={group.groupName} />
-                    <ListItemSecondaryAction>
-                      <IconButton
-                        edge="end"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleGroupSelection(group._id);
-                        }}
-                      >
-                        {isSelected ? (
-                          <CheckCircleIcon sx={{ color: "primary.main" }} />
-                        ) : (
-                          <RadioButtonUncheckedIcon
-                            sx={{ color: "text.secondary" }}
-                          />
-                        )}
-                      </IconButton>
-                    </ListItemSecondaryAction>
-                  </ListItem>
-                );
-              })}
-            </List>
-          )}
-        </Box>
-
-        <Box sx={{ display: "flex", justifyContent: "center", p: 1 }}>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleBatchShare}
-            disabled={selectedChats.length === 0 && selectedGroups.length === 0}
-          >
-            Send
-          </Button>
-        </Box>
-      </Popover>
-    </Box>
+          </Box>
+        </Popover>
+      </Box>
+    </ThemeProvider>
   );
 }

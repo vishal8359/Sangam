@@ -57,6 +57,7 @@ import Products from "../pages/Products/NewProd";
 import CartPage from "../pages/Products/cartPage";
 import user_avatar from "../assets/user_avatar.png";
 import UserProfileCard from "../pages/Society/UserProfile.jsx";
+import { FaFilm } from "react-icons/fa";
 
 const NAVIGATION = [
   {
@@ -119,8 +120,8 @@ const NAVIGATION = [
   },
   {
     segment: "gallery",
-    title: "Gallery",
-    icon: <PhotoLibraryIcon />,
+    title: "Reels",
+    icon: <FaFilm />,
   },
   {
     kind: "divider",

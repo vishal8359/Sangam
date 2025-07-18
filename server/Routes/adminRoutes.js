@@ -7,8 +7,8 @@ import { createPoll, getPollsBySociety, voteInPoll, getPollResults, togglePollLo
 import { createNotice, getNoticesBySociety } from "../Controllers/noticeController.js";
 import { getGroupsBySociety, getGroupDetails, postInGroup, createBuzzGroup, getSocietyMembers } from "../Controllers/buzzController.js";
 import { rejectGroupJoinRequest, approveGroupJoinRequest } from "../Controllers/groupJoinController.js";
-
-import { resolveComplaint, getComplaintsBySociety, getResolvedComplaints, deleteComplaint } from "../Controllers/complaintController.js";
+import upload from "../Configs/multer.js";
+import { resolveComplaint, getComplaintsBySociety, getResolvedComplaints, deleteComplaint, addComplaintReply } from "../Controllers/complaintController.js";
 import { getNeighbouringSocieties } from "../Controllers/societyController.js";
 import { getEvents } from "../Controllers/eventController.js";
 import { getMyChats, sendMessage } from "../Controllers/chatsController.js";
@@ -29,7 +29,7 @@ router.post("/approve-request/:requestId", verifyAdmin, approveJoinRequest);
 router.post("/reject-request/:requestId", verifyAdmin, rejectJoinRequest);
 
 // Poll routes
-router.post("/polls/create", verifyAdmin, createPoll);
+router.post('/polls/create', verifyAdmin, upload.single('logo'), createPoll);
 router.get("/polls/:societyId", verifyAdmin, getPollsBySociety);
 router.post("/polls/vote/:pollId", verifyUser, voteInPoll);
 router.get("/polls/results/:pollId", verifyUser, getPollResults);
@@ -56,6 +56,7 @@ router.post("/buzz/groups/requests/:requestId/reject", verifyAdmin, rejectGroupJ
 
 // Complaints
 router.get("/complaints/:societyId", verifyAdmin, getComplaintsBySociety);
+router.put('/complaints/reply/:complaintId', verifyAdmin, addComplaintReply);
 router.put("/complaints/resolve/:complaintId", verifyAdmin, resolveComplaint);
 router.get("/complaints/resolved/:societyId", verifyAdmin, getResolvedComplaints);
 router.delete("/complaints/:complaintId", verifyAdmin, deleteComplaint);

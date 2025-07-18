@@ -17,6 +17,9 @@ import {
   useTheme,
   useMediaQuery,
   TextField,
+  Zoom,
+  Slide,
+  Fade,
 } from "@mui/material";
 
 import LockIcon from "@mui/icons-material/Lock";
@@ -81,6 +84,7 @@ const PollsPage = () => {
     try {
       const res = await axios.post(`/api/users/polls/${pollId}/vote`, {
         optionIndex,
+        ...(isSingleVote && { houseNumber }),
       });
 
       const updated = res.data.poll;
@@ -130,6 +134,8 @@ const PollsPage = () => {
         position: "relative",
         zIndex: 1,
         overflow: "hidden",
+        minHeight: "100vh",
+        py: 4,
         "&::before": {
           content: '""',
           position: "fixed",
@@ -143,6 +149,15 @@ const PollsPage = () => {
           opacity: 0.15,
           filter: "blur(8px)",
           zIndex: -2,
+          animation: "panBackground 60s linear infinite alternate",
+          "@keyframes panBackground": {
+            "0%": {
+              backgroundPosition: "0% 0%",
+            },
+            "100%": {
+              backgroundPosition: "100% 100%",
+            },
+          },
         },
         ...(isDark && {
           "&::after": {
@@ -152,46 +167,111 @@ const PollsPage = () => {
             left: 0,
             width: "100vw",
             height: "150vh",
-            backgroundColor: "rgba(100, 10, 10, 0.1)",
+            backgroundColor: "rgba(10, 10, 10, 0.3)",
             zIndex: -1,
           },
         }),
       }}
+      maxWidth={false}
     >
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        ml={4}
-        pt={3}
-        mr={4}
-        mt={4}
-        mb={2}
+      <Slide
+        direction="down"
+        in={true}
+        mountOnEnter
+        unmountOnExit
+        timeout={700}
       >
-        <Box display="flex" alignItems="center">
-          <img
-            className="w-15 h-15 rounded-2xl mr-2"
-            src={Poll_icon}
-            alt="Poll Icon"
-          />
-          <Typography component="h4" variant="h5" fontWeight="bold">
-            Society Polls
-          </Typography>
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          ml={isMobile ? 2 : 4}
+          pt={3}
+          mr={isMobile ? 2 : 4}
+          mt={isMobile ? 2 : 4}
+          mb={4}
+          flexDirection={isMobile ? "column" : "row"}
+          gap={2}
+        >
+          <Box display="flex" alignItems="center">
+            <Avatar
+              src={Poll_icon}
+              alt="Poll Icon"
+              sx={{
+                width: isMobile ? 60 : 75,
+                height: isMobile ? 60 : 75,
+                mr: 2,
+                boxShadow: theme.shadows[4],
+                animation: "pulseIcon 2s infinite alternate",
+                "@keyframes pulseIcon": {
+                  "0%": {
+                    transform: "scale(1)",
+                  },
+                  "100%": {
+                    transform: "scale(1.05)",
+                  },
+                },
+              }}
+            />
+            <Box
+              component="h4"
+              sx={{
+                fontSize: isMobile
+                  ? theme.typography.h5.fontSize
+                  : theme.typography.h4.fontSize,
+                fontWeight: "bold",
+                background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.secondary.main} 90%)`,
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                textShadow: isDark ? "0 0 8px rgba(255,255,255,0.3)" : "none",
+              }}
+            >
+              Society Polls
+            </Box>
+          </Box>
+
+          {userRole === "admin" && (
+            <Zoom in={true} timeout={700}>
+              <Button
+                variant="contained"
+                color="primary"
+                sx={{
+                  borderRadius: 3,
+                  px: 4,
+                  py: 1.5,
+                  boxShadow: theme.shadows[6],
+                  transition: "transform 0.2s ease-in-out",
+                  "&:hover": {
+                    transform: "scale(1.05)",
+                    boxShadow: theme.shadows[8],
+                  },
+                  fontSize: isMobile ? "0.8rem" : "1rem",
+                }}
+                onClick={() => navigate("/my-society/polls/create")}
+              >
+                Create Poll
+              </Button>
+            </Zoom>
+          )}
         </Box>
+      </Slide>
 
-        {userRole === "admin" && (
-          <Button
-            variant="contained"
-            color="primary"
-            sx={{ borderRadius: 2 }}
-            onClick={() => navigate("/my-society/polls/create")}
-          >
-            Create Poll
-          </Button>
-        )}
-      </Box>
+      {polls.length === 0 && (
+        <Fade in={true} timeout={1000}>
+          <Box sx={{ textAlign: "center", mt: 10 }}>
+            <Typography variant="h6" color="text.secondary">
+              No polls available at the moment.
+            </Typography>
+            {userRole === "admin" && (
+              <Typography variant="body1" color="text.secondary" mt={2}>
+                Click "Create Poll" to get started!
+              </Typography>
+            )}
+          </Box>
+        </Fade>
+      )}
 
-      {polls.map((poll) => {
+      {polls.map((poll, index) => {
         const totalVotes = poll.options.reduce(
           (acc, opt) => acc + opt.votes,
           0
@@ -200,147 +280,283 @@ const PollsPage = () => {
         const currentHouseNumber = houseNumbers[poll.id] || "";
 
         return (
-          <Paper key={poll.id} elevation={4} sx={{ p: 2, m: 1, mb: 3 }}>
-            <Box display="flex" alignItems="center" mb={2}>
-              <Avatar
-                src={poll.logo}
-                alt="Poll Logo"
-                sx={{ width: 50, height: 50, mr: 2 }}
-              />
-              <Typography variant="h6" fontWeight="medium">
-                {poll.question}
-              </Typography>
-              <Box ml="auto">
-                <Tooltip
-                  title={poll.locked ? "Votes are locked" : "Votes are open"}
-                >
-                  <span>
-                    <IconButton
-                      onClick={() => toggleLock(poll.id)}
-                      color={poll.locked ? "error" : "success"}
-                      disabled={userRole !== "admin"}
-                    >
-                      {poll.locked ? <LockIcon /> : <LockOpenIcon />}
-                    </IconButton>
-                  </span>
-                </Tooltip>
-              </Box>
-            </Box>
-
-            <Typography variant="subtitle2" mb={2} color="text.secondary">
-              Voting type:{" "}
-              {poll.type === "single"
-                ? "One vote per house"
-                : "Multiple votes per house allowed"}
-            </Typography>
-
-            {poll.type === "single" && userRole !== "admin" && (
-              <Box mb={2}>
-                <TextField
-                  label="Enter your House Number"
-                  variant="outlined"
-                  size="small"
-                  fullWidth
-                  value={currentHouseNumber}
-                  onChange={(e) =>
-                    setHouseNumbers((prev) => ({
-                      ...prev,
-                      [poll.id]: e.target.value,
-                    }))
-                  }
-                  disabled={poll.locked}
+          <Slide
+            key={poll.id}
+            direction="up"
+            in={true}
+            mountOnEnter
+            unmountOnExit
+            timeout={500 + index * 150}
+          >
+            <Paper
+              elevation={6}
+              sx={{
+                p: isMobile ? 2 : 3,
+                m: isMobile ? 1 : 2,
+                mb: 4,
+                borderRadius: 3,
+                overflow: "hidden",
+                transition:
+                  "transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
+                "&:hover": {
+                  transform: "translateY(-5px)",
+                  boxShadow: theme.shadows[10],
+                },
+                backgroundColor: isDark
+                  ? "rgba(30, 30, 30, 0.85)"
+                  : "rgba(255, 255, 255, 0.9)",
+                backdropFilter: "blur(5px)",
+                border: `1px solid ${theme.palette.divider}`,
+              }}
+            >
+              <Box
+                display="flex"
+                alignItems="center"
+                mb={2}
+                flexDirection={isMobile ? "column" : "row"}
+                textAlign={isMobile ? "center" : "left"}
+              >
+                <Avatar
+                  src={poll.logo}
+                  alt="Poll Logo"
+                  sx={{
+                    width: 60,
+                    height: 60,
+                    mr: isMobile ? 0 : 2,
+                    mb: isMobile ? 1 : 0,
+                    boxShadow: theme.shadows[2],
+                  }}
                 />
+                <Typography
+                  variant={isMobile ? "h6" : "h5"}
+                  fontWeight="bold"
+                  flexGrow={1}
+                  sx={{
+                    color: isDark
+                      ? theme.palette.primary.light
+                      : theme.palette.primary.dark,
+                  }}
+                >
+                  {poll.question}
+                </Typography>
+                <Box ml={isMobile ? 0 : "auto"} mt={isMobile ? 1 : 0}>
+                  <Tooltip
+                    title={poll.locked ? "Votes are locked" : "Votes are open"}
+                    TransitionComponent={Zoom}
+                    arrow
+                  >
+                    <span>
+                      <IconButton
+                        onClick={() => toggleLock(poll.id)}
+                        color={poll.locked ? "error" : "success"}
+                        disabled={userRole !== "admin"}
+                        sx={{
+                          transition: "transform 0.2s ease-in-out",
+                          "&:hover": {
+                            transform: "scale(1.1)",
+                          },
+                        }}
+                      >
+                        {poll.locked ? <LockIcon /> : <LockOpenIcon />}
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                </Box>
               </Box>
-            )}
 
-            <Table size="medium" sx={{ minWidth: 300 }}>
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    <b>Option</b>
-                  </TableCell>
-                  <TableCell align="center">
-                    <b>Votes</b>
-                  </TableCell>
-                  <TableCell align="center">
-                    <b>Percentage</b>
-                  </TableCell>
-                  <TableCell align="center">
-                    <b>Action</b>
-                  </TableCell>
-                </TableRow>
-              </TableHead>
+              <Typography
+                variant="subtitle2"
+                mb={3}
+                color="text.secondary"
+                fontStyle="italic"
+              >
+                Voting type:{" "}
+                <Typography component="span" fontWeight="bold">
+                  {poll.type === "single"
+                    ? "One vote per house"
+                    : "Multiple votes per house allowed"}
+                </Typography>
+              </Typography>
 
-              <TableBody>
-                {poll.options.map((opt, i) => {
-                  const percent = totalVotes
-                    ? Math.round((opt.votes / totalVotes) * 100)
-                    : 0;
-                  const isMajority = opt.votes === maxVotes && maxVotes !== 0;
+              {poll.type === "single" && userRole !== "admin" && (
+                <Fade in={true} timeout={1000}>
+                  <Box mb={3}>
+                    <TextField
+                      label="Enter your House Number"
+                      variant="outlined"
+                      size="small"
+                      fullWidth
+                      value={currentHouseNumber}
+                      onChange={(e) =>
+                        setHouseNumbers((prev) => ({
+                          ...prev,
+                          [poll.id]: e.target.value,
+                        }))
+                      }
+                      disabled={poll.locked}
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: 2,
+                          "& fieldset": {
+                            borderColor: theme.palette.divider,
+                          },
+                          "&:hover fieldset": {
+                            borderColor: theme.palette.primary.main,
+                          },
+                          "&.Mui-focused fieldset": {
+                            borderColor: theme.palette.primary.main,
+                            borderWidth: "2px",
+                          },
+                        },
+                      }}
+                    />
+                  </Box>
+                </Fade>
+              )}
 
-                  return (
-                    <TableRow key={i}>
-                      <TableCell>
-                        <Box display="flex" alignItems="center">
-                          {isMobile
-                            ? opt.name.length > 15
-                              ? `${opt.name.slice(0, 8)}..`
-                              : opt.name
-                            : opt.name}
+              <Table size="medium" sx={{ minWidth: 300 }}>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>
+                      <b>Option</b>
+                    </TableCell>
+                    <TableCell align="center">
+                      <b>Votes</b>
+                    </TableCell>
+                    <TableCell align="center">
+                      <b>Percentage</b>
+                    </TableCell>
+                    <TableCell align="center">
+                      <b>Action</b>
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
 
-                          {isMajority && (
-                            <EmojiEventsIcon
-                              color="warning"
-                              fontSize="small"
-                              sx={{ ml: 1 }}
-                            />
-                          )}
-                        </Box>
-                      </TableCell>
+                <TableBody>
+                  {poll.options.map((opt, i) => {
+                    const percent = totalVotes
+                      ? Math.round((opt.votes / totalVotes) * 100)
+                      : 0;
+                    const isMajority = opt.votes === maxVotes && maxVotes !== 0;
 
-                      <TableCell align="center">{opt.votes}</TableCell>
-                      <TableCell align="center" sx={{ width: 100 }}>
-                        <Box display="flex" alignItems="center">
-                          <LinearProgress
-                            variant="determinate"
-                            value={percent}
-                            sx={{
-                              width: "100%",
-                              height: 10,
-                              borderRadius: 5,
-                              mr: 1,
-                            }}
-                            color={isMajority ? "success" : "primary"}
-                          />
-                          <Typography variant="body2">{percent}%</Typography>
-                        </Box>
-                      </TableCell>
+                    return (
+                      <TableRow
+                        key={i}
+                        sx={{
+                          "&:last-child td, &:last-child th": { border: 0 },
+                          "&:hover": {
+                            backgroundColor: isDark
+                              ? "rgba(255,255,255,0.05)"
+                              : "rgba(0,0,0,0.02)",
+                          },
+                          transition: "background-color 0.2s ease-in-out",
+                        }}
+                      >
+                        <TableCell>
+                          <Box display="flex" alignItems="center">
+                            <Typography variant="body1" fontWeight="medium">
+                              {isMobile
+                                ? opt.name.length > 15
+                                  ? `${opt.name.slice(0, 8)}..`
+                                  : opt.name
+                                : opt.name}
+                            </Typography>
+                            {isMajority && (
+                              <Tooltip
+                                title="Current Leader"
+                                TransitionComponent={Zoom}
+                                arrow
+                              >
+                                <EmojiEventsIcon
+                                  color="warning"
+                                  fontSize="small"
+                                  sx={{
+                                    ml: 1,
+                                    animation: "bounceIcon 1s infinite",
+                                  }}
+                                />
+                              </Tooltip>
+                            )}
+                          </Box>
+                        </TableCell>
 
-                      <TableCell align="center">
-                        {userRole !== "admin" && (
-                          <Button
-                            variant="contained"
-                            size="small"
-                            disabled={
-                              poll.locked ||
-                              (poll.type === "single" &&
-                                (poll.votedHouses.has(
-                                  currentHouseNumber.trim()
-                                ) ||
-                                  !currentHouseNumber.trim()))
-                            }
-                            onClick={() => handleVote(poll.id, i)}
+                        <TableCell align="center">
+                          <Typography
+                            variant="body1"
+                            fontWeight="bold"
+                            color="primary.main"
                           >
-                            Vote
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </Paper>
+                            {opt.votes}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="center" sx={{ width: 100 }}>
+                          <Box display="flex" alignItems="center">
+                            <LinearProgress
+                              variant="determinate"
+                              value={percent}
+                              sx={{
+                                width: "100%",
+                                height: 10,
+                                borderRadius: 5,
+                                mr: 1,
+                                bgcolor: isDark
+                                  ? "rgba(255,255,255,0.1)"
+                                  : "grey.300",
+                                "& .MuiLinearProgress-bar": {
+                                  transition: "transform 0.5s ease-out",
+                                },
+                              }}
+                              color={isMajority ? "success" : "primary"}
+                            />
+                            <Typography variant="body2" fontWeight="bold">
+                              {percent}%
+                            </Typography>
+                          </Box>
+                        </TableCell>
+
+                        <TableCell align="center">
+                          {userRole !== "admin" && (
+                            <Button
+                              variant="contained"
+                              size="small"
+                              startIcon={<HowToVoteIcon />}
+                              disabled={
+                                poll.locked ||
+                                (poll.type === "single" &&
+                                  (poll.votedHouses.has(
+                                    currentHouseNumber.trim()
+                                  ) ||
+                                    !currentHouseNumber.trim()))
+                              }
+                              onClick={() => handleVote(poll.id, i)}
+                              sx={{
+                                borderRadius: 2,
+                                px: isMobile ? 1.5 : 2.5,
+                                py: isMobile ? 0.5 : 1,
+                                fontSize: isMobile ? "0.7rem" : "0.8rem",
+                                transition: "all 0.2s ease-in-out",
+                                "&:hover": {
+                                  transform: "scale(1.05)",
+                                },
+                                "&.Mui-disabled": {
+                                  backgroundColor:
+                                    theme.palette.action.disabledBackground,
+                                  color: theme.palette.action.disabled,
+                                  cursor: "not-allowed",
+                                },
+                              }}
+                            >
+                              Vote
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </Paper>
+          </Slide>
         );
       })}
     </Container>

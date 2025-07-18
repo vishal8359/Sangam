@@ -9,7 +9,7 @@ import {
   getCurrentUser,
   getUserById,
 } from "../Controllers/userController.js";
-import multer from "../Configs/multer.js";
+
 import {
   verifyUser,
   verifyUserOrAdmin,

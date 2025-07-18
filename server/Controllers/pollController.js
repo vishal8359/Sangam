@@ -1,12 +1,10 @@
 import Poll from "../Models/Poll.js";
-
-// POST /api/buzz/polls
+import User from "../Models/User.js"; // Assuming User model is needed for created_by or society lookup
 
 export const createPoll = async (req, res) => {
   try {
     const { question, options, expires_at, society_id } = req.body;
 
-    // Basic validation
     if (!question || !options || !Array.isArray(options)) {
       return res
         .status(400)
@@ -19,7 +17,6 @@ export const createPoll = async (req, res) => {
         .json({ message: "Poll must have between 2 to 6 options." });
     }
 
-    // Validate option texts
     const formattedOptions = options
       .map((text) => (typeof text === "string" ? text.trim() : null))
       .filter((text) => text);
@@ -30,7 +27,6 @@ export const createPoll = async (req, res) => {
         .json({ message: "All options must be non-empty strings." });
     }
 
-    // Create the poll
     const poll = await Poll.create({
       question: question.trim(),
       type: req.body.type || "single",
@@ -87,7 +83,6 @@ export const voteInPoll = async (req, res) => {
       return res.status(400).json({ message: "Invalid option index" });
     }
 
-    // Prevent duplicate voting
     const isSingleVote = poll.type === "single";
 
     const alreadyVoted = poll.options.some((opt) =>
@@ -100,7 +95,6 @@ export const voteInPoll = async (req, res) => {
         .json({ message: "You have already voted in this poll" });
     }
 
-    // Register vote
     poll.options[optionIndex].votes.push(userId);
     await poll.save();
 
@@ -148,4 +142,3 @@ export const togglePollLock = async (req, res) => {
     res.status(500).json({ message: "Server error while toggling lock" });
   }
 };
-

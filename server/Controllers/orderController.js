@@ -62,7 +62,7 @@ export const getSellerOrders = async (req, res) => {
 
       .populate({
         path: "items.product",
-        select: "name images seller",
+        select: "name images seller offerPrice",
       })
       .lean();
 

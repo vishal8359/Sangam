@@ -2,62 +2,35 @@ import React, { useState } from "react";
 import {
   Box,
   Typography,
-  Grid,
-  Card,
-  CardContent,
-  CardActions,
-  Button,
-  TextField,
-  Avatar,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
   Paper,
   Tabs,
   Tab,
   useTheme,
   useMediaQuery,
+  TextField,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
+  Avatar,
+  Button,
+  Grid,
+  Card,
+  CardContent,
+  CardActions,
   Divider,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
-import EventAvailableIcon from "@mui/icons-material/EventAvailable";
-import StorefrontIcon from "@mui/icons-material/Storefront";
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
-import AnnouncementIcon from "@mui/icons-material/Announcement";
 import GroupIcon from "@mui/icons-material/Group";
-import PollIcon from "@mui/icons-material/Poll";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
+import StorefrontIcon from "@mui/icons-material/Storefront";
 
+// Sample Data
 const neighboursSample = [
   { id: 1, name: "Alice Johnson", flat: "A-101", avatar: "", online: true },
   { id: 2, name: "Bob Smith", flat: "B-202", avatar: "", online: false },
   { id: 3, name: "Charlie Davis", flat: "A-303", avatar: "", online: true },
   { id: 4, name: "Diana Prince", flat: "C-404", avatar: "", online: false },
-];
-
-const announcementsSample = [
-  {
-    id: 1,
-    title: "Water Supply Disruption",
-    date: "2025-06-10",
-    details:
-      "Water supply will be disrupted from 9 AM to 1 PM due to maintenance.",
-  },
-];
-
-const eventsSample = [
-  {
-    id: 1,
-    title: "Community Cleanup Drive",
-    date: "2025-06-15",
-    description: "Join us for a cleanup drive in the park at 9 AM.",
-  },
-  {
-    id: 2,
-    title: "Yoga Session",
-    date: "2025-06-20",
-    description: "Morning yoga at the club house from 7 AM.",
-  },
 ];
 
 const helpServicesSample = [
@@ -81,39 +54,26 @@ const neighbouringSocietiesSample = [
   { id: 3, name: "Maple Leaf Society", location: "Sector 18", flats: 150 },
 ];
 
-function TabPanel(props) {
-  const { children, value, index, ...other } = props;
+// TabPanel Component
+function TabPanel({ children, value, index, ...other }) {
   return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      {...other}
-      style={{ marginTop: 16 }}
-    >
-      {value === index && children}
+    <div role="tabpanel" hidden={value !== index} {...other}>
+      {value === index && <Box mt={2}>{children}</Box>}
     </div>
   );
 }
 
+// Main Component
 export default function NeighboursPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-
   const [tab, setTab] = useState(0);
   const [searchText, setSearchText] = useState("");
 
-  // Filter neighbours by search
+  const handleTabChange = (_, newValue) => setTab(newValue);
   const filteredNeighbours = neighboursSample.filter((n) =>
     n.name.toLowerCase().includes(searchText.toLowerCase())
   );
-
-  const handleTabChange = (_, newValue) => {
-    setTab(newValue);
-  };
-
-  const openNeighbouringSocieties = () => {
-    setTab(5); 
-  };
 
   return (
     <Box
@@ -128,7 +88,6 @@ export default function NeighboursPage() {
         sx={{
           fontWeight: "bold",
           mb: 2,
-          color: theme.palette.mode === "dark" ? "#f5f5ff" : "",
           fontSize: (theme) => theme.typography.h4.fontSize,
           lineHeight: (theme) => theme.typography.h4.lineHeight,
         }}
@@ -136,49 +95,25 @@ export default function NeighboursPage() {
         Neighbours Community
       </Box>
 
-      {/* Tabs for different sections */}
       <Paper elevation={3}>
         <Tabs
           value={tab}
           onChange={handleTabChange}
           variant={isMobile ? "scrollable" : "fullWidth"}
           scrollButtons="auto"
-          indicatorColor="#121212"
-          textColor="#f5f5ff"
-          aria-label="Neighbours sections tabs"
+          aria-label="Neighbours sections"
           centered={!isMobile}
+          sx={{mb : 3}}
         >
           <Tab icon={<GroupIcon />} label="Neighbours" />
-          <Tab icon={<AnnouncementIcon />} label="Announcements" />
-          <Tab icon={<EventAvailableIcon />} label="Events" />
           <Tab icon={<HelpOutlineIcon />} label="Help & Services" />
-          <Tab icon={<PollIcon />} label="N-Polls" />
           <Tab icon={<StorefrontIcon />} label="Neighbouring Societies" />
         </Tabs>
       </Paper>
 
-      {/* Button to open Neighbouring Societies */}
-      <Box
-        sx={{
-          mt: 2,
-          display: "flex",
-          justifyContent: isMobile ? "center" : "flex-end",
-        }}
-      >
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={openNeighbouringSocieties}
-          startIcon={<StorefrontIcon />}
-          sx={{ minWidth: 200 }}
-        >
-          View Neighbouring Societies
-        </Button>
-      </Box>
-
-      {/* Neighbours List */}
+      {/* Neighbours Section */}
       <TabPanel value={tab} index={0}>
-        <Box sx={{ mb: 2, mt: 1, maxWidth: 400 }}>
+        <Box sx={{ my: 2, maxWidth: 400 }}>
           <TextField
             label="Search Neighbours"
             variant="outlined"
@@ -210,70 +145,15 @@ export default function NeighboursPage() {
             </ListItem>
           ))}
           {filteredNeighbours.length === 0 && (
-            <Typography variant="body2" color="text.secondary" align="center">
+            <Typography variant="body2" align="center" color="text.secondary">
               No neighbours found.
             </Typography>
           )}
         </List>
       </TabPanel>
 
-      {/* Announcements */}
+      {/* Help & Services Section */}
       <TabPanel value={tab} index={1}>
-        <Grid container spacing={2} mt={1}>
-          {announcementsSample.map((a) => (
-            <Grid item xs={12} md={6} key={a.id}>
-              <Card variant="outlined">
-                <CardContent>
-                  <Typography variant="h6">{a.title}</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {a.date}
-                  </Typography>
-                  <Divider sx={{ my: 1 }} />
-                  <Typography>{a.details}</Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-          {announcementsSample.length === 0 && (
-            <Typography align="center" color="text.secondary" mt={2}>
-              No announcements.
-            </Typography>
-          )}
-        </Grid>
-      </TabPanel>
-
-      {/* Events */}
-      <TabPanel value={tab} index={2}>
-        <Grid container spacing={2} mt={1}>
-          {eventsSample.map((event) => (
-            <Grid item xs={12} md={6} key={event.id}>
-              <Card variant="outlined">
-                <CardContent>
-                  <Typography variant="h6">{event.title}</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {new Date(event.date).toDateString()}
-                  </Typography>
-                  <Divider sx={{ my: 1 }} />
-                  <Typography>{event.description}</Typography>
-                </CardContent>
-                <CardActions>
-                  <Button size="small" variant="contained" color="primary">
-                    RSVP
-                  </Button>
-                </CardActions>
-              </Card>
-            </Grid>
-          ))}
-          {eventsSample.length === 0 && (
-            <Typography align="center" color="text.secondary" mt={2}>
-              No upcoming events.
-            </Typography>
-          )}
-        </Grid>
-      </TabPanel>
-
-      {/* Help & Services */}
-      <TabPanel value={tab} index={3}>
         <List>
           {helpServicesSample.map((service) => (
             <ListItem key={service.id} divider>
@@ -287,23 +167,16 @@ export default function NeighboursPage() {
             </ListItem>
           ))}
           {helpServicesSample.length === 0 && (
-            <Typography align="center" color="text.secondary" mt={2}>
+            <Typography variant="body2" align="center" color="text.secondary">
               No services available.
             </Typography>
           )}
         </List>
       </TabPanel>
 
-      {/* N-Polls Placeholder */}
-      <TabPanel value={tab} index={4}>
-        <Typography variant="h6" color="text.secondary" mt={2}>
-          Polls & Surveys feature coming soon...
-        </Typography>
-      </TabPanel>
-
-      {/* Neighbouring Societies */}
-      <TabPanel value={tab} index={5}>
-        <Grid container spacing={2} mt={1}>
+      {/* Neighbouring Societies Section */}
+      <TabPanel value={tab} index={2}>
+        <Grid container spacing={2}>
           {neighbouringSocietiesSample.map((society) => (
             <Grid item xs={12} sm={6} md={4} key={society.id}>
               <Card variant="outlined" sx={{ height: "100%" }}>
@@ -325,7 +198,7 @@ export default function NeighboursPage() {
             </Grid>
           ))}
           {neighbouringSocietiesSample.length === 0 && (
-            <Typography align="center" color="text.secondary" mt={2}>
+            <Typography variant="body2" align="center" color="text.secondary">
               No neighbouring societies found.
             </Typography>
           )}

@@ -251,7 +251,7 @@ const YourProductsPage = () => {
                   {product.quantity > 0 ? product.quantity : "Sold Out"}
                 </Typography>
                 <Typography>
-                  Status: {product.sold ? "Sold" : "Available"}
+                  Status: {product.isActive ? "Available" : <strong className="text-red-500">Sold</strong>}
                 </Typography>
                 <Typography fontWeight={500} color="success.main">
                   Earnings: ₹{product.soldQuantity * product.offerPrice ?? 0}

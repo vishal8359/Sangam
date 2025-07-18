@@ -30,6 +30,7 @@ import { samplePolls } from "../../assets/local.js";
 import poll_bg from "../../assets/poll_bg.jpg";
 import Poll_icon from "../../assets/Poll_icon.png";
 import { AppContext } from "../../context/AppContext.jsx";
+import {toast} from "react-hot-toast"
 
 const PollsPage = () => {
   const { polls, setPolls, userRole, societyId, navigate, axios, token } =
@@ -107,7 +108,7 @@ const PollsPage = () => {
 
       setPolls((prev) => prev.map((p) => (p.id === pollId ? mappedPoll : p)));
     } catch (err) {
-      alert(err.response?.data?.message || "Error submitting vote");
+      toast.error(err.response?.data?.message || "Error submitting vote");
     }
   };
 
@@ -333,7 +334,7 @@ const PollsPage = () => {
                   flexGrow={1}
                   sx={{
                     color: isDark
-                      ? theme.palette.primary.light
+                      ? "#ccc"
                       : theme.palette.primary.dark,
                   }}
                 >
@@ -484,7 +485,7 @@ const PollsPage = () => {
                           <Typography
                             variant="body1"
                             fontWeight="bold"
-                            color="primary.main"
+                            color={isDark? "#ccc" : ""}
                           >
                             {opt.votes}
                           </Typography>

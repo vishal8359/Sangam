@@ -918,11 +918,11 @@ export default function ScrollReelsPage() {
                             ref={(el) => (replyEmojiRefs.current[i] = el)}
                             sx={{
                               position: "absolute",
-                              bottom: 50,
+                              bottom: -300,
                               right: 10,
                               zIndex: 1000,
                               boxShadow: theme.shadows[4],
-                              borderRadius: theme.shape.borderRadius,
+                              borderRadius: "30px",
                               overflow: "hidden",
                             }}
                           >
@@ -1000,7 +1000,7 @@ export default function ScrollReelsPage() {
                   left: 60,
                   zIndex: 9999,
                   boxShadow: theme.shadows[4],
-                  borderRadius: theme.shape.borderRadius,
+                  borderRadius: "30px",
                   overflow: "hidden",
                 }}
               >

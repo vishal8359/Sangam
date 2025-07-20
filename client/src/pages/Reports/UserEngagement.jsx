@@ -12,6 +12,7 @@ import {
   ListItemAvatar,
   ListItemText,
   useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import {
   LineChart,
@@ -20,8 +21,18 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
-} from "recharts";
+}
+ from "recharts";
 import { motion } from "framer-motion";
+import { useAppContext } from "../../context/AppContext";
+
+// Create Motion components for better animation control
+const MotionBox = motion(Box);
+const MotionTypography = motion(Typography);
+const MotionCard = motion(Card);
+const MotionGrid = motion(Grid);
+const MotionButton = motion(Button);
+const MotionListItem = motion(ListItem);
 
 const screenTimeData = [
   { house: "101", time: 4 },
@@ -30,80 +41,152 @@ const screenTimeData = [
   { house: "104", time: 5 },
   { house: "105", time: 12 },
   { house: "106", time: 3 },
+  { house: "107", time: 8 },
+  { house: "108", time: 6 },
+  { house: "109", time: 9 },
+  { house: "110", time: 4.5 },
 ];
 
-const activeUsers = ["Radha", "Krishna", "Mira", "Shyam"];
+const activeUsers = ["Radha", "Krishna", "Mira", "Shyam", "Gopal", "Priya"];
 
 const UserEngagementPage = () => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isDark = theme.palette.mode === "dark";
+  const {user} = useAppContext();
+  // Framer Motion Variants for staggered entry
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.2,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 12,
+      },
+    },
+  };
 
   return (
-    <Box
+    <MotionBox
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
       p={{ xs: 2, md: 4 }}
       sx={{
-        bgcolor: theme.palette.background.default,
         minHeight: "100vh",
         maxWidth: 1200,
         // mx: "auto",
+        position: "relative",
+        overflow: "hidden",
+        borderRadius: 0,
+        zIndex: 1,
+        backgroundColor: isDark ? theme.palette.background.default : theme.palette.grey[50], 
+        "&::after": {
+          content: '""',
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          background: isDark ? "rgba(0,0,0,0.4)" : "rgba(255,255,255,0.6)", 
+          zIndex: -1,
+          borderRadius: 'inherit', 
+        },
       }}
     >
       {/* Greetings */}
-      <Box
-        component="h4"
-        mb={3}
+      <MotionBox
+        component="h4" 
+        mb={isMobile ? 3 : 4}
         sx={{
           fontWeight: 700,
-          color: theme.palette.mode === "dark" ? "#f5f5f5": theme.palette.primary.main,
-          letterSpacing: 0.5,
-          fontSize: "2.125rem", // equivalent to h4 in MUI default
-          lineHeight: 1.235,
+          fontSize: isMobile ? theme.typography.h5.fontSize : theme.typography.h4.fontSize,
+          lineHeight: isMobile ? theme.typography.h5.lineHeight : theme.typography.h4.lineHeight,
+          background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.secondary.main} 90%)`,
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          textShadow: isDark ? "0 0 8px rgba(255,255,255,0.1)" : "none",
+          textAlign: isMobile ? "center" : "left",
+          display: 'block', 
         }}
+        variants={itemVariants}
       >
-        👋 Welcome back, Vishal!
-      </Box>
+        👋 Welcome back, {user.name}!
+      </MotionBox>
+
+      {/* --- */}
 
       {/* Active Users */}
-      <Card
+      <MotionCard
         sx={{
           mb: 4,
           borderRadius: 3,
           boxShadow: theme.shadows[6],
           bgcolor: theme.palette.background.paper,
+          p: isMobile ? 2 : 3,
+          overflowX: 'auto',
         }}
+        variants={itemVariants}
       >
-        <CardContent>
+        <CardContent sx={{ p: '0 !important' }}>
           <Typography variant="h6" fontWeight="600" gutterBottom>
             Currently Active Members
           </Typography>
-          <Box display="flex" mt={1} gap={2}>
+          <Box display="flex" mt={2} gap={isMobile ? 1.5 : 2} py={1}>
             {activeUsers.map((user, idx) => (
-              <Avatar
+              <motion.div
                 key={idx}
-                sx={{
-                  bgcolor: theme.palette.secondary.main,
-                  fontWeight: "bold",
-                  fontSize: "1.1rem",
-                  boxShadow: `0 0 8px ${theme.palette.secondary.light}`,
-                  cursor: "pointer"
-                }}
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                whileTap={{ scale: 0.95 }}
+                variants={itemVariants}
               >
-                {user.charAt(0)}
-              </Avatar>
+                <Avatar
+                  sx={{
+                    bgcolor: theme.palette.secondary.main,
+                    fontWeight: "bold",
+                    fontSize: isMobile ? "0.9rem" : "1.1rem",
+                    width: isMobile ? 48 : 56,
+                    height: isMobile ? 48 : 56,
+                    boxShadow: `0 0 12px ${theme.palette.secondary.light}80`,
+                    cursor: "pointer",
+                    border: `2px solid ${theme.palette.secondary.dark}`,
+                    transition: "all 0.2s ease-in-out",
+                  }}
+                  title={user}
+                >
+                  {user.charAt(0)}
+                </Avatar>
+              </motion.div>
             ))}
           </Box>
         </CardContent>
-      </Card>
+      </MotionCard>
+
+      {/* --- */}
 
       {/* CTAs */}
-      <Grid container spacing={3} mb={5}>
+      <MotionGrid container spacing={isMobile ? 2 : 3} mb={isMobile ? 4 : 5} variants={containerVariants}>
         {[
           { label: "Post Update", variant: "contained", color: "primary" },
           { label: "Join Discussion", variant: "outlined", color: "secondary" },
           { label: "Upload Photo", variant: "contained", color: "secondary" },
           { label: "Invite Neighbour", variant: "outlined", color: "success" },
         ].map(({ label, variant, color }, i) => (
-          <Grid item xs={12} sm={6} md={3} key={i}>
-            <Button
+          <MotionGrid item xs={12} sm={6} md={3} key={i} variants={itemVariants}>
+            <MotionButton
               variant={variant}
               color={color}
               fullWidth
@@ -113,73 +196,107 @@ const UserEngagementPage = () => {
                 py: 1.5,
                 textTransform: "none",
                 boxShadow: variant === "contained" ? theme.shadows[3] : "none",
+                transition: "all 0.3s ease",
                 "&:hover": {
                   boxShadow:
                     variant === "contained"
                       ? theme.shadows[8]
-                      : `0 0 8px ${theme.palette[color]?.main || theme.palette.primary.main}`,
+                      : `0 0 10px ${theme.palette[color]?.main || theme.palette.primary.main}`,
+                  transform: "translateY(-3px)",
                 },
               }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
               {label}
-            </Button>
-          </Grid>
+            </MotionButton>
+          </MotionGrid>
         ))}
-      </Grid>
+      </MotionGrid>
+
+      {/* --- */}
 
       {/* User Activities */}
-      <Card
+      <MotionCard
         sx={{
-          mb: 5,
+          mb: isMobile ? 4 : 5,
           borderRadius: 3,
           boxShadow: theme.shadows[6],
           bgcolor: theme.palette.background.paper,
+          p: isMobile ? 2 : 3,
         }}
+        variants={itemVariants}
       >
-        <CardContent>
-          <Typography variant="h6" fontWeight="600" mb={2}>
+        <CardContent sx={{ p: '0 !important' }}>
+          <Typography variant="h6" fontWeight="600" mb={isMobile ? 1.5 : 2}>
             Your Recent Activities
           </Typography>
           <List>
-            <ListItem sx={{ px: 0 }}>
+            <MotionListItem
+              sx={{ px: 0, py: 1.5 }}
+              variants={itemVariants}
+              whileHover={{ x: 5, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }}
+            >
               <ListItemAvatar>
-                <Avatar sx={{ bgcolor: theme.palette.primary.light }}>
+                <Avatar sx={{ bgcolor: theme.palette.primary.light, color: theme.palette.primary.contrastText }}>
                   📸
                 </Avatar>
               </ListItemAvatar>
               <ListItemText
-                primary="Uploaded 3 photos to Community Wall"
+                primary={
+                  <Typography variant="body1" fontWeight="bold">
+                    Uploaded 3 photos to Community Wall
+                  </Typography>
+                }
                 secondary="2 hours ago"
               />
-            </ListItem>
-            <ListItem sx={{ px: 0 }}>
+            </MotionListItem>
+            <MotionListItem
+              sx={{ px: 0, py: 1.5 }}
+              variants={itemVariants}
+              whileHover={{ x: 5, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }}
+            >
               <ListItemAvatar>
-                <Avatar sx={{ bgcolor: theme.palette.primary.light }}>
+                <Avatar sx={{ bgcolor: theme.palette.success.light, color: theme.palette.success.contrastText }}>
                   💬
                 </Avatar>
               </ListItemAvatar>
               <ListItemText
-                primary="Commented on Krishna’s post"
+                primary={
+                  <Typography variant="body1" fontWeight="bold">
+                    Commented on Krishna’s post
+                  </Typography>
+                }
                 secondary="4 hours ago"
               />
-            </ListItem>
-            <ListItem sx={{ px: 0 }}>
+            </MotionListItem>
+            <MotionListItem
+              sx={{ px: 0, py: 1.5 }}
+              variants={itemVariants}
+              whileHover={{ x: 5, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }}
+            >
               <ListItemAvatar>
-                <Avatar sx={{ bgcolor: theme.palette.primary.light }}>
+                <Avatar sx={{ bgcolor: theme.palette.warning.light, color: theme.palette.warning.contrastText }}>
                   🎉
                 </Avatar>
               </ListItemAvatar>
               <ListItemText
-                primary="Joined Yoga Day Event"
+                primary={
+                  <Typography variant="body1" fontWeight="bold">
+                    Joined Yoga Day Event
+                  </Typography>
+                }
                 secondary="1 day ago"
               />
-            </ListItem>
+            </MotionListItem>
           </List>
         </CardContent>
-      </Card>
+      </MotionCard>
+
+      {/* --- */}
 
       {/* Achievements */}
-      <Grid container spacing={3} mb={5}>
+      <MotionGrid container spacing={isMobile ? 2 : 3} mb={isMobile ? 4 : 5} variants={containerVariants}>
         {[
           {
             title: "🏅 Community Contributor",
@@ -194,17 +311,19 @@ const UserEngagementPage = () => {
             desc: "5 discussions initiated",
           },
         ].map(({ title, desc }, i) => (
-          <Grid item xs={12} sm={6} md={4} key={i}>
-            <Card
+          <MotionGrid item xs={12} sm={6} md={4} key={i} variants={itemVariants}>
+            <MotionCard
+              whileHover={{ scale: 1.05, boxShadow: theme.shadows[12] }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
               sx={{
                 borderRadius: 3,
                 boxShadow: theme.shadows[6],
                 bgcolor: theme.palette.background.paper,
-                transition: "transform 0.3s ease",
-                "&:hover": {
-                  transform: "scale(1.05)",
-                  boxShadow: theme.shadows[12],
-                },
+                minHeight: isMobile ? 120 : 150,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                p: isMobile ? 1 : 2,
               }}
             >
               <CardContent>
@@ -213,6 +332,7 @@ const UserEngagementPage = () => {
                   fontWeight="700"
                   mb={1}
                   sx={{ userSelect: "none" }}
+                  color={theme.palette.primary.main}
                 >
                   {title}
                 </Typography>
@@ -220,38 +340,38 @@ const UserEngagementPage = () => {
                   {desc}
                 </Typography>
               </CardContent>
-            </Card>
-          </Grid>
+            </MotionCard>
+          </MotionGrid>
         ))}
-      </Grid>
+      </MotionGrid>
+
+      {/* --- */}
 
       {/* Graph: Screen Time vs House Numbers */}
-      
-      <Card
+      <MotionCard
         sx={{
           borderRadius: 3,
           boxShadow: theme.shadows[6],
           bgcolor: theme.palette.background.paper,
-          p: 2,
+          p: isMobile ? 2 : 3,
         }}
+        variants={itemVariants}
       >
-        
         <Typography
           variant="h6"
           fontWeight="600"
-          mb={2}
+          mb={isMobile ? 1.5 : 2}
           sx={{ userSelect: "none", color: theme.palette.text.primary }}
         >
           📊 Screen Time vs House Numbers
         </Typography>
 
-        <ResponsiveContainer width="100%" height={320}>
+        <ResponsiveContainer width="100%" height={isMobile ? 250 : 320}>
           <LineChart
             cursor="pointer"
             data={screenTimeData}
-            margin={{ top: 10, bottom: 10, left: 0, right: 10 }}
+            margin={{ top: 10, bottom: 10, left: isMobile ? -20 : 0, right: isMobile ? 0 : 10 }}
           >
-            {/* Removed CartesianGrid for clean look */}
             <XAxis
               dataKey="house"
               label={{
@@ -263,43 +383,50 @@ const UserEngagementPage = () => {
               }}
               tick={{ fill: theme.palette.text.primary }}
               axisLine={{ stroke: theme.palette.divider }}
+              tickLine={{ stroke: theme.palette.divider }}
             />
             <YAxis
-              domain={[0, 24]}
+              domain={[0, 15]}
               label={{
                 value: "Hours",
                 angle: -90,
                 position: "insideLeft",
                 fill: theme.palette.text.secondary,
                 fontWeight: 600,
-                dx: 10,
+                dx: isMobile ? 0 : 10,
               }}
               tick={{ fill: theme.palette.text.primary }}
               axisLine={{ stroke: theme.palette.divider }}
+              tickLine={{ stroke: theme.palette.divider }}
             />
             <Tooltip
               contentStyle={{
                 borderRadius: 8,
                 boxShadow: theme.shadows[5],
-                color: theme.palette.mode === "dark" ? "#121212" : "",
+                background: theme.palette.background.paper,
+                border: `1px solid ${theme.palette.divider}`,
               }}
-              cursor={{ stroke: theme.palette.primary.main, strokeWidth: 2 }}
+              labelStyle={{ color: theme.palette.text.primary }}
+              itemStyle={{ color: theme.palette.text.secondary }}
+              cursor={{ stroke: theme.palette.primary.main, strokeWidth: 2, strokeDasharray: '3 3' }}
             />
             <Line
               type="monotone"
               dataKey="time"
               stroke={theme.palette.primary.main}
               strokeWidth={4}
+              dot={{ stroke: theme.palette.primary.dark, strokeWidth: 2, r: 5 }}
               activeDot={{
                 r: 9,
                 strokeWidth: 3,
                 stroke: theme.palette.secondary.main,
+                fill: theme.palette.secondary.light,
               }}
             />
           </LineChart>
         </ResponsiveContainer>
-      </Card>
-    </Box>
+      </MotionCard>
+    </MotionBox>
   );
 };
 

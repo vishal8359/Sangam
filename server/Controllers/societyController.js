@@ -1,6 +1,6 @@
 // Controllers/societyController.js
 import Society from "../Models/Society.js";
-
+import User from "../Models/User.js";
 export const getSocietyById = async (req, res) => {
   try {
     const society = await Society.findById(req.params.id)
@@ -43,26 +43,69 @@ export const getSocietyById = async (req, res) => {
 };
 
 export const getNeighbouringSocieties = async (req, res) => {
-  try {
-    const { id } = req.params;
+    try {
+        const userId = req.user._id;
 
-    const society = await Society.findById(id);
-    if (!society || !society.location) {
-      return res.status(404).json({ message: "Society or location not found" });
+        const currentUser = await User.findById(userId)
+            .populate('roles.society_id')
+            .populate('joined_societies');
+
+        if (!currentUser) {
+            return res.status(404).json({ message: "Current user not found." });
+        }
+
+        let currentSociety = null;
+
+        if (currentUser.roles && currentUser.roles.length > 0) {
+            currentSociety = currentUser.roles[0].society_id;
+        } else if (currentUser.joined_societies && currentUser.joined_societies.length > 0) {
+            currentSociety = currentUser.joined_societies[0];
+        } else if (currentUser.created_society) {
+            return res.status(400).json({ message: "User is not associated with any society as a resident/admin or joined society." });
+        } else {
+            return res.status(400).json({ message: "User is not associated with any society to determine neighbouring societies." });
+        }
+
+        if (!currentSociety || !currentSociety.location || currentSociety.location.type !== "Polygon" || !currentSociety.location.coordinates || currentSociety.location.coordinates.length === 0 || currentSociety.location.coordinates[0].length === 0) {
+            return res.status(400).json({ message: "Current society's location data is incomplete or not a valid Polygon." });
+        }
+
+        const [centerLongitude, centerLatitude] = currentSociety.location.coordinates[0][0];
+
+        const maxDistanceMeters = 5000;
+
+        const neighbouringSocieties = await Society.find({
+            _id: { $ne: currentSociety._id },
+            location: {
+                $nearSphere: {
+                    $geometry: {
+                        type: "Point",
+                        coordinates: [centerLongitude, centerLatitude]
+                    },
+                    $maxDistance: maxDistanceMeters
+                }
+            }
+        }).select('name location');
+
+        const formattedSocieties = neighbouringSocieties.map(society => {
+            let societyDisplayLocation = "Unknown Location";
+            if (society.location && society.location.type === "Polygon" && society.location.coordinates[0] && society.location.coordinates[0][0]) {
+                 societyDisplayLocation = `${society.location.coordinates[0][0][1]}, ${society.location.coordinates[0][0][0]}`;
+            }
+
+            return {
+                id: society._id,
+                name: society.name,
+                location: societyDisplayLocation,
+                flats: "Not Available",
+                map_url: `http://maps.google.com/maps?q=${society.location.coordinates[0][0][1]},${society.location.coordinates[0][0][0]}`
+            };
+        });
+
+        res.status(200).json({ societies: formattedSocieties });
+
+    } catch (err) {
+        console.error("Error fetching neighbouring societies:", err);
+        res.status(500).json({ message: "Internal Server Error" });
     }
-
-    const neighbours = await Society.find({
-      _id: { $ne: society._id },
-      location: {
-        $geoIntersects: {
-          $geometry: society.location,
-        },
-      },
-    });
-
-    res.status(200).json({ neighbours });
-  } catch (err) {
-    console.error("Neighbouring Society Error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
 };

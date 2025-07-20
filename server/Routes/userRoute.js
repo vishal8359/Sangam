@@ -28,7 +28,6 @@ import {
   deleteBuzzMessageForEveryone,
   getBuzzGroups,
   createBuzzGroup,
-  getGroupsBySociety,
 } from "../Controllers/buzzController.js";
 import upload from "../Configs/multer.js";
 import { requestToJoinGroup } from "../Controllers/groupJoinController.js";
@@ -39,7 +38,7 @@ import {
   deleteComplaint,
 } from "../Controllers/complaintController.js";
 
-import { getNeighbourHomes } from "../Controllers/getNeighbourHomes.js";
+import { addHelpService, getHelpServices, getNeighbourHomes } from "../Controllers/getNeighbourHomes.js";
 import {
   getNeighbouringSocieties,
   getSocietyById,
@@ -61,6 +60,9 @@ import {
 } from "../Controllers/chatsController.js";
 import { createOrder, getMyOrders, getSellerOrders } from "../Controllers/orderController.js";
 import { addComment, addReply, deleteReelById, getAllReels, getEngagementStats, getReelsByUserId, getUserReelStats, incrementView, likeReel, sendReelToChatOrGroup, shareReel, toggleFollowUser, uploadReel } from "../Controllers/galleryController.js";
+import { getTopContributors } from "../Controllers/contributorController.js";
+import { addHealth, getHealth } from "../Controllers/addHealthController.js";
+
 
 const router = express.Router();
 // first register
@@ -107,9 +109,6 @@ router.post(
 );
 router.get("/buzz/members/:societyId", verifyUser, getSocietyMembers);
 
-
-// router.get("/buzz/groups/:societyId", verifyUser, getGroupsBySociety);
-// router.get("/buzz/group/:groupId", verifyUser, getGroupDetails);
 router.get("/buzz/groups/:societyId", getBuzzGroups);
 router.delete("/buzz/message/:messageId/me", verifyUser, deleteBuzzMessageForMe);
 router.delete("/buzz/message/:messageId/all", verifyUser, deleteBuzzMessageForEveryone);
@@ -159,9 +158,10 @@ router.get("/me", verifyUser, getCurrentUser);
 
 // Neighbours
 router.get("/homes/neighbours", verifyUser, getNeighbourHomes);
-
+router.get("/help-services", verifyUser, getHelpServices);
+router.post("/addServices", verifyUser, addHelpService);
 // societies
-router.get("/society/:id/neighbours/", verifyUser, getNeighbouringSocieties);
+router.get("/neighbouring-societies", verifyUser, getNeighbouringSocieties);
 
 // Reels
 router.post("/gallery/reels/upload", verifyUser, upload.single("video"), uploadReel);
@@ -184,6 +184,11 @@ router.post("/gallery/reels/send", verifyUser, sendReelToChatOrGroup);
 
 
 router.get("/user/:id", verifyUser, getUserById);
-// Images
 
+router.get("/contributors/all", verifyUser, getTopContributors);
+
+// health
+
+router.post("/addhealth", verifyUser, addHealth);
+router.get("/gethealth", verifyUser, getHealth);
 export default router;

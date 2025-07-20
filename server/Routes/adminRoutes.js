@@ -12,6 +12,8 @@ import { resolveComplaint, getComplaintsBySociety, getResolvedComplaints, delete
 import { getNeighbouringSocieties } from "../Controllers/societyController.js";
 import { getEvents } from "../Controllers/eventController.js";
 import { getMyChats, sendMessage } from "../Controllers/chatsController.js";
+import { markTopContributor } from "../Controllers/contributorController.js";
+
 
 const router = express.Router();
 
@@ -64,6 +66,9 @@ router.delete("/complaints/:complaintId", verifyAdmin, deleteComplaint);
 // Societies
 
 router.get("/society/:id/neighbours", verifyAdmin, getNeighbouringSocieties);
+
+router.post("/contributors/mark", verifyAdmin,markTopContributor);
+
 
 // events
 router.get("/events", verifyAdmin, getEvents);

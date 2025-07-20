@@ -1,0 +1,30 @@
+import mongoose from "mongoose";
+import User from "./User.js";
+
+const healthSchema = new mongoose.Schema({
+  user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, unique: true },
+  name: String,
+  age: Number,
+  feet: Number,
+  inches: Number,
+  weight: Number,
+  fat: Number,
+  condition: String,
+  house: String,
+  bmi: Number,
+  healthScore: Number,
+});
+
+healthSchema.pre("save", async function (next) {
+  if (this.isModified("user") || !this.house) {
+    const user = await User.findById(this.user);
+    if (user?.address?.house) {
+      this.house = user.address.house;
+    }
+  }
+  next();
+});
+
+
+const Health = mongoose.models.Health || mongoose.model("Health", healthSchema);
+export default Health;

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -21,6 +21,7 @@ import {
 } from "recharts";
 
 import { SEVERE_CONDITIONS } from "../../assets/local.js";
+import { useAppContext } from "../../context/AppContext.jsx";
 
 const initialPerson = {
   name: "",
@@ -41,7 +42,7 @@ const computeHealthScore = ({ age, bmi, fat, condition }) => {
 
   if (bmi < 18.5 || bmi > 24.9) score -= 1;
 
-  if (fat > 25) score -= 1;
+  if (fat > 25) score -= 1.2;
 
   if (SEVERE_CONDITIONS.includes(condition)) score -= 5;
   else if (condition !== "None") score -= 2;
@@ -63,6 +64,7 @@ export default function SocietyHealthScore() {
 
   const [data, setData] = useState([]);
   const [person, setPerson] = useState(initialPerson);
+  const { axios, token, user } = useAppContext();
 
   const bmi = calculateBMI(person.feet, person.inches, person.weight);
 
@@ -82,31 +84,66 @@ export default function SocietyHealthScore() {
     house: item.house,
     avgScore: parseFloat((item.total / item.count).toFixed(2)),
   }));
-  const handleAdd = () => {
-     const healthScore = computeHealthScore({ ...person, bmi });
-    
-    const { name, house, age, feet, inches, weight, fat, condition } = person;
-    if (
-      !name ||
-      !house ||
-      !age ||
-      !feet ||
-      !inches ||
-      !weight ||
-      !fat ||
-      !condition
-    ) {
-      alert("Please fill all required fields.");
-      return;
+
+  useEffect(() => {
+    if (user?.address) {
+      const houseNo = user.address.split(",")[0]?.trim();
+      setPerson((prev) => ({ ...prev, house: houseNo }));
     }
-    else{
-      const newPerson = { ...person, bmi, healthScore: parseFloat(healthScore) };
-    setData([...data, newPerson]);
-    setPerson(initialPerson);
+  }, [user]);
+
+  const handleAdd = async () => {
+    const { name, age, feet, inches, weight, fat, condition } = person;
+    if (!name || !age || !feet || !inches || !weight || !fat || !condition) {
+      return alert("Fill all fields");
     }
 
-    // Proceed to add person
+    const bmi = calculateBMI(feet, inches, weight);
+    const healthScore = computeHealthScore({ age, bmi, fat, condition });
+
+    try {
+      const res = await axios.post(
+        "/api/users/addhealth",
+        {
+          name,
+          age,
+          feet,
+          inches,
+          weight,
+          fat,
+          condition,
+          bmi,
+          healthScore,
+          house: person.house,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      fetchHealthData();
+      setPerson(initialPerson);
+    } catch (err) {
+      console.error("Submit error", err.response?.data || err.message);
+    }
   };
+
+  const fetchHealthData = async () => {
+    try {
+      console.log("Token in health request:", token);
+
+      const res = await axios.get("/api/users/gethealth", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setData(res.data);
+    } catch (err) {
+      console.error("Fetch error", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchHealthData();
+  }, []);
 
   return (
     <Box p={4} bgcolor={isDark ? "#121212" : "#f5f5f5"} minHeight="100vh">
@@ -147,29 +184,16 @@ export default function SocietyHealthScore() {
           </Grid>
           <Grid item xs={12} sm={6}>
             <TextField
-              label="House"
+              label="House No. (Auto-filled)"
               name="house"
               value={person.house}
-              onChange={handleChange}
               fullWidth
               variant="outlined"
               InputLabelProps={{ shrink: true }}
-              required
+              InputProps={{ readOnly: true }}
             />
           </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="Age"
-              name="age"
-              type="number"
-              value={person.age}
-              onChange={handleChange}
-              fullWidth
-              variant="outlined"
-              InputLabelProps={{ shrink: true }}
-              required
-            />
-          </Grid>
+
           <Grid item xs={6} sm={3}>
             <TextField
               label="Height (Feet)"
@@ -316,6 +340,25 @@ export default function SocietyHealthScore() {
                     }
                     sx={{ height: 10, borderRadius: 5 }}
                   />
+                  <Button
+                    size="small"
+                    color="error"
+                    onClick={async () => {
+                      try {
+                        await axios.delete(`/api/health/${item._id}`, {
+                          headers: { Authorization: `Bearer ${token}` },
+                        });
+                        fetchHealthData();
+                      } catch (err) {
+                        console.error(
+                          "Delete failed",
+                          err.response?.data || err.message
+                        );
+                      }
+                    }}
+                  >
+                    🗑 Delete
+                  </Button>
                 </Box>
               </CardContent>
             </Card>

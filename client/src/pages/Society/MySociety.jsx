@@ -197,13 +197,14 @@ const MySociety = () => {
             mb={isMobile ? 2 : 3}
           >
             <Avatar
-              src={society_icon}
+              src={isDark ? "" : society_icon}
               alt="Society Icon"
               sx={{
                 width: isMobile ? 50 : 60,
                 height: isMobile ? 50 : 60,
                 mr: 2,
                 boxShadow: theme.shadows[4],
+                
               }}
             />
             <Box

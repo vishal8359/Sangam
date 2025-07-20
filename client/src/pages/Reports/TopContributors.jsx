@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Card,
@@ -10,46 +10,95 @@ import {
   useTheme,
   Tooltip,
   Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Button,
 } from "@mui/material";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import StarsIcon from "@mui/icons-material/Stars";
 import { motion } from "framer-motion";
-
-const contributors = [
-  {
-    name: "Radha Sharma",
-    house: "A-101, Lotus Residency",
-    designation: "President",
-    achievements: [
-      "Organized 15+ events",
-      "Maintained 98% resident satisfaction",
-      "Green Initiative Leader",
-    ],
-  },
-  {
-    name: "Krishna Mehra",
-    house: "B-203, Tulip Towers",
-    designation: "Community Coordinator",
-    achievements: [
-      "Led Volunteer Programs",
-      "Helped resolve 120+ complaints",
-      "Monthly Newsletter Author",
-    ],
-  },
-  {
-    name: "Meera Bansal",
-    house: "C-307, Orchid Heights",
-    designation: "Youth Representative",
-    achievements: [
-      "Started Skill Development Classes",
-      "Organized Youth Fest 2025",
-      "Top Voted Member of Month",
-    ],
-  },
-];
+import { useAppContext } from "../../context/AppContext";
+import { toast } from "react-hot-toast";
 
 const TopContributorsPage = () => {
   const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
+  const [contributors, setContributors] = useState([]);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [newContributor, setNewContributor] = useState({
+    name: "",
+    house: "",
+    designation: "",
+    achievements: "",
+  });
+  const { userRole, token, axios, user } = useAppContext();
+  const isAdmin = userRole === "admin";
+
+  useEffect(() => {
+    if (!token || !axios) return;
+
+    fetchContributors();
+  }, [token, axios]);
+
+  const fetchContributors = async () => {
+    try {
+      const res = await axios.get("/api/users/contributors/all", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setContributors(res.data.contributors || []);
+    } catch (err) {
+      console.error(
+        "Failed to fetch contributors:",
+        err.response?.data || err.message
+      );
+      toast.error(
+        err.response?.data?.message ||
+          "Unauthorized or failed to fetch contributors."
+      );
+    }
+  };
+
+  const handleMarkContributor = async () => {
+    try {
+      const url = `${import.meta.env.VITE_BACKEND_URL}/api/admin/contributors/mark`;
+
+      await axios.post(
+        url,
+        {
+          name: newContributor.name,
+          house: newContributor.house,
+          designation: newContributor.designation,
+          achievements: newContributor.achievements
+            .split(",")
+            .map((ach) => ach.trim()),
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      toast.success("Top contributor added successfully!");
+      setNewContributor({
+        name: "",
+        house: "",
+        designation: "",
+        achievements: "",
+      });
+      setOpenDialog(false);
+      fetchContributors();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to add contributor");
+      console.error(err.response?.data || err.message);
+    }
+  };
 
   return (
     <Box
@@ -57,72 +106,120 @@ const TopContributorsPage = () => {
       sx={{
         bgcolor: theme.palette.background.default,
         minHeight: "100vh",
+        background: isDark
+          ? `linear-gradient(180deg, ${theme.palette.background.default}, ${theme.palette.background.paper})`
+          : `linear-gradient(180deg, ${theme.palette.primary.light}10, ${theme.palette.secondary.light}10)`,
       }}
     >
-      {/* Page Title */}
-      <Box
-        sx={{
-          textAlign: "center",
-          mb: 4,
-          p: 2,
-          borderRadius: 3,
-          background: `linear-gradient(90deg, ${theme.palette.primary.light}, ${theme.palette.secondary.light})`,
-          color: theme.palette.primary.contrastText,
-          fontSize: {
-            xs: "1.8rem",
-            sm: "2.2rem",
-            md: "2.5rem",
-          },
-          fontWeight: 800,
-          letterSpacing: 1,
-          boxShadow: 4,
-        }}
+      <motion.div
+        initial={{ opacity: 0, y: -50 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
       >
-        🌟 Celebrating Our Top Contributors
-      </Box>
-
-      <Grid container spacing={4}>
+        <Box
+          sx={{
+            textAlign: "center",
+            mb: 4,
+            p: 3,
+            borderRadius: 3,
+            background: isDark
+              ? `linear-gradient(90deg, ${theme.palette.primary.dark}, ${theme.palette.secondary.dark})`
+              : `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+            color: theme.palette.primary.contrastText,
+            fontSize: {
+              xs: "1.8rem",
+              sm: "2.2rem",
+              md: "2.8rem",
+            },
+            fontWeight: 800,
+            letterSpacing: 1,
+            boxShadow: theme.shadows[8],
+            textShadow: "2px 2px 4px rgba(0,0,0,0.3)",
+          }}
+        >
+          🌟 Celebrating Our Top Contributors 🌟
+        </Box>
+      </motion.div>
+      {isAdmin && (
+        <Box textAlign="center" mb={4}>
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={() => setOpenDialog(true)}
+              sx={{
+                px: 4,
+                py: 1.5,
+                borderRadius: "50px",
+                fontSize: "1rem",
+                fontWeight: "bold",
+                boxShadow: theme.shadows[4],
+                background: isDark
+                  ? `linear-gradient(90deg, ${theme.palette.secondary.dark}, ${theme.palette.primary.dark})`
+                  : `linear-gradient(90deg, ${theme.palette.secondary.main}, ${theme.palette.primary.main})`,
+                color: theme.palette.secondary.contrastText,
+                "&:hover": {
+                  opacity: 0.9,
+                },
+              }}
+            >
+              ➕ Add Top Contributor
+            </Button>
+          </motion.div>
+        </Box>
+      )}
+      <Grid container spacing={4} justifyContent="center">
         {contributors.map((contributor, idx) => (
           <Grid item xs={12} sm={6} md={4} key={idx}>
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
+              initial={{ opacity: 0, scale: 0.8 }}
               whileInView={{ opacity: 1, scale: 1 }}
-              transition={{ delay: idx * 0.2, duration: 0.5 }}
+              transition={{ delay: idx * 0.1, duration: 0.6, type: "spring", stiffness: 100 }}
+              viewport={{ once: true, amount: 0.5 }}
             >
               <Card
-                elevation={6}
+                elevation={10}
                 sx={{
                   borderRadius: 5,
-                  background: `linear-gradient(to bottom right, ${theme.palette.primary.light}, ${theme.palette.background.paper})`,
+                  background: isDark
+                    ? `linear-gradient(to bottom right, ${theme.palette.background.paper}, ${theme.palette.background.default})`
+                    : `linear-gradient(to bottom right, ${theme.palette.background.default}, ${theme.palette.grey[50]})`,
                   color: theme.palette.text.primary,
-                  boxShadow: theme.shadows[10],
+                  boxShadow: isDark ? `0 8px 32px 0 ${theme.palette.common.black}80` : theme.shadows[10],
                   overflow: "hidden",
                   px: 3,
                   pt: 3,
                   pb: 2,
+                  border: `1px solid ${theme.palette.divider}`,
+                  backdropFilter: "blur(5px)",
                 }}
               >
-                <Box display="flex" alignItems="center" gap={2}>
+                <Box display="flex" alignItems="center" gap={2} mb={2}>
                   <Avatar
                     sx={{
                       background: "linear-gradient(to right, #FF6B6B, #FFD93D)",
                       fontWeight: "bold",
-                      fontSize: "1.5rem",
-                      width: 60,
-                      height: 60,
+                      fontSize: "1.8rem",
+                      width: 70,
+                      height: 70,
                       color: "#fff",
+                      border: `3px solid ${theme.palette.background.paper}`,
+                      boxShadow: theme.shadows[3],
                     }}
                   >
                     {contributor.name.charAt(0)}
                   </Avatar>
                   <Box>
-                    <Typography variant="h6" fontWeight="bold">
+                    <Typography variant="h5" fontWeight="bold" sx={{ color: isDark ? theme.palette.info.light : theme.palette.primary.main }}>
                       {contributor.name}
                     </Typography>
                     <Typography
-                      variant="body2"
-                      color="text.primary"
-                      sx={{ fontStyle: "italic" }}
+                      variant="body1"
+                      color="text.secondary"
+                      sx={{ fontStyle: "italic", mt: 0.5 }}
                     >
                       {contributor.house}
                     </Typography>
@@ -133,49 +230,182 @@ const TopContributorsPage = () => {
                   icon={<StarsIcon />}
                   label={contributor.designation}
                   color="secondary"
-                  size="small"
+                  size="medium"
                   sx={{
-                    mt: 2,
+                    mt: 1,
+                    mb: 2,
                     fontWeight: "bold",
-                    borderRadius: "8px",
-                    px: 1.5,
+                    borderRadius: "10px",
+                    px: 2,
+                    background: theme.palette.secondary.main,
+                    color: theme.palette.secondary.contrastText,
+                    boxShadow: theme.shadows[2],
                   }}
                 />
 
-                <Divider sx={{ my: 2, borderColor: theme.palette.divider }} />
+                <Divider sx={{ my: 2.5, borderColor: theme.palette.divider, borderStyle: "dashed" }} />
 
                 <Typography
-                  variant="subtitle2"
+                  variant="h6"
                   fontWeight={700}
                   gutterBottom
-                  sx={{ textTransform: "uppercase", color: theme.palette.mode === "dark" ? "text.secondary" : "#121212" }}
+                  sx={{
+                    textTransform: "uppercase",
+                    color: isDark ? theme.palette.info.light : theme.palette.primary.dark,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    mb: 1.5,
+                  }}
                 >
-                  🏆 Achievements
+                  <EmojiEventsIcon sx={{ color: theme.palette.warning.main }} /> Achievements
                 </Typography>
 
-                {contributor.achievements.map((ach, i) => (
-                  <Box
-                    key={i}
-                    display="flex"
-                    alignItems="center"
-                    gap={1}
-                    mb={1}
-                  >
-                    <Tooltip title="Achievement" arrow>
-                      <EmojiEventsIcon
-                        fontSize="small"
-                        color="warning"
-                        sx={{ mt: "1px" }}
-                      />
-                    </Tooltip>
-                    <Typography variant="body2">{ach}</Typography>
-                  </Box>
-                ))}
+                <Box sx={{ maxHeight: 150, overflowY: "auto", pr: 1 }}>
+                  {contributor.achievements.map((ach, i) => (
+                    <Box
+                      key={i}
+                      display="flex"
+                      alignItems="flex-start"
+                      gap={1.5}
+                      mb={1}
+                      sx={{
+                        background: isDark ? theme.palette.action.hover : theme.palette.action.selected,
+                        p: 1,
+                        borderRadius: 2,
+                        "&:last-child": { mb: 0 },
+                      }}
+                    >
+                      <Tooltip title="Achievement" arrow>
+                        <EmojiEventsIcon
+                          fontSize="small"
+                          color="warning"
+                          sx={{ mt: "3px", flexShrink: 0 }}
+                        />
+                      </Tooltip>
+                      <Typography variant="body2" color="text.secondary">{ach}</Typography>
+                    </Box>
+                  ))}
+                </Box>
               </Card>
             </motion.div>
           </Grid>
         ))}
       </Grid>
+      <Dialog
+        open={openDialog}
+        onClose={() => setOpenDialog(false)}
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            background: isDark ? theme.palette.background.paper : theme.palette.background.default,
+            color: theme.palette.text.primary,
+            boxShadow: theme.shadows[12],
+          }
+        }}
+      >
+        <DialogTitle sx={{ bgcolor: theme.palette.primary.main, color: theme.palette.primary.contrastText }}>
+          Add Top Contributor
+        </DialogTitle>
+        <DialogContent
+          sx={{ display: "flex", flexDirection: "column", gap: 2.5, mt: 2 }}
+        >
+          <TextField
+            label="Name"
+            variant="outlined"
+            fullWidth
+            value={newContributor.name}
+            onChange={(e) =>
+              setNewContributor({ ...newContributor, name: e.target.value })
+            }
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": { borderColor: theme.palette.divider },
+                "&:hover fieldset": { borderColor: theme.palette.primary.main },
+                "&.Mui-focused fieldset": { borderColor: theme.palette.primary.main },
+              },
+              "& .MuiInputLabel-root": { color: theme.palette.text.secondary },
+            }}
+          />
+          <TextField
+            label="House"
+            variant="outlined"
+            fullWidth
+            value={newContributor.house}
+            onChange={(e) =>
+              setNewContributor({ ...newContributor, house: e.target.value })
+            }
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": { borderColor: theme.palette.divider },
+                "&:hover fieldset": { borderColor: theme.palette.primary.main },
+                "&.Mui-focused fieldset": { borderColor: theme.palette.primary.main },
+              },
+              "& .MuiInputLabel-root": { color: theme.palette.text.secondary },
+            }}
+          />
+          <TextField
+            label="Designation"
+            variant="outlined"
+            fullWidth
+            value={newContributor.designation}
+            onChange={(e) =>
+              setNewContributor({
+                ...newContributor,
+                designation: e.target.value,
+              })
+            }
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": { borderColor: theme.palette.divider },
+                "&:hover fieldset": { borderColor: theme.palette.primary.main },
+                "&.Mui-focused fieldset": { borderColor: theme.palette.primary.main },
+              },
+              "& .MuiInputLabel-root": { color: theme.palette.text.secondary },
+            }}
+          />
+          <TextField
+            label="Achievements (comma separated)"
+            variant="outlined"
+            fullWidth
+            multiline
+            rows={3}
+            value={newContributor.achievements}
+            onChange={(e) =>
+              setNewContributor({
+                ...newContributor,
+                achievements: e.target.value,
+              })
+            }
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": { borderColor: theme.palette.divider },
+                "&:hover fieldset": { borderColor: theme.palette.primary.main },
+                "&.Mui-focused fieldset": { borderColor: theme.palette.primary.main },
+              },
+              "& .MuiInputLabel-root": { color: theme.palette.text.secondary },
+            }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 3, pt: 1 }}>
+          <Button
+            onClick={() => setOpenDialog(false)}
+            color="primary"
+            variant="outlined"
+            sx={{ px: 3, py: 1 }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleMarkContributor}
+            color="secondary"
+            sx={{ px: 3, py: 1, boxShadow: theme.shadows[3] }}
+          >
+            Submit
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

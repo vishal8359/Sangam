@@ -11,6 +11,8 @@ import {
   TextField,
   useTheme,
   ListItemButton,
+  Slide,
+  Fade,
 } from "@mui/material";
 import { useAppContext } from "../../context/AppContext";
 
@@ -31,99 +33,167 @@ export default function Sidebar({
   );
 
   return (
-    <Box
-      width={isMobile ? "100%" : "100%"}
-      height="100%"
-      borderRight={isMobile ? "none" : `1px solid ${theme.palette.divider}`}
-      bgcolor={isDark ? "#272727" : "#f5f5f5"}
-      sx={{ color: isDark ? "#f5f5ff" : "" }}
-    >
-      <Typography
-        variant="h6"
-        px={isMobile ? 8 : 2.5}
-        py={isMobile ? 2 : 1.5}
-        fontWeight={700}
+    <Slide direction="right" in={true} mountOnEnter unmountOnExit timeout={500}>
+      <Box
+        width={isMobile ? "100%" : "100%"}
+        height="100%"
+        borderRight={isMobile ? "none" : `1px solid ${theme.palette.divider}`}
+        bgcolor={isDark ? "#272727" : "#f5f5f5"}
+        sx={{ color: isDark ? "#f5f5ff" : "", overflowY: "auto" }}
       >
-        Conversations
-      </Typography>
-      <Divider />
-      <Box px={2.5} py={1}>
-        <TextField
-          fullWidth
-          variant="outlined"
-          size="small"
-          placeholder="Search members..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+        <Box
+          px={isMobile ? 8 : 2.5}
+          py={isMobile ? 2 : 1.5}
+          sx={{
+            position: "sticky",
+            top: 0,
+            zIndex: 1,
+          }}
+        >
+          <Typography variant="h5" fontWeight={700}>
+            Conversations
+          </Typography>
+        </Box>
+        <Divider />
+        <Box px={2.5} py={1} sx={{ bgcolor: isDark ? "#272727" : "#f5f5f5" }}>
+          <TextField
+            fullWidth
+            variant="outlined"
+            size="small"
+            placeholder="Search members..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 2,
+                transition: "all 0.3s ease-in-out",
+                "&:hover fieldset": {
+                  borderColor: theme.palette.primary.main,
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: theme.palette.primary.main,
+                  boxShadow: `${theme.palette.primary.main} 0px 0px 0px 2px`,
+                },
+              },
+            }}
+          />
+        </Box>
+
+        <List sx={{ px: 1.5, pt: 0.5 }}>
+          {user && (
+            <Fade in={true} timeout={700}>
+              <Box mb={1}>
+                <Typography
+                  variant="caption"
+                  px={1}
+                  py={0.5}
+                  sx={{
+                    opacity: 0.7,
+                    color: isDark ? theme.palette.grey[400] : theme.palette.grey[600],
+                  }}
+                >
+                  You
+                </Typography>
+                <ListItemButton
+                  selected={selectedChatId === user._id}
+                  onClick={() => setSelectedChatId(user._id)}
+                  sx={{
+                    mb: 0.5,
+                    borderRadius: 2,
+                    bgcolor:
+                      selectedChatId === user._id
+                        ? isDark
+                          ? theme.palette.primary.dark
+                          : theme.palette.primary.light
+                        : "transparent",
+                    "&:hover": {
+                      backgroundColor:
+                        selectedChatId === user._id
+                          ? isDark
+                            ? theme.palette.primary.dark
+                            : theme.palette.primary.light
+                          : theme.palette.action.hover,
+                      transform: "translateX(4px)",
+                      transition: "transform 0.2s ease-out",
+                    },
+                    transition: "background-color 0.3s ease-in-out, transform 0.2s ease-out",
+                  }}
+                >
+                  <ListItemAvatar>
+                    <Avatar
+                      src={user.avatar || undefined}
+                      sx={{
+                        boxShadow: `0px 0px 0px 2px ${theme.palette.primary.main}`,
+                      }}
+                    >
+                      {user.name?.[0]}
+                    </Avatar>
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={user.name || "Your Name"}
+                    primaryTypographyProps={{
+                      fontWeight: selectedChatId === user._id ? 600 : 500,
+                      color: selectedChatId === user._id ? (isDark ? "#fff" : "#000") : "inherit",
+                    }}
+                  />
+                </ListItemButton>
+                <Divider variant="inset" component="li" sx={{ ml: 7, my: 1 }} />
+              </Box>
+            </Fade>
+          )}
+
+          {filteredMembers.map((member, index) => (
+            <Fade in={true} timeout={500 + index * 100} key={member._id}>
+              <ListItem disablePadding>
+                <ListItemButton
+                  selected={selectedChatId === member._id}
+                  onClick={() => setSelectedChatId(member._id)}
+                  sx={{
+                    cursor: "pointer",
+                    borderRadius: 2,
+                    mb: 0.5,
+                    bgcolor:
+                      selectedChatId === member._id
+                        ? isDark
+                          ? theme.palette.primary.dark
+                          : theme.palette.primary.light
+                        : "transparent",
+                    "&:hover": {
+                      backgroundColor:
+                        selectedChatId === member._id
+                          ? isDark
+                            ? theme.palette.primary.dark
+                            : theme.palette.primary.light
+                          : theme.palette.action.hover,
+                      transform: "translateX(4px)",
+                      transition: "transform 0.2s ease-out",
+                    },
+                    transition: "background-color 0.3s ease-in-out, transform 0.2s ease-out",
+                  }}
+                >
+                  <ListItemAvatar>
+                    <Avatar
+                      src={member.avatar || undefined}
+                      sx={{
+                        boxShadow: `0px 0px 0px 1px ${theme.palette.divider}`,
+                      }}
+                    >
+                      {member.name[0]}
+                    </Avatar>
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={member.name}
+                    primaryTypographyProps={{
+                      fontWeight: selectedChatId === member._id ? 600 : 400,
+                      color: selectedChatId === member._id ? (isDark ? "#fff" : "#000") : "inherit",
+                    }}
+                  />
+                </ListItemButton>
+              </ListItem>
+            </Fade>
+          ))}
+        </List>
       </Box>
-
-      <List>
-        {/* 👤 Your Profile */}
-        {user && (
-          <>
-            <Typography
-              variant="caption"
-              px={2.5}
-              py={0.5}
-              sx={{ opacity: 0.6 }}
-            >
-              You
-            </Typography>
-            <ListItem
-              button
-              selected={selectedChatId === user._id}
-              onClick={() => setSelectedChatId(user._id)} 
-              sx={{
-                mb: 1,
-                borderRadius: 2,
-                bgcolor:
-                  selectedChatId === user._id
-                    ? theme.palette.action.selected
-                    : "transparent",
-                "&:hover": {
-                  backgroundColor: theme.palette.action.hover,
-                },
-              }}
-            >
-              <ListItemAvatar>
-                <Avatar src={user.avatar || undefined}>{user.name?.[0]}</Avatar>
-              </ListItemAvatar>
-              <ListItemText primary={user.name || "Your Name"} />
-            </ListItem>
-            <Divider />
-          </>
-        )}
-
-        {/* 🔁 Other members */}
-        {filteredMembers.map((member) => (
-          <ListItem key={member._id} disablePadding>
-            <ListItemButton
-              selected={selectedChatId === member._id}
-              onClick={() => setSelectedChatId(member._id)}
-              sx={{
-                cursor: "pointer",
-                borderRadius: 2,
-                mb: 1,
-                bgcolor:
-                  selectedChatId === member._id
-                    ? theme.palette.action.selected
-                    : "transparent",
-                "&:hover": {
-                  backgroundColor: theme.palette.action.hover,
-                },
-              }}
-            >
-              <ListItemAvatar>
-                <Avatar src={member.avatar || undefined}>
-                  {member.name[0]}
-                </Avatar>
-              </ListItemAvatar>
-              <ListItemText primary={member.name} />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
-    </Box>
+    </Slide>
   );
 }

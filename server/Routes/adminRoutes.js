@@ -13,6 +13,7 @@ import { getNeighbouringSocieties } from "../Controllers/societyController.js";
 import { getEvents } from "../Controllers/eventController.js";
 import { getMyChats, sendMessage } from "../Controllers/chatsController.js";
 import { markTopContributor } from "../Controllers/contributorController.js";
+import { upsertSocietyIntegration } from "../Controllers/integrationController.js";
 
 
 const router = express.Router();
@@ -68,7 +69,16 @@ router.delete("/complaints/:complaintId", verifyAdmin, deleteComplaint);
 router.get("/society/:id/neighbours", verifyAdmin, getNeighbouringSocieties);
 
 router.post("/contributors/mark", verifyAdmin,markTopContributor);
-
+// Integration
+router.post(
+  "/society-integration",
+  verifyAdmin,
+  upload.fields([
+    { name: 'adminImage', maxCount: 1 },
+    { name: 'mapImage', maxCount: 1 }
+  ]),
+  upsertSocietyIntegration
+);
 
 // events
 router.get("/events", verifyAdmin, getEvents);

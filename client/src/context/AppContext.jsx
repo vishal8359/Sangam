@@ -74,16 +74,17 @@ export const AppContextProvider = ({ children }) => {
     return saved ? JSON.parse(saved) : [];
   });
 
+  // AppContext.js
   useEffect(() => {
     const fetchUser = async () => {
-      if (!token || user) return;
+      if (!token || user) return; 
       try {
         const { data } = await axios.get("/api/users/me", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-        setUser(data.user);
+        setUser(data.user); 
         setUserId(data.user._id);
       } catch (err) {
         console.error(

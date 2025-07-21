@@ -156,7 +156,7 @@ export const loginUser = async (req, res) => {
   }
 
   try {
-    const user = await User.findOne({ user_id });
+    const user = await User.findOne({ user_id }).populate('home_id');
     if (!user) {
       return res.status(400).json({
         success: false,
@@ -180,7 +180,6 @@ export const loginUser = async (req, res) => {
       });
     }
 
-    // ADD THIS LOGIC *AFTER* credentials are validated:
     const hasRole = user.roles.some(
       (r) => r.role === "resident" && r.society_id.toString() === society_id
     );
@@ -227,6 +226,7 @@ export const loginUser = async (req, res) => {
         name: user.name,
         email: user.email,
         avatar: user.avatar,
+        address: user.address,
       },
     });
   } catch (err) {

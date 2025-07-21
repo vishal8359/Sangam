@@ -5,6 +5,11 @@ const topContributorSchema = new mongoose.Schema({
   house: String,
   designation: String,
   achievements: [String],
+  society_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Society",
+    required: true,
+  },
   avatar: String,
 });
 

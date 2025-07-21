@@ -61,7 +61,7 @@ import {
 import { createOrder, getMyOrders, getSellerOrders } from "../Controllers/orderController.js";
 import { addComment, addReply, deleteReelById, getAllReels, getEngagementStats, getReelsByUserId, getUserReelStats, incrementView, likeReel, sendReelToChatOrGroup, shareReel, toggleFollowUser, uploadReel } from "../Controllers/galleryController.js";
 import { getTopContributors } from "../Controllers/contributorController.js";
-import { addHealth, getHealth } from "../Controllers/addHealthController.js";
+import { addHealth, deleteHealthData, getHealth } from "../Controllers/addHealthController.js";
 
 
 const router = express.Router();
@@ -191,4 +191,5 @@ router.get("/contributors/all", verifyUser, getTopContributors);
 
 router.post("/addhealth", verifyUser, addHealth);
 router.get("/gethealth", verifyUser, getHealth);
+router.delete("/health/:id", verifyUser, deleteHealthData);
 export default router;

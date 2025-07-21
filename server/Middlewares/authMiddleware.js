@@ -11,7 +11,9 @@ export const verifyUser = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id);
+    const user = await User.findById(decoded.id)
+      .select("-password")
+      .populate("home_id");
 
     if (!user) {
       return res.status(404).json({ msg: "User not found" });
@@ -22,6 +24,10 @@ export const verifyUser = async (req, res, next) => {
       _id: user._id,
       role: user.role,
       name: user.name,
+      email: user.email,
+      phone_no: user.phone_no,
+      address: user.address, 
+      avatar: user.avatar,
       societyId: user.created_society || user.joined_societies?.[0], // key part
     };
 

@@ -34,7 +34,7 @@ const TopContributorsPage = () => {
     designation: "",
     achievements: "",
   });
-  const { userRole, token, axios, user } = useAppContext();
+  const { userRole, token, axios, } = useAppContext();
   const isAdmin = userRole === "admin";
 
   useEffect(() => {

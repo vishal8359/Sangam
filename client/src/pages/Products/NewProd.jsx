@@ -126,11 +126,11 @@ const Products = () => {
       variants={pageVariants}
       style={{
         minHeight: "100vh",
-        padding: isMobile ? theme.spacing(2) : theme.spacing(6), // Responsive padding
+        padding: isMobile ? theme.spacing(2) : theme.spacing(6), 
         position: "relative",
         zIndex: 1,
-        overflow: "hidden", // Ensure no overflow from animations
-        backgroundColor: theme.palette.background.default, // Base background color
+        overflow: "hidden", 
+        backgroundColor: isDark? theme.palette.background.default : "#fff", 
       }}
     >
       {/* Animated Background Layer */}
@@ -173,7 +173,7 @@ const Products = () => {
           display: "flex",
           alignItems: "center",
           gap: 1,
-          backgroundColor: "#e3f2fd", 
+          backgroundColor: "#fff", 
           color: "#000",
           borderRadius: 2,
           px: 2,

@@ -179,7 +179,7 @@ const ComplaintsPage = () => {
       py={5}
       minHeight="100vh"
       sx={{
-        backgroundColor: theme.palette.background.default,
+        backgroundColor: theme.palette.mode === "dark" ? theme.palette.background.default : "#fff",
         animation: 'fadeIn 0.5s ease-in-out',
         '@keyframes fadeIn': {
           '0%': { opacity: 0 },

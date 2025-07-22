@@ -69,4 +69,5 @@ const userSchema = new mongoose.Schema(
 
 const User = mongoose.models.User || mongoose.model("User", userSchema);
 
+// console.log("User Schema fields:", Object.keys(User.schema.paths));
 export default User;

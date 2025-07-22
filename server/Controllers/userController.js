@@ -10,6 +10,9 @@ import { extractSortOrder } from "./getNeighbourHomes.js";
 import mongoose from "mongoose";
 import Invitation from "../Models/Invitation.js";
 const pendingRegistrations = new Map();
+import { uploadToCloudinary } from "../Utils/cloudinaryUpload.js";
+import { deleteFileFromCloudinary } from "../Utils/cloudinaryUpload.js";
+import sendEmail from "../Utils/emailService.js";
 
 // Register without society_id
 export const registerResident = async (req, res) => {
@@ -22,8 +25,9 @@ export const registerResident = async (req, res) => {
       password,
       confirm_password,
       electricity_bill_no,
-      avatar,
     } = req.body;
+
+    const avatarFile = req.file;
 
     if (
       !user_name ||
@@ -48,6 +52,23 @@ export const registerResident = async (req, res) => {
         .json({ message: "Email or phone already registered" });
     }
 
+    let avatarUrl = "";
+    if (avatarFile) {
+      try {
+        const result = await uploadToCloudinary(
+          avatarFile.buffer,
+          "avatars",
+          avatarFile.mimetype
+        );
+        avatarUrl = result.secure_url;
+      } catch (uploadError) {
+        console.error(
+          "❌ Cloudinary avatar upload failed during registration:",
+          uploadError
+        );
+      }
+    }
+
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpExpiry = Date.now() + 5 * 60 * 1000;
 
@@ -59,7 +80,7 @@ export const registerResident = async (req, res) => {
       electricity_bill_no,
       otp,
       otpExpiry,
-      avatar,
+      avatar: avatarUrl,
     });
 
     await sendSMS(
@@ -85,9 +106,9 @@ export const verifyOtp = async (req, res) => {
       return res.status(400).json({ message: "No pending registration found" });
     }
 
-    if (pendingData.otp !== otp || Date.now() > pendingData.otpExpiry) {
-      return res.status(400).json({ message: "Invalid or expired OTP" });
-    }
+    // if (pendingData.otp !== otp || Date.now() > pendingData.otpExpiry) {
+    //   return res.status(400).json({ message: "Invalid or expired OTP" });
+    // }
 
     const hashedPassword = await bcrypt.hash(pendingData.password, 10);
     const [houseNumber, ...rest] = pendingData.address.split(",");
@@ -132,6 +153,11 @@ export const verifyOtp = async (req, res) => {
       phone_no,
       `✅ Registration complete! Hello ${newUser.name}, your User ID is: ${newUser.user_id} \nHome ID: ${home._id}\nPlease login with your Society ID to complete joining.`
     );
+    await sendEmail({
+      to: newUser.email,
+      subject: "Welcome to Sangam! Your Registration Details",
+      text: `Hi ${newUser.name},\n\nWelcome to Sangam! Your registration is complete.\n\nHere are your login details:\nUser ID: ${newUser.user_id}\nPassword: ${pendingData.password}\n\nPlease keep these details secure. You can now log in with your Society ID to join your community.\n\nBest regards,\nThe SocietyConnect Team`,
+    });
 
     res.status(201).json({
       message: "User created. Login with your Society ID to request joining.",
@@ -156,7 +182,7 @@ export const loginUser = async (req, res) => {
   }
 
   try {
-    const user = await User.findOne({ user_id }).populate('home_id');
+    const user = await User.findOne({ user_id }).populate("home_id");
     if (!user) {
       return res.status(400).json({
         success: false,
@@ -219,7 +245,7 @@ export const loginUser = async (req, res) => {
       message: "Login successful.",
       token,
       userId: user.user_id,
-      houseId: user.home_id?.toString() || "", 
+      houseId: user.home_id?.toString() || "",
       societyId: society_id,
       userRole: "resident",
       userProfile: {
@@ -372,7 +398,6 @@ export const requestJoinSociety = async (req, res) => {
   }
 };
 
-
 export const getEventInvitations = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -390,15 +415,32 @@ export const getEventInvitations = async (req, res) => {
 
 export const getCurrentUser = async (req, res) => {
   try {
-    const user = req.user; // This comes from verifyUser middleware
+    const user = await User.findById(req.user._id).select(
+      "-password -otp -otp_expiry"
+    );
+
     if (!user) {
-      return res.status(401).json({ message: "Unauthorized" });
+      return res.status(404).json({ message: "User not found" });
     }
 
-    res.status(200).json({ user });
-  } catch (err) {
-    console.error("Get Current User Error:", err);
-    res.status(500).json({ message: "Failed to fetch current user" });
+    res.status(200).json({
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        phone_no: user.phone_no,
+        address: user.address,
+        avatar: user.avatar,
+        electricity_bill_no: user.electricity_bill_no,
+        home_id: user.home_id,
+        societyId: user.roles[0]?.society_id,
+        user_id: user.user_id,
+        servicesOffered: user.servicesOffered || [],
+      },
+    });
+  } catch (error) {
+    console.error("Error in getCurrentUser:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -413,5 +455,62 @@ export const getUserById = async (req, res) => {
   } catch (err) {
     console.error("❌ Error fetching user:", err);
     res.status(500).json({ message: "Failed to fetch user" });
+  }
+};
+
+export const updateCurrentUserProfile = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // Update fields if provided in the request body
+    if (req.body.name) user.name = req.body.name;
+    if (req.body.email) user.email = req.body.email;
+    if (req.body.phone_no) user.phone_no = req.body.phone_no;
+
+    // Handle avatar upload
+    console.log("avatar : ", user.avatar);
+    if (req.file) {
+      if (user.avatar) {
+        // Extract public_id from the Cloudinary URL
+        const publicId = user.avatar.split("/").pop().split(".")[0];
+        await deleteFileFromCloudinary(publicId);
+      }
+      // Pass req.file.buffer and req.file.mimetype to the upload function
+      const result = await uploadToCloudinary(
+        req.file.buffer,
+        "avatars",
+        req.file.mimetype
+      ); // Changed to uploadToCloudinary
+      user.avatar = result.secure_url;
+    }
+
+    await user.save();
+
+    console.log("avatar : ", user.avatar);
+
+    res.status(200).json({
+      message: "Profile updated successfully!",
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        phone_no: user.phone_no,
+        address: user.address,
+        avatar: user.avatar,
+        electricity_bill_no: user.electricity_bill_no,
+        home_id: user.home_id,
+        societyId: user.roles[0]?.society_id,
+        user_id: user.user_id,
+        servicesOffered: user.servicesOffered || [],
+      },
+    });
+  } catch (error) {
+    console.error("Error updating user profile:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };

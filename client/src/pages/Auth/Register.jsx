@@ -11,13 +11,15 @@ import {
   CircularProgress,
   Slide,
   Fade,
+  Avatar, // Added Avatar for preview
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { Link as RouterLink } from "react-router-dom";
 import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
-import register_bg from "../../assets/societyBg.jpg"; // Reusing a background image
+import register_bg from "../../assets/societyBg.jpg";
+import { CloudUpload } from "@mui/icons-material"; // Added CloudUpload icon
 
 const MotionBox = motion(Box);
 const MotionPaper = motion(Paper);
@@ -33,8 +35,9 @@ export default function Register() {
     electricity_bill_no: "",
     password: "",
     confirm_password: "",
-    avatar: "",
   });
+  const [avatarFile, setAvatarFile] = useState(null); // New state for avatar file
+  const [avatarPreview, setAvatarPreview] = useState(""); // New state for avatar preview
 
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -46,6 +49,23 @@ export default function Register() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) { // 2MB limit
+        toast.error("Avatar file size exceeds 2MB limit.");
+        setAvatarFile(null);
+        setAvatarPreview("");
+        return;
+      }
+      setAvatarFile(file);
+      setAvatarPreview(URL.createObjectURL(file));
+    } else {
+      setAvatarFile(null);
+      setAvatarPreview("");
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -81,22 +101,28 @@ export default function Register() {
       return;
     }
 
+    const dataToSend = new FormData();
+    for (const key in formData) {
+      if (key !== "avatar") { // Exclude avatar from direct form data as it's handled as file
+        dataToSend.append(key, formData[key].trim());
+      }
+    }
+    if (avatarFile) {
+      dataToSend.append("avatar", avatarFile); // Append the actual file
+    }
+
     try {
-      const { data } = await axios.post("/api/users/register", {
-        user_name: formData.user_name.trim(),
-        email: formData.email.trim(),
-        phone_no: formData.phone_no.trim(),
-        address: formData.address.trim(),
-        electricity_bill_no: formData.electricity_bill_no.trim(),
-        password: formData.password.trim(),
-        confirm_password: formData.confirm_password.trim(),
-        avatar: formData.avatar?.trim() || "",
+      const { data } = await axios.post("/api/users/register", dataToSend, {
+        headers: {
+          "Content-Type": "multipart/form-data", // Important for file uploads
+        },
       });
 
       localStorage.setItem("otp_phone", formData.phone_no.trim());
       toast.success(data.message || "Registration submitted. Awaiting OTP.");
       setError(null);
 
+      // Clear form data after successful submission
       setFormData({
         user_name: "",
         email: "",
@@ -105,8 +131,9 @@ export default function Register() {
         electricity_bill_no: "",
         password: "",
         confirm_password: "",
-        avatar: "",
       });
+      setAvatarFile(null);
+      setAvatarPreview("");
 
       navigate("/verify-otp");
     } catch (err) {
@@ -235,7 +262,6 @@ export default function Register() {
               { label: "Phone Number", name: "phone_no", type: "tel" },
               { label: "Address", name: "address", multiline: true, rows: 2 },
               { label: "Electricity Bill Number", name: "electricity_bill_no" },
-              { label: "Avatar (optional)", name: "avatar" },
               { label: "Password", name: "password", type: "password" },
               {
                 label: "Confirm Password",
@@ -247,7 +273,7 @@ export default function Register() {
                 key={field.name}
                 fullWidth
                 margin="normal"
-                required={field.name !== "avatar"}
+                required
                 variant="outlined"
                 label={field.label}
                 name={field.name}
@@ -262,6 +288,53 @@ export default function Register() {
                 variants={itemVariants}
               />
             ))}
+
+            {/* Avatar Upload Section */}
+            <MotionBox variants={itemVariants} sx={{ my: 2 }}>
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
+                Profile Avatar (optional)
+              </Typography>
+              <Box display="flex" alignItems="center" gap={2}>
+                <Button
+                  variant="outlined"
+                  component="label"
+                  startIcon={<CloudUpload />}
+                  sx={{
+                    py: 1,
+                    px: 2,
+                    borderRadius: theme.shape.borderRadius,
+                    borderColor: theme.palette.divider,
+                    color: theme.palette.text.secondary,
+                    "&:hover": {
+                      borderColor: theme.palette.primary.main,
+                      bgcolor: isDark ? theme.palette.grey[800] : theme.palette.grey[50],
+                    },
+                  }}
+                >
+                  {avatarFile ? avatarFile.name : "Choose Avatar File"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    onChange={handleAvatarChange}
+                  />
+                </Button>
+                {avatarPreview && (
+                  <Fade in={Boolean(avatarPreview)} timeout={500}>
+                    <Avatar
+                      src={avatarPreview}
+                      sx={{
+                        width: 60,
+                        height: 60,
+                        boxShadow: theme.shadows[3],
+                        border: `2px solid ${theme.palette.primary.light}`,
+                      }}
+                      alt="Avatar Preview"
+                    />
+                  </Fade>
+                )}
+              </Box>
+            </MotionBox>
 
             {error && (
               <Fade in={Boolean(error)} timeout={500}>

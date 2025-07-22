@@ -7,27 +7,23 @@ import {
   Button,
   Typography,
   useTheme,
-  Fab, // Adding Fab for a potential "Back" button or similar action
+  Fab, 
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import VideoLibraryIcon from "@mui/icons-material/VideoLibrary";
-import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary"; // More general icon for gallery
-import ArrowBackIcon from "@mui/icons-material/ArrowBack"; // For a back button
-import { keyframes } from "@emotion/react"; // For CSS keyframe animations
-
-// Assume you have this image in your assets folder
+import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary"; 
+import ArrowBackIcon from "@mui/icons-material/ArrowBack"; 
+import { keyframes } from "@emotion/react"; 
 import gallery_bg from "../../assets/gallery_bg.jpg";
 
-// 1. Keyframe Animations for Background
-// A subtle, slow panoramic scroll
+
 const backgroundPan = keyframes`
   0% { background-position: 0% 0%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 0%; }
 `;
 
-// A subtle pulsating light effect on the overlay
 const pulseLight = keyframes`
   0% { transform: scale(1); opacity: 0.8; }
   50% { transform: scale(1.02); opacity: 1; }
@@ -39,12 +35,11 @@ export default function SocietyGalleryPage() {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
 
-  // Data for gallery sections
   const sections = [
     {
       title: "Upload & Share Reels",
       description: "Contribute your creative videos and short-form content to the community gallery.",
-      icon: <VideoLibraryIcon sx={{ fontSize: 60 }} />, // Larger icon
+      icon: <VideoLibraryIcon sx={{ fontSize: 60 }} />,
       path: "/gallery/upload-reel",
       color: theme.palette.primary.main, 
     },
@@ -53,11 +48,10 @@ export default function SocietyGalleryPage() {
       description: "Immerse yourself in a curated feed of engaging community reels.",
       icon: <VideoLibraryIcon sx={{ fontSize: 60 }} />,
       path: "/gallery/reels",
-      color: theme.palette.info.main, // Another color
+      color: theme.palette.info.main, 
     },
   ];
 
-  // 2. Framer Motion Variants for Staggered Entrance
   const pageVariants = {
     initial: { opacity: 0 },
     animate: {
@@ -66,10 +60,10 @@ export default function SocietyGalleryPage() {
         duration: 0.8,
         ease: "easeOut",
         when: "beforeChildren",
-        staggerChildren: 0.1, // Stagger children slightly
+        staggerChildren: 0.1, 
       },
     },
-    exit: { opacity: 0, transition: { duration: 0.5 } }, // For exit animation if used with AnimatePresence
+    exit: { opacity: 0, transition: { duration: 0.5 } }, 
   };
 
   const cardContainerVariants = {
@@ -77,7 +71,7 @@ export default function SocietyGalleryPage() {
     animate: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.2, // Cards appear one after another
+        staggerChildren: 0.2, 
       },
     },
   };
@@ -90,9 +84,9 @@ export default function SocietyGalleryPage() {
       scale: 1,
       transition: {
         type: "spring",
-        stiffness: 80, // Softer spring
+        stiffness: 80, 
         damping: 10,
-        mass: 0.5, // Lighter, faster spring
+        mass: 0.5,
       },
     },
   };
@@ -107,38 +101,38 @@ export default function SocietyGalleryPage() {
       variants={pageVariants}
       initial="initial"
       animate="animate"
-      exit="exit" // Essential for exit animations if using React Router's AnimatePresence
+      exit="exit" 
       style={{ position: "relative", minHeight: "100vh", overflow: "hidden" }}
     >
-      {/* 3. Immersive Background Layer */}
+      {/* Immersive Background Layer */}
       <Box
         sx={{
           position: "absolute",
           inset: 0,
           zIndex: 0,
           backgroundImage: `url(${gallery_bg})`,
-          backgroundSize: "cover", // Ensures image covers
-          backgroundRepeat: "no-repeat", // Prevent tiling
-          backgroundPosition: "center center", // Start centered
-          animation: `${backgroundPan} 120s linear infinite alternate`, // Slow pan, alternates direction
-          filter: "blur(5px) saturate(1.5) brightness(0.8)", // More aggressive blur for art background, desaturate slightly
-          opacity: 0.3, // Make it very subtle
+          backgroundSize: "cover", 
+          backgroundRepeat: "no-repeat", 
+          backgroundPosition: "center center",
+          animation: `${backgroundPan} 120s linear infinite alternate`, 
+          filter: "blur(5px) saturate(1.5) brightness(0.8)", 
+          opacity: 0.3, 
         }}
       />
 
-      {/* 4. Overlay for Depth and Mood */}
+      {/* Overlay for Depth and Mood */}
       <Box
         sx={{
           position: "absolute",
           inset: 0,
           zIndex: 1,
           background: `linear-gradient(135deg, ${
-            isDark ? "rgba(20, 20, 40, 0.8)" : "rgba(240, 248, 255, 0.8)"
+            isDark ? "rgba(20, 20, 40, 0.8)" : "#fff"
           }, ${
-            isDark ? "rgba(0, 0, 0, 0.9)" : "rgba(220, 230, 240, 0.9)"
-          })`, // Gradient overlay
-          animation: `${pulseLight} 15s ease-in-out infinite`, // Subtle pulsing light
-          backdropFilter: "brightness(0.8)", // Darken the blurred background further
+            isDark ? "rgba(0, 0, 0, 0.9)" : "#f5f5f5"
+          })`, 
+          animation: `${pulseLight} 15s ease-in-out infinite`, 
+          backdropFilter: "brightness(0.8)", 
         }}
       />
 
@@ -147,13 +141,13 @@ export default function SocietyGalleryPage() {
         sx={{
           position: "relative",
           zIndex: 2,
-          p: { xs: 3, sm: 6, md: 8 }, // Generous padding
+          p: { xs: 3, sm: 6, md: 8 }, 
           color: isDark ? theme.palette.grey[100] : theme.palette.grey[900],
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          minHeight: "100vh", // Ensure it fills the viewport
+          minHeight: "100vh", 
           textAlign: "center",
         }}
       >
@@ -162,9 +156,9 @@ export default function SocietyGalleryPage() {
         <motion.div variants={cardContainerVariants}>
           <Grid
             container
-            spacing={{ xs: 3, sm: 4, md: 6 }} // Responsive spacing
+            spacing={{ xs: 3, sm: 4, md: 6 }} 
             justifyContent="center"
-            alignItems="stretch" // Ensure cards in a row have same height
+            alignItems="stretch" 
             sx={{ maxWidth: 1400, width: "100%", mt:5}}
           >
             {sections.map((section, index) => (
@@ -172,13 +166,13 @@ export default function SocietyGalleryPage() {
                 <motion.div
                   variants={cardVariants}
                   whileHover={{
-                    y: -10, // Lift slightly more
-                    scale: 1.03, // Slightly less scale for stability
+                    y: -10, 
+                    scale: 1.03, 
                     boxShadow: `0 15px 40px ${
                       isDark
                         ? "rgba(0, 255, 255, 0.3)"
                         : "rgba(0, 0, 0, 0.2)"
-                    }`, // Stronger, colored shadow
+                    }`, 
                     transition: {
                       type: "spring",
                       stiffness: 200,
@@ -186,30 +180,29 @@ export default function SocietyGalleryPage() {
                     },
                   }}
                   whileTap={{ scale: 0.98 }}
-                  style={{ height: "100%" }} // Important for stretch alignment
+                  style={{ height: "100%" }} 
                 >
                   <Card
-                    elevation={8} // Higher elevation for more pop
+                    elevation={8} 
                     sx={{
                       height: "100%",
                       display: "flex",
                       flexDirection: "column",
-                      justifyContent: "space-between", // Pushes button to bottom
+                      justifyContent: "space-between", 
                       alignItems: "center",
-                      p: { xs: 3, sm: 4, md: 5 }, // Increased internal padding
-                      borderRadius: 5, // More rounded corners
-                      backdropFilter: "blur(12px) brightness(1.2) saturate(1.5)", // Stronger glass effect
+                      p: { xs: 3, sm: 4, md: 5 }, 
+                      borderRadius: 5,
+                      backdropFilter: "blur(12px) brightness(1.2) saturate(1.5)", 
                       backgroundColor: isDark
-                        ? `rgba(255, 255, 255, 0.08)` // Very subtle transparent white
-                        : `rgba(255, 255, 255, 0.65)`, // More opaque white for light mode
+                        ? `rgba(255, 255, 255, 0.08)` 
+                        : `rgba(255, 255, 255, 0.65)`, 
                       border: `1px solid ${
                         isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.1)"
-                      }`, // Defined border
-                      transition: "background-color 0.3s ease-in-out", // Smooth mode transition
-                      overflow: "hidden", // Ensures nothing spills out of rounded corners
+                      }`, 
+                      transition: "background-color 0.3s ease-in-out", 
+                      overflow: "hidden", 
                     }}
                   >
-                    {/* Icon Section */}
                     <Box
                       sx={{
                         mb: 3,

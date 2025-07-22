@@ -508,7 +508,7 @@ export default function ChatContainer({
     <Box
       display="flex"
       flexDirection="column"
-      bgcolor={theme.palette.background.default}
+      bgcolor={isDark ? theme.palette.background.default : "#fff"}
       sx={{
         width: "100vw",
         height: "92vh",

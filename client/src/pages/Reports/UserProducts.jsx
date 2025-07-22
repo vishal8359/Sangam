@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 import {
   Box,
   Grid,
@@ -31,6 +31,7 @@ const COLORS = ["#00C49F", "#FF8042"];
 
 const YourProductsPage = () => {
   const { axios, token } = useAppContext();
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [purchasedProducts, setPurchasedProducts] = useState([]);
   const theme = useTheme();
@@ -122,10 +123,10 @@ const YourProductsPage = () => {
         minHeight: "100vh",
         px: { xs: 2, sm: 3, md: 5 },
         py: 3,
-        bgcolor: theme.palette.background.default,
+        bgcolor: isDark ? theme.palette.background.default : "#fff",
         background: isDark
           ? `linear-gradient(180deg, ${theme.palette.background.default}, ${theme.palette.background.paper})`
-          : `linear-gradient(180deg, ${theme.palette.grey[50]}, ${theme.palette.background.default})`,
+          : `linear-gradient(180deg, "#fff", ${theme.palette.background.default})`,
       }}
     >
       <motion.div
@@ -147,7 +148,7 @@ const YourProductsPage = () => {
             sx={{
               lineHeight: 1.3,
               mb: isMobile? 2 : 0,
-              color: isDark ? theme.palette.primary.light : theme.palette.primary.dark,
+              color: isDark ? "#fff": theme.palette.primary.dark,
               textShadow: isDark ? "1px 1px 3px rgba(0,0,0,0.5)" : "none",
             }}
           >
@@ -250,10 +251,16 @@ const YourProductsPage = () => {
                     objectFit: "cover",
                     borderTopLeftRadius: 3,
                     borderTopRightRadius: 3,
+                    cursor:"pointer",
                   }}
                   onError={(e) => {
                     e.target.src = "https://via.placeholder.com/200?text=No+Image";
                   }}
+                  onClick={() =>
+                      navigate(`/my-society/ads/${product._id}/product_detail`, {
+                        state: { product },
+                      })
+                    }
                 />
 
                 {/* Product Info */}

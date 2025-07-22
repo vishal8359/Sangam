@@ -127,8 +127,6 @@ const UserEngagementPage = () => {
         👋 Welcome back, {user.name}!
       </MotionBox>
 
-      {/* --- */}
-
       {/* Active Users */}
       <MotionCard
         sx={{

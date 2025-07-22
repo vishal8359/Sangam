@@ -85,7 +85,7 @@ const ApprovalPanel = () => {
               return (
                 <div
                   key={request._id}
-                  className="border p-4 rounded-md shadow bg-gray-50 flex justify-between items-start gap-4"
+                  className="border p-4 rounded-md shadow bg-gray-50 flex justify-between flex-wrap items-start gap-4"
                 >
                   <div className="flex-1 space-y-1 text-sm text-gray-700">
                     <p>
@@ -105,26 +105,21 @@ const ApprovalPanel = () => {
                     <p>
                       <strong>Society:</strong> {society?.name || "N/A"}
                     </p>
-                    <p>
-                      <strong>Location:</strong>{" "}
-                      {society?.location?.coordinates
-                        ? `${society.location.coordinates[1]}, ${society.location.coordinates[0]}`
-                        : "N/A"}
-                    </p>
+                    
                   </div>
 
                   <div className="flex flex-col gap-2">
                     <button
                       onClick={() => handleAction(request._id, "approve")}
                       disabled={actionId === request._id}
-                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded disabled:opacity-50"
+                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded disabled:opacity-50 cursor-pointer"
                     >
                       {actionId === request._id ? "Approving..." : "Approve"}
                     </button>
                     <button
                       onClick={() => handleAction(request._id, "reject")}
                       disabled={actionId === request._id}
-                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded disabled:opacity-50"
+                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded disabled:opacity-50 cursor-pointer"
                     >
                       {actionId === request._id ? "Rejecting..." : "Reject"}
                     </button>

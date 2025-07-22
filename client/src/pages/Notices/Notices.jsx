@@ -84,7 +84,7 @@ const NoticesPage = () => {
       style={{
         padding:30,
         minHeight: "100vh",
-        backgroundColor: theme.palette.background.default,
+        backgroundColor: isDark ? theme.palette.background.default : "#fff",
         color: theme.palette.text.primary,
       }}
     >
@@ -106,7 +106,7 @@ const NoticesPage = () => {
             backgroundImage: `url(${notices_bg})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
-            opacity: 0.15,
+            opacity: 0.1,
             filter: "blur(6px)",
             zIndex: -2,
           },

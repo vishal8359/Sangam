@@ -38,7 +38,7 @@ export default function Sidebar({
         width={isMobile ? "100%" : "100%"}
         height="100%"
         borderRight={isMobile ? "none" : `1px solid ${theme.palette.divider}`}
-        bgcolor={isDark ? "#272727" : "#f5f5f5"}
+        bgcolor={isDark ? "#272727" : "#fff"}
         sx={{ color: isDark ? "#f5f5ff" : "", overflowY: "auto" }}
       >
         <Box
@@ -55,7 +55,7 @@ export default function Sidebar({
           </Typography>
         </Box>
         <Divider />
-        <Box px={2.5} py={1} sx={{ bgcolor: isDark ? "#272727" : "#f5f5f5" }}>
+        <Box px={2.5} py={1} sx={{ bgcolor: isDark ? "#272727" : "#fff" }}>
           <TextField
             fullWidth
             variant="outlined"

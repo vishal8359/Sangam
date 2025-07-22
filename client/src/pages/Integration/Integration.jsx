@@ -292,7 +292,7 @@ export default function IntegrationPage() {
       sx={{
         bgcolor: isDark
           ? theme.palette.background.default
-          : theme.palette.grey[100],
+          : "#fff",
         minHeight: "100vh",
         mb: 0,
         transition: "background-color 0.3s ease-in-out",

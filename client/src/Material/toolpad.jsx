@@ -54,9 +54,10 @@ import ScrollReelsPage from "../pages/Gallery/scrollReelsPage";
 import UploadImagePage from "../pages/Gallery/uploadImagePage";
 import YourProductsPage from "../pages/Reports/UserProducts.jsx";
 import Products from "../pages/Products/NewProd";
-import CartPage from "../pages/Products/cartPage";
 import user_avatar from "../assets/user_avatar.png";
 import UserProfileCard from "../pages/Society/UserProfile.jsx";
+import logo_light from "../assets/logo_light.png"
+import logo_dark from "../assets/logo_dark.png"
 import { FaFilm } from "react-icons/fa";
 
 const NAVIGATION = [
@@ -275,7 +276,7 @@ export default function DashboardLayoutBasic(props) {
           MuiAppBar: {
             styleOverrides: {
               root: {
-                backgroundColor: mode === "light" ? "#e8e8e8" : "#272727",
+                backgroundColor: mode === "light" ? "#fff" : "#272727",
                 color: mode === "light" ? "#E5E5E5" : "#fff",
                 boxShadow: "none",
                 borderBottom:
@@ -450,7 +451,7 @@ export default function DashboardLayoutBasic(props) {
       // Disable interaction
       collapseButton.disabled = true;
       collapseButton.style.pointerEvents = "none";
-      collapseButton.style.opacity = "0.5"; // Optional: make it look disabled
+      collapseButton.style.opacity = "0.5"; 
       // Or fully hide it with:
       // collapseButton.style.display = "none";
     } else if (collapseButton) {
@@ -472,7 +473,7 @@ export default function DashboardLayoutBasic(props) {
         branding={{
           title: !isMobile ? (
             <span className="mt-1.5">
-              <SangamLogo />
+              
             </span>
           ) : (
             ""
@@ -483,7 +484,7 @@ export default function DashboardLayoutBasic(props) {
               onClick={goToMySociety}
             >
               <img
-                src={appLogo}
+                src={demoTheme.palette.mode === "dark" ? logo_dark : logo_light}
                 alt="App Logo"
                 style={{ width: "100%", height: "100%", marginLeft: 15 }}
               />

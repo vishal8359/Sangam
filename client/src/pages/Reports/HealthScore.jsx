@@ -176,7 +176,7 @@ export default function SocietyHealthScore() {
       sx={{
         background: isDark
           ? "linear-gradient(135deg, #121212 0%, #2a2a2a 100%)"
-          : "linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%)",
+          : "linear-gradient(135deg, #fff 0%, #f5f5f5 100%)",
         minHeight: "100vh",
         color: isDark ? theme.palette.common.white : theme.palette.common.black,
       }}

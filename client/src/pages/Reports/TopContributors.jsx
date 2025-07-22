@@ -34,7 +34,7 @@ const TopContributorsPage = () => {
     designation: "",
     achievements: "",
   });
-  const { userRole, token, axios, } = useAppContext();
+  const { userRole, token, axios, user } = useAppContext();
   const isAdmin = userRole === "admin";
 
   useEffect(() => {
@@ -104,7 +104,7 @@ const TopContributorsPage = () => {
     <Box
       p={3}
       sx={{
-        bgcolor: theme.palette.background.default,
+        bgcolor: isDark? theme.palette.background.default : "#fff",
         minHeight: "100vh",
         background: isDark
           ? `linear-gradient(180deg, ${theme.palette.background.default}, ${theme.palette.background.paper})`
@@ -199,6 +199,7 @@ const TopContributorsPage = () => {
               >
                 <Box display="flex" alignItems="center" gap={2} mb={2}>
                   <Avatar
+                    src={contributor.avatar}
                     sx={{
                       background: "linear-gradient(to right, #FF6B6B, #FFD93D)",
                       fontWeight: "bold",
@@ -210,7 +211,7 @@ const TopContributorsPage = () => {
                       boxShadow: theme.shadows[3],
                     }}
                   >
-                    {contributor.name.charAt(0)}
+                    {contributor.avatar || contributor.name.charAt(0)}
                   </Avatar>
                   <Box>
                     <Typography variant="h5" fontWeight="bold" sx={{ color: isDark ? theme.palette.info.light : theme.palette.primary.main }}>

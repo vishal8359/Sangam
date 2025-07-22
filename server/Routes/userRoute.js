@@ -8,6 +8,7 @@ import {
   getEventInvitations,
   getCurrentUser,
   getUserById,
+  updateCurrentUserProfile,
 } from "../Controllers/userController.js";
 
 import {
@@ -67,7 +68,7 @@ import { getSocietyIntegration } from "../Controllers/integrationController.js";
 
 const router = express.Router();
 // first register
-router.post("/register", registerResident);
+router.post("/register", upload.single('avatar'), registerResident);
 //send OTP
 router.post("/verify-otp", verifyOtp);
 // login
@@ -77,6 +78,8 @@ router.post("/society/create", createSociety);
 
 router.post("/society/:id/join", verifyUser, requestJoinSociety);
 router.get("/society/:id/details", verifyUserOrAdmin, getSocietyById);
+router.patch("/profile/me", verifyUser, upload.single("avatar"), updateCurrentUserProfile);
+
 
 // Polls
 router.get("/polls/:societyId", verifyUser, getPollsBySociety);

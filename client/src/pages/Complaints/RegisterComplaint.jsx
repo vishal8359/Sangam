@@ -39,7 +39,7 @@ const SubmitComplaint = () => {
   const { token, axios } = useAppContext();
 
   const [form, setForm] = useState({
-    name: "", // You can still collect this for display if needed, but it won't be sent to backend explicitly for the complaint document
+    name: "", 
     flat: "",
     type: "",
     description: "",
@@ -70,8 +70,6 @@ const SubmitComplaint = () => {
     formData.append("complaint_type", form.type);
     formData.append("description", form.description);
     formData.append("house_no", form.flat);
-    // REMOVED: No longer need to append 'name' from frontend, backend gets it from req.user
-    // formData.append("name", form.name);
 
     if (form.file) formData.append("file", form.file);
 
@@ -94,7 +92,7 @@ const SubmitComplaint = () => {
       navigate("/my-society/complaints");
     } catch (err) {
       console.error(
-        "❌ Complaint submission failed:",
+        "Complaint submission failed:",
         err.response?.data || err.message
       );
       const errorMessage =

@@ -153,10 +153,6 @@ const ComplaintsPage = () => {
 
   useEffect(() => {
     const loadComplaints = async () => {
-      if (!societyId || !token) {
-        toast.error("Authentication required to load complaints.");
-        return;
-      }
       try {
         const data = await fetchComplaints();
         setComplaints(data || []);

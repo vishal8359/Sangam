@@ -11,7 +11,7 @@ import {
   CircularProgress,
   Slide,
   Fade,
-  Avatar, // Added Avatar for preview
+  Avatar, 
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { Link as RouterLink } from "react-router-dom";
@@ -19,7 +19,7 @@ import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
 import register_bg from "../../assets/societyBg.jpg";
-import { CloudUpload } from "@mui/icons-material"; // Added CloudUpload icon
+import { CloudUpload } from "@mui/icons-material"; 
 
 const MotionBox = motion(Box);
 const MotionPaper = motion(Paper);
@@ -36,8 +36,8 @@ export default function Register() {
     password: "",
     confirm_password: "",
   });
-  const [avatarFile, setAvatarFile] = useState(null); // New state for avatar file
-  const [avatarPreview, setAvatarPreview] = useState(""); // New state for avatar preview
+  const [avatarFile, setAvatarFile] = useState(null); 
+  const [avatarPreview, setAvatarPreview] = useState(""); 
 
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -54,7 +54,7 @@ export default function Register() {
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) { // 2MB limit
+      if (file.size > 2 * 1024 * 1024) { // setting the limits
         toast.error("Avatar file size exceeds 2MB limit.");
         setAvatarFile(null);
         setAvatarPreview("");

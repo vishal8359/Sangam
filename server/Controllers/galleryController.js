@@ -1,4 +1,3 @@
-// POST /api/users/gallery/reels/upload
 import { uploadToCloudinary } from "../Utils/cloudinaryUpload.js";
 import Reel from "../Models/Reel.js";
 import User from "../Models/User.js";
@@ -13,11 +12,9 @@ export const uploadReel = async (req, res) => {
     const file = req.file;
     const userId = req.user._id;
 
-    // console.log("🧠 User in request:", req.user);
-
     if (!file) return res.status(400).json({ message: "Video file required" });
 
-    const { url, public_id } = await uploadToCloudinary(
+    const { secure_url, public_id } = await uploadToCloudinary(
       file.buffer,
       "reels",
       file.mimetype
@@ -25,7 +22,7 @@ export const uploadReel = async (req, res) => {
 
     const reel = new Reel({
       user: userId,
-      videoUrl: url,
+      videoUrl: secure_url,
       description,
       tags: tags ? tags.split(",") : [],
     });
@@ -34,12 +31,11 @@ export const uploadReel = async (req, res) => {
 
     res.status(201).json({ message: "Reel uploaded", reel });
   } catch (error) {
-    console.error("❌ Upload Reel Error:", error);
+    console.error("Upload Reel Error:", error);
     res.status(500).json({ message: "Failed to upload reel" });
   }
 };
 
-// GET /api/users/gallery/reels
 export const getAllReels = async (req, res) => {
   try {
     const reels = await Reel.find()
@@ -50,12 +46,11 @@ export const getAllReels = async (req, res) => {
 
     res.status(200).json(reels);
   } catch (error) {
-    console.error("❌ Failed to fetch all reels:", error);
+    console.error("Failed to fetch all reels:", error);
     res.status(500).json({ message: "Failed to fetch reels" });
   }
 };
 
-// PUT /api/users/gallery/reels/:reelId/like
 export const likeReel = async (req, res) => {
   const userId = req.user._id?.toString();
   const { reelId } = req.params;
@@ -70,9 +65,9 @@ export const likeReel = async (req, res) => {
     );
 
     if (index === -1) {
-      reel.likes.push(userObjectId); // like
+      reel.likes.push(userObjectId);
     } else {
-      reel.likes.splice(index, 1); // unlike
+      reel.likes.splice(index, 1);
     }
 
     await reel.save();
@@ -81,37 +76,32 @@ export const likeReel = async (req, res) => {
       likesCount: reel.likes.length,
     });
   } catch (error) {
-    console.error("❌ Like reel failed:", error);
+    console.error("Like reel failed:", error);
     res.status(500).json({ message: "Failed to like reel" });
   }
 };
 
-// POST /api/users/gallery/reels/:reelId/comment
 export const addComment = async (req, res) => {
   const { text } = req.body;
   const { reelId } = req.params;
-  const userId = req.user._id; // From middleware
+  const userId = req.user._id;
 
   try {
-    // Validate input
     if (!text?.trim()) {
       return res.status(400).json({ message: "Comment text is required" });
     }
 
-    // Find reel
     const reel = await Reel.findById(reelId);
     if (!reel) {
       return res.status(404).json({ message: "Reel not found" });
     }
 
-    // Add comment (store user as ObjectId)
     reel.comments.push({
       user: userId,
       text,
       replies: [],
     });
 
-    // Save and re-fetch with population
     const savedReel = await reel.save();
 
     const populatedReel = await Reel.findById(savedReel._id)
@@ -123,12 +113,11 @@ export const addComment = async (req, res) => {
       comments: populatedReel.comments,
     });
   } catch (error) {
-    console.error("❌ Error in addComment:", error);
+    console.error("Error in addComment:", error);
     res.status(500).json({ message: "Failed to add comment" });
   }
 };
 
-// POST /api/users/gallery/reels/:reelId/comment/:commentIndex/reply
 export const addReply = async (req, res) => {
   const { reelId, commentIndex } = req.params;
   const { text } = req.body;
@@ -154,7 +143,6 @@ export const addReply = async (req, res) => {
   }
 };
 
-// PUT /api/users/gallery/reels/:reelId/view
 export const incrementView = async (req, res) => {
   const { reelId } = req.params;
   const userId = req.user?._id;
@@ -177,7 +165,6 @@ export const incrementView = async (req, res) => {
   }
 };
 
-// GET /api/users/gallery/reels/engagement
 export const getEngagementStats = async (req, res) => {
   const userId = req.user.userId;
 
@@ -188,7 +175,7 @@ export const getEngagementStats = async (req, res) => {
     const totalViews = reels.reduce((acc, r) => acc + r.views, 0);
     const totalLikes = reels.reduce((acc, r) => acc + r.likes.length, 0);
     const totalComments = reels.reduce((acc, r) => acc + r.comments.length, 0);
-    const earnings = totalViews * 0.1; // For example, ₹0.1 per view
+    const earnings = totalViews * 0.1;
 
     res
       .status(200)
@@ -205,7 +192,7 @@ export const getUserReelStats = async (req, res) => {
 
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    const reels = await Reel.find({ user: userId }); // Now this will match
+    const reels = await Reel.find({ user: userId });
 
     const totalViews = reels.reduce((acc, reel) => acc + reel.views, 0);
     const uploads = reels.length;
@@ -217,7 +204,7 @@ export const getUserReelStats = async (req, res) => {
       totalViews,
       followers,
       reach,
-      earnings: uploads * 100, // Sample: ₹100 per reel
+      earnings: uploads * 100,
     });
   } catch (err) {
     console.error("Failed to fetch reel stats:", err);
@@ -229,7 +216,6 @@ export const getReelsByUserId = async (req, res) => {
   try {
     const userId = req.params.id;
 
-    // Ensure valid ObjectId
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({ message: "Invalid user ID" });
     }
@@ -238,7 +224,7 @@ export const getReelsByUserId = async (req, res) => {
 
     res.status(200).json(reels);
   } catch (error) {
-    console.error("❌ Error fetching user reels:", error);
+    console.error("Error fetching user reels:", error);
     res.status(500).json({ message: "Failed to fetch reels" });
   }
 };
@@ -249,7 +235,6 @@ export const deleteReelById = async (req, res) => {
 
     if (!reel) return res.status(404).json({ message: "Reel not found" });
 
-    // Optional: restrict deletion to owner
     if (String(reel.user) !== String(req.user._id)) {
       return res.status(403).json({ message: "Unauthorized" });
     }
@@ -258,7 +243,7 @@ export const deleteReelById = async (req, res) => {
 
     res.status(200).json({ message: "Reel deleted" });
   } catch (error) {
-    console.error("❌ Error deleting reel:", error);
+    console.error("Error deleting reel:", error);
     res.status(500).json({ message: "Failed to delete reel" });
   }
 };
@@ -303,37 +288,33 @@ export const shareReel = async (req, res) => {
     const reel = await Reel.findById(reelId);
     if (!reel) return res.status(404).json({ message: "Reel not found" });
 
-    // Notify target users (optional)
     for (const userId of targetUserIds) {
-      // Example: createNotification(userId, `A reel was shared with you.`);
-      console.log(`🎯 Reel shared with user: ${userId}`);
+      console.log(`Reel shared with user: ${userId}`);
     }
 
-    // Share reel into buzz group posts
     for (const groupId of buzzGroupIds) {
       await BuzzGroup.findByIdAndUpdate(groupId, {
         $push: {
           posts: {
             user: req.user._id,
             content: reel.description,
-            file: reel.cloudinaryUrl,
+            file: reel.videoUrl, // Corrected to videoUrl
             createdAt: new Date(),
           },
         },
       });
-      console.log(`📢 Reel pushed to group: ${groupId}`);
+      console.log(`Reel pushed to group: ${groupId}`);
     }
 
     res
       .status(200)
       .json({ success: true, message: "Reel shared successfully" });
   } catch (err) {
-    console.error("❌ Error sharing reel:", err);
+    console.error("Error sharing reel:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
-// SEND REEL TO CHAT OR GROUP
 export const sendReelToChatOrGroup = async (req, res) => {
   try {
     const { senderId, receiverId, groupId, reelUrl, societyId } = req.body;
@@ -347,7 +328,6 @@ export const sendReelToChatOrGroup = async (req, res) => {
       return res.status(404).json({ message: "Sender not found" });
     }
 
-    // ✅ Send to "Public Group" (virtual)
     if (groupId === "public") {
       const message = new BuzzMessage({
         sender: senderId,
@@ -355,9 +335,9 @@ export const sendReelToChatOrGroup = async (req, res) => {
         content: "Shared a reel",
         fileUrl: reelUrl,
         fileType: "reel",
-        group: null, // not linked to a buzzGroup
+        group: null,
         societyId,
-        isPublicGroup: true, // optional flag for UI filtering
+        isPublicGroup: true,
       });
 
       await message.save();
@@ -366,7 +346,6 @@ export const sendReelToChatOrGroup = async (req, res) => {
         .json({ message: "Reel sent to Public Group", data: message });
     }
 
-    // ✅ Send to buzz group (normal)
     if (groupId) {
       const message = new BuzzMessage({
         sender: senderId,
@@ -384,7 +363,6 @@ export const sendReelToChatOrGroup = async (req, res) => {
         .json({ message: "Reel sent to group", data: message });
     }
 
-    // ✅ Send to private chat
     if (receiverId) {
       const message = new Message({
         sender: senderId,
@@ -405,7 +383,7 @@ export const sendReelToChatOrGroup = async (req, res) => {
       .status(400)
       .json({ message: "receiverId or groupId must be provided" });
   } catch (error) {
-    console.error("❌ Error sending reel:", error);
+    console.error("Error sending reel:", error);
     return res.status(500).json({ message: "Server error", error: error.message });
   }
 };

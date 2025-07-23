@@ -1,14 +1,12 @@
 import User from "../Models/User.js";
 import JoinRequest from "../Models/JoinRequest.js"; 
-import Society from "../Models/Society.js";         
-import sendSMS from "../Utils/smsService.js";
-import sendEmail from "../Utils/emailService.js";
+
 
 export const getPendingUsers = async (req, res) => {
   try {
     const pendingRequests = await JoinRequest.find({ status: "pending" })
       .sort({ requested_at: -1 }) // show latest first
-      .populate("user_id", "user_id name email phone_no address") // ✅ include address
+      .populate("user_id", "user_id name email phone_no address")
       .populate("society_id", "name location");
 
     const formatted = pendingRequests.map((request) => ({
@@ -19,7 +17,7 @@ export const getPendingUsers = async (req, res) => {
         name: request.user_id?.name || "N/A",
         email: request.user_id?.email || "N/A",
         phone_no: request.user_id?.phone_no || "N/A",
-        address: request.user_id?.address || "N/A", // ✅ add address here
+        address: request.user_id?.address || "N/A",
       },
       society_id: {
         _id: request.society_id?._id || null,
@@ -34,7 +32,7 @@ export const getPendingUsers = async (req, res) => {
       requests: formatted,
     });
   } catch (err) {
-    console.error("❌ Error fetching join requests:", err);
+    console.error("Error fetching join requests:", err);
     return res.status(500).json({ message: "Server error" });
   }
 };

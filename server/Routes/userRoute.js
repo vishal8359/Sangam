@@ -21,7 +21,6 @@ import {
 } from "../Controllers/pollController.js";
 import { getNoticesBySociety } from "../Controllers/noticeController.js";
 import {
-  getGroupDetails,
   getMessages,
   uploadVoiceMessage,
   uploadBuzzFile,
@@ -31,7 +30,6 @@ import {
   createBuzzGroup,
 } from "../Controllers/buzzController.js";
 import upload from "../Configs/multer.js";
-import { requestToJoinGroup } from "../Controllers/groupJoinController.js";
 import { addProduct, getCartProducts, getMyProducts, getProductById, getRelatedProducts, getSellerProductsWithStats, getSocietyProducts, toggleProductActiveStatus } from "../Controllers/productController.js";
 import {
   submitComplaint,
@@ -105,12 +103,6 @@ router.post(
   uploadVoiceMessage
 );
 router.post("/buzz/create-group", verifyUser, createBuzzGroup);
-router.get("/buzz/group/:groupId", verifyUser, getGroupDetails);
-router.post(
-  "/buzz/groups/:groupId/join-request",
-  verifyUser,
-  requestToJoinGroup
-);
 router.get("/buzz/members/:societyId", verifyUser, getSocietyMembers);
 
 router.get("/buzz/groups/:societyId", getBuzzGroups);

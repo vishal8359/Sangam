@@ -55,7 +55,7 @@ export default function EventPage() {
 
         setEvents(fetchedEvents);
       } catch (err) {
-        console.error("❌ Failed to load events:", err);
+        console.error("Failed to load events:", err);
       }
     };
 

@@ -47,7 +47,7 @@ export const createOrder = async (req, res) => {
       order,
     });
   } catch (err) {
-    console.error("❌ Order placement failed:", err);
+    console.error("Order placement failed:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 };
@@ -66,12 +66,12 @@ export const getSellerOrders = async (req, res) => {
       })
       .lean();
 
-    console.log("🔍 Seller ID:", sellerId);
-    console.log("🧾 All orders fetched:", allOrders.length);
+    console.log("Seller ID:", sellerId);
+    console.log("All orders fetched:", allOrders.length);
 
     allOrders.forEach((order) => {
       order.items.forEach((item) => {
-        console.log("🛒 Item:", {
+        console.log("Item:", {
           productId: item.product?._id,
           seller: item.product?.seller,
         });
@@ -87,11 +87,11 @@ export const getSellerOrders = async (req, res) => {
 
         return sellerItems.length > 0 ? { ...order, items: sellerItems } : null;
       })
-      .filter(Boolean); // remove nulls
+      .filter(Boolean); 
 
     res.status(200).json({ success: true, orders: sellerOrders });
   } catch (err) {
-    console.error("❌ Error fetching seller orders:", err);
+    console.error("Error fetching seller orders:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 };

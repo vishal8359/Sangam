@@ -99,7 +99,7 @@ export const deleteHealthData = async (req, res) => {
       _id: id,
       user: userId,
       society: societyId,
-    }); // <--- Added society check
+    }); 
 
     if (!healthEntry) {
       return res.status(404).json({

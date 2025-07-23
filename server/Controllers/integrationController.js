@@ -1,6 +1,6 @@
 import SocietyIntegration from "../Models/Integration.js";
 import User from "../Models/User.js";
-import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
+import { uploadToCloudinary } from "../Utils/cloudinaryUpload.js";
 
 export const upsertSocietyIntegration = async (req, res) => {
   try {

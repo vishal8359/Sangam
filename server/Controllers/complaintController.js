@@ -53,7 +53,7 @@ export const submitComplaint = async (req, res) => {
       house_no,
       complaint_type,
       description,
-      file_url: fileData?.url || null,
+      file_url: fileData?.secure_url || null,
       file_id: fileData?.public_id || null,
       society_id: user.joined_society,
     });

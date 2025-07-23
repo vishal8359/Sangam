@@ -10,17 +10,13 @@ import {
   Rating,
   useTheme,
   useMediaQuery,
-  CircularProgress, // For loading spinner
+  CircularProgress, 
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import StorefrontIcon from "@mui/icons-material/Storefront";
-import { useNavigate } from "react-router-dom"; // Assuming react-router-dom is used
 import { useAppContext } from "../../context/AppContext";
-import { toast } from "react-hot-toast"; // For toast notifications
-import { motion, AnimatePresence } from "framer-motion"; // Import motion and AnimatePresence
-
-// Ensure these paths are correct for your project
-import ProductIcon from "../../assets/Product_Icon.png"; // Keeping it commented as it was in original
+import { toast } from "react-hot-toast"; 
+import { motion, AnimatePresence } from "framer-motion"; 
 import Product_Bg from "../../assets/products_bg.png";
 
 const ProductFormSection = () => {
@@ -38,7 +34,6 @@ const ProductFormSection = () => {
   const [description, setDescription] = useState("");
   const [rating, setRating] = useState(0);
 
-  // Variants for Framer Motion animations
   const pageVariants = {
     initial: { opacity: 0, y: 50 },
     animate: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
@@ -64,17 +59,15 @@ const ProductFormSection = () => {
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
-    // Filter out non-image files if any
     const imageFiles = files.filter(file => file.type.startsWith('image/'));
 
     const newImages = imageFiles.map((file) => ({
       file,
       url: URL.createObjectURL(file),
-      id: file.name + Date.now(), // Unique ID for keying in AnimatePresence
+      id: file.name + Date.now(), 
     }));
 
     setImages((prev) => {
-      // Limit to max 4 images
       const combined = [...prev, ...newImages].slice(0, 4);
       return combined;
     });
@@ -96,7 +89,7 @@ const ProductFormSection = () => {
       return;
     }
 
-    console.log("📦 Submitting product. userId:", userId);
+    console.log("Submitting product. userId:", userId);
 
     const formData = new FormData();
     formData.append("name", productName);
@@ -106,27 +99,26 @@ const ProductFormSection = () => {
     formData.append("description", description);
     formData.append("rating", rating);
     formData.append("societyId", societyId);
-    // formData.append("createdBy", userId); // Uncomment if your backend expects this field
 
     images.forEach((img) => {
       formData.append("images", img.file);
     });
 
     try {
-      setSubmitting(true); // Start loading
+      setSubmitting(true);
       const { data } = await axios.post("/api/users/add", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`, // Ensure token is sent if required by API
+          Authorization: `Bearer ${token}`, 
         },
       });
-      toast.success("🎉 Product uploaded successfully!");
+      toast.success("Product uploaded successfully!");
       navigate("/my-society/ads"); // Navigate on success
     } catch (err) {
-      console.error("❌ Upload failed:", err.response?.data || err.message);
-      toast.error("❌ Failed to upload product. Please try again.");
+      console.error("Upload failed:", err.response?.data || err.message);
+      toast.error("Failed to upload product. Please try again.");
     } finally {
-      setSubmitting(false); // Stop loading
+      setSubmitting(false);
     }
   };
 
@@ -142,9 +134,9 @@ const ProductFormSection = () => {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: isMobile ? "16px" : "48px", // px values for padding
-        overflow: "hidden", // Ensure no overflow from animations
-        backgroundColor: isDark ? theme.palette.background.default : theme.palette.background.paper, // Base background
+        padding: isMobile ? "16px" : "48px", 
+        overflow: "hidden",
+        backgroundColor: isDark ? theme.palette.background.default : theme.palette.background.paper, 
       }}
     >
       {/* Background Image Layer */}
@@ -160,7 +152,6 @@ const ProductFormSection = () => {
           backgroundPosition: "center",
           opacity: 0.15,
           zIndex: -2,
-          // Subtle parallax scroll effect
           backgroundAttachment: "fixed",
           animation: "bg-pan 60s linear infinite alternate",
           "@keyframes bg-pan": {
@@ -180,7 +171,7 @@ const ProductFormSection = () => {
           width: "100%",
           height: "100%",
           backgroundColor: isDark ? "rgba(18,18,18,0.85)" : "rgba(255,255,255,0.85)",
-          backdropFilter: "blur(5px)", // Reduced blur for better performance/look
+          backdropFilter: "blur(5px)", 
           zIndex: -1,
         }}
       />
@@ -192,26 +183,26 @@ const ProductFormSection = () => {
           variants={cardVariants}
         >
           <Paper
-            elevation={8} // Increased elevation for more prominence
+            elevation={8} 
             sx={{
               p: { xs: 3, sm: 5 },
-              borderRadius: 4, // More rounded corners
-              backgroundColor: isDark ? "#2a2a2a" : "#ffffff", // Slightly different dark background
+              borderRadius: 4,
+              backgroundColor: isDark ? "#2a2a2a" : "#ffffff", 
               width: "100%",
               boxShadow: isDark
                 ? "0px 10px 30px rgba(0,0,0,0.5)"
-                : "0px 10px 30px rgba(0,0,0,0.1)", // Enhanced shadow
-              overflow: 'hidden', // Ensure animations within don't overflow
+                : "0px 10px 30px rgba(0,0,0,0.1)", 
+              overflow: 'hidden', 
             }}
           >
             <Box
               sx={{
                 display: "flex",
-                flexDirection: "column", // Stack vertically on small screens
+                flexDirection: "column",
                 alignItems: "center",
-                mb: 4, // Increased margin-bottom
-                gap: 1.5, // Increased gap
-                color: isDark ? "#e0e0e0" : "#333", // Adjusted text color
+                mb: 4, 
+                gap: 1.5, 
+                color: isDark ? "#e0e0e0" : "#333", 
               }}
             >
               <StorefrontIcon sx={{ fontSize: isMobile ? 40 : 50, color: "#000" }} />
@@ -250,7 +241,7 @@ const ProductFormSection = () => {
                   type="number"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
-                  inputProps={{ min: "0", step: "0.01" }} // Ensure valid number input
+                  inputProps={{ min: "0", step: "0.01" }} 
                   sx={{
                     "& .MuiOutlinedInput-root": { borderRadius: 2 },
                     "& label": { color: isDark ? "#bbb" : "#666" },
@@ -335,7 +326,7 @@ const ProductFormSection = () => {
                     onChange={(e, newValue) => setRating(newValue)}
                     sx={{
                       "& .MuiRating-iconFilled": {
-                        color: theme.palette.warning.main, // Use theme's warning color for stars
+                        color: theme.palette.warning.main, 
                       },
                       "& .MuiRating-iconHover": {
                         color: theme.palette.warning.dark,
@@ -360,11 +351,11 @@ const ProductFormSection = () => {
                     color: isDark ? "#121212" : "#fff",
                     "&:hover": {
                       backgroundColor: isDark ? theme.palette.primary.main : "#121211",
-                      transform: "translateY(-2px)", // Subtle lift on hover
+                      transform: "translateY(-2px)", 
                       boxShadow: theme.shadows[4],
                     },
                     "&:active": {
-                      transform: "translateY(0)", // Press down effect
+                      transform: "translateY(0)",
                     },
                     transition: "all 0.2s ease-in-out",
                     "&.Mui-disabled": {
@@ -375,7 +366,7 @@ const ProductFormSection = () => {
                     },
                     "@keyframes pulse-disabled": {
                       "0%": { boxShadow: "0 0 0px rgba(0,0,0,0)" },
-                      "50%": { boxShadow: "0 0 8px rgba(255,0,0,0.5)" }, // Red pulse when max images reached
+                      "50%": { boxShadow: "0 0 8px rgba(255,0,0,0.5)" }, 
                       "100%": { boxShadow: "0 0 0px rgba(0,0,0,0)" },
                     },
                   }}
@@ -399,29 +390,29 @@ const ProductFormSection = () => {
               <Box
                 sx={{
                   display: "flex",
-                  gap: 1.5, // Increased gap between images
+                  gap: 1.5, 
                   mt: 1.5,
                   flexWrap: "wrap",
-                  justifyContent: 'center', // Center images
+                  justifyContent: 'center', 
                 }}
               >
                 <AnimatePresence>
                   {images.map((img) => (
                     <motion.div
-                      key={img.id} // Unique key for AnimatePresence to track items
+                      key={img.id} 
                       initial="initial"
                       animate="animate"
                       exit="exit"
                       variants={imagePreviewVariants}
-                      whileHover={{ scale: 1.05 }} // Hover effect
-                      whileTap={{ scale: 0.95 }} // Tap/click effect
+                      whileHover={{ scale: 1.05 }} 
+                      whileTap={{ scale: 0.95 }} 
                       style={{
                         position: "relative",
                         width: 80,
                         height: 80,
-                        borderRadius: 2, // More rounded corners
+                        borderRadius: 2,
                         overflow: "hidden",
-                        boxShadow: theme.shadows[4], // Clearer shadow
+                        boxShadow: theme.shadows[4], 
                         cursor: "pointer",
                       }}
                     >

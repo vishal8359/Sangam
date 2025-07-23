@@ -6,7 +6,7 @@ const ApprovalPanel = () => {
   const { axios } = useAppContext();
   const [pendingRequests, setPendingRequests] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [actionId, setActionId] = useState(null); // requestId during approval/rejection
+  const [actionId, setActionId] = useState(null); 
 
   const fetchPendingRequests = async () => {
     const token = localStorage.getItem("adminToken");

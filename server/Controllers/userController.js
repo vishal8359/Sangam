@@ -279,17 +279,15 @@ export const createSociety = async (req, res) => {
     const [houseNumber, ...rest] = house.split(",");
     const street = rest.join(",").trim();
 
-    // Create Home first
     const newHome = await Home.create({
       electricity_bill_no: "N/A-" + uuidv4().split("-")[0],
       houseNumber: houseNumber.trim(),
       street,
       houseSortOrder: extractSortOrder(houseNumber),
-      residents: [], // Add user later
+      residents: [], 
     });
 
     if (!user) {
-      // Create user with home_id assigned
       const hashedPassword = await bcrypt.hash(password, 10);
       user = new User({
         user_id: uuidv4().split("-")[0],
@@ -345,7 +343,7 @@ Admin: ${user.name}
       home_id: newHome._id,
     });
   } catch (err) {
-    console.error("❌ Society creation error:", err);
+    console.error("Society creation error:", err);
     return res
       .status(500)
       .json({ message: "Server error during society creation" });
@@ -393,7 +391,7 @@ export const requestJoinSociety = async (req, res) => {
 
     res.status(201).json({ message: "Join request sent", request });
   } catch (err) {
-    console.error("❌ Join request error:", err);
+    console.error("Join request error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -403,8 +401,8 @@ export const getEventInvitations = async (req, res) => {
     const userId = req.user._id;
 
     const invitations = await Invitation.find({ invitedUser: userId })
-      .populate("event") // populate the event details
-      .populate("invitedBy", "name"); // optional: who invited
+      .populate("event") 
+      .populate("invitedBy", "name"); 
 
     res.status(200).json({ invitations });
   } catch (err) {
@@ -447,13 +445,13 @@ export const getCurrentUser = async (req, res) => {
 export const getUserById = async (req, res) => {
   try {
     const user = await User.findById(req.params.id)
-      .populate("followers", "_id") // just count, not full data
-      .select("name avatar address followers"); // only what's needed
+      .populate("followers", "_id") 
+      .select("name avatar address followers"); 
 
     if (!user) return res.status(404).json({ message: "User not found" });
     res.json(user);
   } catch (err) {
-    console.error("❌ Error fetching user:", err);
+    console.error("Error fetching user:", err);
     res.status(500).json({ message: "Failed to fetch user" });
   }
 };
@@ -467,25 +465,21 @@ export const updateCurrentUserProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found." });
     }
 
-    // Update fields if provided in the request body
     if (req.body.name) user.name = req.body.name;
     if (req.body.email) user.email = req.body.email;
     if (req.body.phone_no) user.phone_no = req.body.phone_no;
 
-    // Handle avatar upload
     console.log("avatar : ", user.avatar);
     if (req.file) {
       if (user.avatar) {
-        // Extract public_id from the Cloudinary URL
         const publicId = user.avatar.split("/").pop().split(".")[0];
         await deleteFileFromCloudinary(publicId);
       }
-      // Pass req.file.buffer and req.file.mimetype to the upload function
       const result = await uploadToCloudinary(
         req.file.buffer,
         "avatars",
         req.file.mimetype
-      ); // Changed to uploadToCloudinary
+      ); 
       user.avatar = result.secure_url;
     }
 

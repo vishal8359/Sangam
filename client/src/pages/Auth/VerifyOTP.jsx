@@ -16,7 +16,7 @@ export default function VerifyOtp() {
   const { axios, navigate } = useAppContext();
   const inputRefs = useRef([]);
 
-  const phone_no = localStorage.getItem("otp_phone"); // ✅ Retrieve stored phone
+  const phone_no = localStorage.getItem("otp_phone"); 
 
   useEffect(() => {
     const interval = setInterval(() => {

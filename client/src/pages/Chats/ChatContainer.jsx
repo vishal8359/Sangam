@@ -282,7 +282,7 @@ export default function ChatContainer({
         peerId: selectedChatId,
       });
       hasMarkedSeen = true;
-      console.log("👁️ Manually marked last as seen on load.");
+      console.log("Manually marked last as seen on load.");
     }
 
     const observer = new IntersectionObserver(
@@ -297,7 +297,7 @@ export default function ChatContainer({
             userId,
             peerId: selectedChatId,
           });
-          console.log("👁️ Last message visible, marked as seen.");
+          console.log("Last message visible, marked as seen.");
           hasMarkedSeen = true;
         }
       },
@@ -394,7 +394,7 @@ export default function ChatContainer({
 
         socket.current?.emit("send message", msg);
       } catch (err) {
-        console.error("❌ File upload failed:", err);
+        console.error("File upload failed:", err);
       }
 
       return;
@@ -421,7 +421,7 @@ export default function ChatContainer({
       socket.current?.emit("send message", msg);
       await axios.post("/api/users/chats/send", msg);
     } catch (err) {
-      console.error("❌ Failed to send message:", err);
+      console.error("Failed to send message:", err);
     }
   };
 
@@ -444,7 +444,7 @@ export default function ChatContainer({
           return updated;
         });
       } catch (err) {
-        console.error("❌ Failed to delete message for self:", err);
+        console.error("Failed to delete message for self:", err);
       }
 
       setContextMenu(null);
@@ -474,7 +474,7 @@ export default function ChatContainer({
           headers: { Authorization: `Bearer ${token}` },
         })
         .catch((err) => {
-          console.error("❌ Backend delete failed:", err);
+          console.error("Backend delete failed:", err);
         });
 
       setContextMenu(null);
@@ -716,7 +716,7 @@ export default function ChatContainer({
                       {msg.fileUrl ? (
                         <>
                           {msg.fileType?.startsWith("video") ||
-                          msg.fileUrl.endsWith(".mp4") ? (
+                          msg.fileUrl.endsWith(".mp4") || msg.fileUrl.includes("reels") ? (
                             <div
                               
                               style={{

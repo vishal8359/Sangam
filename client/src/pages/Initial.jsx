@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import sangamLogo from '/appLogo.png';
+import logo_light from "../assets/logo_light.png"
 import { useAppContext } from '../context/AppContext';
 import {
   Box,
@@ -116,7 +116,7 @@ export default function HomePage() {
           <MotionBox variants={itemVariants}>
             <Box
               component="img"
-              src={sangamLogo}
+              src={logo_light}
               alt="Sangam Logo"
               sx={{
                 mx: 'auto',

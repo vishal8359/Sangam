@@ -16,7 +16,7 @@ import { Link as RouterLink } from "react-router-dom";
 import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
-import login_bg from "../../assets/societyBg.jpg"; // Reusing a background image
+import login_bg from "../../assets/societyBg.jpg";
 
 const MotionBox = motion(Box);
 const MotionPaper = motion(Paper);

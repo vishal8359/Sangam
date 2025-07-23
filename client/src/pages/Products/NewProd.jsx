@@ -49,30 +49,41 @@ const Products = () => {
   // Framer Motion Variants
   const pageVariants = {
     initial: { opacity: 0, y: 20 },
-    animate: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
+    animate: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.6, ease: "easeOut" },
+    },
     exit: { opacity: 0, y: -20, transition: { duration: 0.4, ease: "easeIn" } },
   };
 
   const productCardVariants = {
     initial: { opacity: 0, scale: 0.8, y: 20 },
-    animate: { opacity: 1, scale: 1, y: 0, transition: { type: "spring", stiffness: 100, damping: 10 } },
+    animate: {
+      opacity: 1,
+      scale: 1,
+      y: 0,
+      transition: { type: "spring", stiffness: 100, damping: 10 },
+    },
     exit: { opacity: 0, scale: 0.8, transition: { duration: 0.2 } },
   };
 
   const cartIconVariants = {
     initial: { scale: 0 },
-    animate: { scale: 1, transition: { type: "spring", stiffness: 200, damping: 10 } },
+    animate: {
+      scale: 1,
+      transition: { type: "spring", stiffness: 200, damping: 10 },
+    },
     bounce: {
       scale: [1, 1.2, 1], // Bounce effect
-      transition: { duration: 0.3, type: "keyframes", ease: "easeOut" } // Changed type to "keyframes"
-    }
+      transition: { duration: 0.3, type: "keyframes", ease: "easeOut" }, // Changed type to "keyframes"
+    },
   };
 
   const buttonVariants = {
     hover: { scale: 1.05, boxShadow: "0px 4px 10px rgba(0,0,0,0.1)" },
     tap: { scale: 0.95 },
   };
-
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -100,9 +111,11 @@ const Products = () => {
     const newQty = Math.max(0, currentQty + delta);
 
     // Find the product to check its available quantity
-    const product = products.find(p => p._id === productId);
+    const product = products.find((p) => p._id === productId);
     if (product && newQty > product.quantity) {
-      toast.error(`Only ${product.quantity} of ${product.name} left. Please reduce quantity.`);
+      toast.error(
+        `Only ${product.quantity} of ${product.name} left. Please reduce quantity.`
+      );
       return; // Prevent update if quantity exceeds available
     }
 
@@ -126,11 +139,11 @@ const Products = () => {
       variants={pageVariants}
       style={{
         minHeight: "100vh",
-        padding: isMobile ? theme.spacing(2) : theme.spacing(6), 
+        padding: isMobile ? theme.spacing(2) : theme.spacing(6),
         position: "relative",
         zIndex: 1,
-        overflow: "hidden", 
-        backgroundColor: isDark? theme.palette.background.default : "#fff", 
+        overflow: "hidden",
+        backgroundColor: isDark ? theme.palette.background.default : "#fff",
       }}
     >
       {/* Animated Background Layer */}
@@ -173,7 +186,7 @@ const Products = () => {
           display: "flex",
           alignItems: "center",
           gap: 1,
-          backgroundColor: "#fff", 
+          backgroundColor: "#fff",
           color: "#000",
           borderRadius: 2,
           px: 2,
@@ -193,7 +206,7 @@ const Products = () => {
         <motion.div
           initial="initial"
           animate="animate"
-          whileTap="bounce" 
+          whileTap="bounce"
           variants={cartIconVariants}
           onClick={() => navigate(`/my-society/ads/cart`)}
           style={{
@@ -204,16 +217,19 @@ const Products = () => {
             cursor: "pointer",
             backgroundColor: theme.palette.background.paper,
             borderRadius: "50%",
-            boxShadow: theme.shadows[3], 
-            padding: theme.spacing(1.2), 
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            boxShadow: theme.shadows[3],
+            padding: theme.spacing(1.2),
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
           <Badge badgeContent={getCartCount()} color="primary">
             <ShoppingCartIcon
-              sx={{ fontSize: 30, color: isDark ? "#ffff" : theme.palette.primary.main }}
+              sx={{
+                fontSize: 30,
+                color: isDark ? "#ffff" : theme.palette.primary.main,
+              }}
             />
           </Badge>
         </motion.div>
@@ -221,26 +237,43 @@ const Products = () => {
 
       {/* Products Grid */}
       {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: "50vh",
+          }}
+        >
           <CircularProgress color="primary" size={60} />
-          <Typography variant="h6" ml={2} color="text.secondary">Loading Products...</Typography>
+          <Typography variant="h6" ml={2} color="text.secondary">
+            Loading Products...
+          </Typography>
         </Box>
       ) : products.length === 0 ? (
-        <Box sx={{ textAlign: 'center', py: 5, color: theme.palette.text.secondary }}>
+        <Box
+          sx={{
+            textAlign: "center",
+            py: 5,
+            color: theme.palette.text.secondary,
+          }}
+        >
           <Typography variant="h6">No products available yet.</Typography>
-          <Typography variant="body1">Check back later or add your own!</Typography>
+          <Typography variant="body1">
+            Check back later or add your own!
+          </Typography>
         </Box>
       ) : (
         <Box
           sx={{
             display: "grid",
             gridTemplateColumns: {
-              xs: "1fr 1fr", 
-              sm: "1fr 1fr", 
-              md: "1fr 1fr 1fr", 
-              lg: "1fr 1fr 1fr 1fr", 
+              xs: "1fr 1fr",
+              sm: "1fr 1fr",
+              md: "1fr 1fr 1fr",
+              lg: "1fr 1fr 1fr 1fr",
             },
-            gap: isMobile ? theme.spacing(2) : theme.spacing(3), 
+            gap: isMobile ? theme.spacing(2) : theme.spacing(3),
             justifyItems: "center",
           }}
         >
@@ -252,100 +285,144 @@ const Products = () => {
                 initial="initial"
                 animate="animate"
                 exit="exit"
-                whileHover={{ y: -5, boxShadow: theme.shadows[8] }} 
+                whileHover={{ y: -5, boxShadow: theme.shadows[8] }}
                 transition={{ duration: 0.2 }}
-                layout 
-                style={{ width: '100%' }} 
+                layout
+                style={{ width: "100%" }}
               >
                 <Paper
                   elevation={4}
                   sx={{
-                    width: "100%", 
-                    maxWidth: isMobile ? 160 : 280, 
-                    p: isMobile ? 1.5 : 3, 
+                    width: "100%",
+                    maxWidth: isMobile ? 160 : 280,
+                    p: isMobile ? 1.5 : 3,
                     borderRadius: 3,
-                    bgcolor: isDark ? theme.palette.grey[900] : theme.palette.background.paper,
-                    color: theme.palette.text.primary, 
-                    boxShadow: theme.shadows[4], 
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    height: '100%',
+                    bgcolor: isDark
+                      ? theme.palette.grey[900]
+                      : theme.palette.background.paper,
+                    color: theme.palette.text.primary,
+                    boxShadow: theme.shadows[4],
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    height: "100%",
                   }}
                 >
                   {/* Product Image */}
                   <Box
                     onClick={() =>
-                      navigate(`/my-society/ads/${product._id}/product_detail`, {
-                        state: { product },
-                      })
+                      navigate(
+                        `/my-society/ads/${product._id}/product_detail`,
+                        {
+                          state: { product },
+                        }
+                      )
                     }
                     component="img"
-                    src={product.images?.[0]?.url || "https://placehold.co/150x150/cccccc/333333?text=No+Image"}
+                    src={
+                      product.images?.[0]?.url ||
+                      "https://placehold.co/150x150/cccccc/333333?text=No+Image"
+                    }
                     alt={product.name}
                     sx={{
-                      height: isMobile ? 100 : 140, 
+                      height: isMobile ? 100 : 140,
                       width: "100%",
                       objectFit: "contain",
                       mb: isMobile ? 1 : 2,
                       cursor: "pointer",
-                      borderRadius: 2, 
+                      borderRadius: 2,
                     }}
                     onError={(e) => {
-                      e.target.src = "https://placehold.co/150x150/cccccc/333333?text=No+Image"; // Fallback if broken
+                      e.target.src =
+                        "https://placehold.co/150x150/cccccc/333333?text=No+Image"; // Fallback if broken
                     }}
                   />
 
                   {/* Product Name */}
                   <Typography
                     onClick={() =>
-                      navigate(`/my-society/ads/${product._id}/product_detail`, {
-                        state: { product },
-                      })
+                      navigate(
+                        `/my-society/ads/${product._id}/product_detail`,
+                        {
+                          state: { product },
+                        }
+                      )
                     }
                     align="center"
                     fontWeight={600}
                     fontSize={isMobile ? "0.9rem" : "1.1rem"} // Adjusted font size
-                    sx={{ mb: 0.5, lineHeight: 1.2, color: isDark? "#fff" : "" }}
+                    sx={{
+                      mb: 0.5,
+                      lineHeight: 1.2,
+                      color: isDark ? "#fff" : "",
+                      cursor: "pointer",
+                    }}
                   >
                     {product.name}
                   </Typography>
                   {/* Seller Info */}
                   <Typography
                     onClick={() =>
-                      navigate(`/my-society/ads/${product._id}/product_detail`, {
-                        state: { product },
-                      })
+                      navigate(
+                        `/my-society/ads/${product._id}/product_detail`,
+                        {
+                          state: { product },
+                        }
+                      )
                     }
                     align="center"
                     fontSize="0.75rem"
                     color="text.secondary"
+                    sx={{ cursor: "pointer" }}
                   >
                     Seller: {product.sellerName || "N/A"}
                   </Typography>
                   <Typography
                     onClick={() =>
-                      navigate(`/my-society/ads/${product._id}/product_detail`, {
-                        state: { product },
-                      })
+                      navigate(
+                        `/my-society/ads/${product._id}/product_detail`,
+                        {
+                          state: { product },
+                        }
+                      )
                     }
                     align="center"
                     fontSize="0.7rem"
                     color="text.secondary"
                     mb={1}
+                    sx={{ cursor: "pointer" }}
                   >
                     {product.sellerAddress || "N/A"}
                   </Typography>
 
                   {/* Rating Stars */}
-                  <Box display="flex" justifyContent="center" mt={isMobile ? 0.5 : 1} mb={1}>
+                  <Box
+                    display="flex"
+                    onClick={() =>
+                      navigate(
+                        `/my-society/ads/${product._id}/product_detail`,
+                        {
+                          state: { product },
+                        }
+                      )
+                    }
+                    justifyContent="center"
+                    mt={isMobile ? 0.5 : 1}
+                    mb={1}
+                    sx={{cursor:"pointer"}}
+                  >
                     {Array.from({ length: 5 }, (_, i) => {
                       const rating = product.rating || 0; // Ensure rating is a number
                       if (i < Math.floor(rating)) {
                         return (
-                          <FaStar key={i} size={isMobile ? 14 : 18} color={theme.palette.warning.main} />
+                          <FaStar
+                            key={i}
+                            size={isMobile ? 14 : 18}
+                            color={theme.palette.warning.main}
+                          />
                         );
-                      } else if (i === Math.floor(rating) && rating % 1 !== 0) { // Check for half star
+                      } else if (i === Math.floor(rating) && rating % 1 !== 0) {
+                        // Check for half star
                         return (
                           <FaStarHalfAlt
                             key={i}
@@ -355,7 +432,11 @@ const Products = () => {
                         );
                       } else {
                         return (
-                          <FaRegStar key={i} size={isMobile ? 14 : 18} color={theme.palette.warning.light} />
+                          <FaRegStar
+                            key={i}
+                            size={isMobile ? 14 : 18}
+                            color={theme.palette.warning.light}
+                          />
                         );
                       }
                     })}
@@ -369,24 +450,33 @@ const Products = () => {
                     gap={1}
                     alignItems="center"
                   >
-                    <Typography color={theme.palette.primary.main} fontWeight={600} fontSize={isMobile ? "1rem" : "1.1rem"}
-                    sx={{
-                      color: isDark? "#fff" : ""
-                    }}>
-                      ₹{product.offerPrice?.toFixed(2) || product.price?.toFixed(2) || '0.00'}
+                    <Typography
+                      color={theme.palette.primary.main}
+                      fontWeight={600}
+                      fontSize={isMobile ? "1rem" : "1.1rem"}
+                      sx={{
+                        color: isDark ? "#fff" : "",
+                      }}
+                    >
+                      ₹
+                      {product.offerPrice?.toFixed(2) ||
+                        product.price?.toFixed(2) ||
+                        "0.00"}
                     </Typography>
-                    {product.offerPrice && product.price && product.offerPrice < product.price && (
-                      <Typography
-                        sx={{
-                          textDecoration: "line-through",
-                          color: isDark? "#ccc" : "",
-                          fontWeight: 400,
-                          fontSize: isMobile ? "0.85rem" : "0.95rem",
-                        }}
-                      >
-                        ₹{product.price.toFixed(2)}
-                      </Typography>
-                    )}
+                    {product.offerPrice &&
+                      product.price &&
+                      product.offerPrice < product.price && (
+                        <Typography
+                          sx={{
+                            textDecoration: "line-through",
+                            color: isDark ? "#ccc" : "",
+                            fontWeight: 400,
+                            fontSize: isMobile ? "0.85rem" : "0.95rem",
+                          }}
+                        >
+                          ₹{product.price.toFixed(2)}
+                        </Typography>
+                      )}
                   </Box>
 
                   {/* Add/Quantity Controls */}
@@ -400,11 +490,19 @@ const Products = () => {
                         borderRadius={2}
                         width={120}
                         height={40}
-                        bgcolor={isDark ? theme.palette.primary.dark : theme.palette.primary.light + '20'}
+                        bgcolor={
+                          isDark
+                            ? theme.palette.primary.dark
+                            : theme.palette.primary.light + "20"
+                        }
                         color={theme.palette.primary.main}
-                        sx={{ transition: 'background-color 0.2s ease' }}
+                        sx={{ transition: "background-color 0.2s ease" }}
                       >
-                        <motion.div whileHover="hover" whileTap="tap" variants={buttonVariants}>
+                        <motion.div
+                          whileHover="hover"
+                          whileTap="tap"
+                          variants={buttonVariants}
+                        >
                           <IconButton
                             onClick={() => handleQtyChange(product._id, -1)}
                             size="small"
@@ -422,7 +520,11 @@ const Products = () => {
                         >
                           {cartItems[product._id]}
                         </Typography>
-                        <motion.div whileHover="hover" whileTap="tap" variants={buttonVariants}>
+                        <motion.div
+                          whileHover="hover"
+                          whileTap="tap"
+                          variants={buttonVariants}
+                        >
                           <IconButton
                             onClick={() => handleQtyChange(product._id, 1)}
                             size="small"
@@ -433,15 +535,19 @@ const Products = () => {
                         </motion.div>
                       </Box>
                     ) : (
-                      <motion.div whileHover="hover" whileTap="tap" variants={buttonVariants}>
+                      <motion.div
+                        whileHover="hover"
+                        whileTap="tap"
+                        variants={buttonVariants}
+                      >
                         <Button
                           variant="outlined"
                           startIcon={<FaShoppingCart />}
                           onClick={() => handleQtyChange(product._id, 1)}
-                          disabled={product.quantity <= 0} 
+                          disabled={product.quantity <= 0}
                           sx={{
                             minWidth: 100,
-                            color: isDark? "#fff" : "",
+                            color: isDark ? "#fff" : "",
                             borderColor: theme.palette.primary.main,
                             borderRadius: 2,
                             "&:hover": {
@@ -456,8 +562,8 @@ const Products = () => {
                             "&.Mui-disabled": {
                               color: theme.palette.grey[500],
                               borderColor: theme.palette.grey[400],
-                              backgroundColor: 'transparent',
-                              cursor: 'not-allowed',
+                              backgroundColor: "transparent",
+                              cursor: "not-allowed",
                             },
                           }}
                         >

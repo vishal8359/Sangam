@@ -117,7 +117,7 @@ const CartPage = () => {
         }
       }
     } catch (error) {
-      console.error("❌ Order placement failed:", error);
+      console.error("Order placement failed:", error);
       toast.error(error.response?.data?.message || error.message || "An error occurred during order placement.");
     } finally {
       setIsPlacingOrder(false);

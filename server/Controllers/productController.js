@@ -2,7 +2,6 @@ import Product from "../Models/Product.js";
 import { uploadToCloudinary } from "../Utils/cloudinaryUpload.js";
 import mongoose from "mongoose";
 
-// POST: User uploads product
 export const addProduct = async (req, res) => {
   try {
     const {
@@ -24,7 +23,8 @@ export const addProduct = async (req, res) => {
           "sangam-products",
           file.mimetype
         );
-        images.push(result);
+        // Correctly store secure_url as 'url' and public_id
+        images.push({ url: result.secure_url, public_id: result.public_id });
       }
     }
 
@@ -44,28 +44,29 @@ export const addProduct = async (req, res) => {
     await product.save();
     res.status(201).json({ message: "✅ Product added successfully", product });
   } catch (error) {
-    console.error("❌ Product Upload Error:", error);
+    console.error("Product Upload Error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
 export const getMyProducts = async (req, res) => {
   try {
     const myProducts = await Product.find({
       createdBy: req.user._id,
     }).sort({ createdAt: -1 });
 
-    // Inject earnings field into each product
     const updatedProducts = myProducts.map((p) => ({
       ...p._doc,
-      earnings: (p.price || 0) * (p.soldQuantity || 0), // You can change this logic as needed
+      earnings: (p.price || 0) * (p.soldQuantity || 0),
     }));
 
     res.status(200).json(updatedProducts);
   } catch (error) {
-    console.error("❌ Fetch My Products Error:", error);
+    console.error("Fetch My Products Error:", error);
     res.status(500).json({ message: "Failed to fetch your products." });
   }
 };
+
 export const getSocietyProducts = async (req, res) => {
   try {
     const { societyId } = req.user;
@@ -77,7 +78,6 @@ export const getSocietyProducts = async (req, res) => {
       .populate("createdBy", "name address")
       .sort({ createdAt: -1 });
 
-    // Format the product data
     const formatted = products.map((p) => ({
       ...p._doc,
       image: p.images?.[0]?.url || "",
@@ -87,7 +87,7 @@ export const getSocietyProducts = async (req, res) => {
 
     res.status(200).json(formatted);
   } catch (err) {
-    console.error("❌ Error in getSocietyProducts:", err);
+    console.error("Error in getSocietyProducts:", err);
     res.status(500).json({ message: "Failed to fetch society products." });
   }
 };
@@ -99,7 +99,6 @@ export const toggleProductActiveStatus = async (req, res) => {
 
     if (!product) return res.status(404).json({ message: "Product not found" });
 
-    // Only owner can toggle
     if (product.createdBy.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: "Unauthorized" });
     }
@@ -114,14 +113,14 @@ export const toggleProductActiveStatus = async (req, res) => {
       isActive: product.isActive,
     });
   } catch (err) {
-    console.error("❌ Error toggling product status:", err);
+    console.error("Error toggling product status:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
 
 export const getCartProducts = async (req, res) => {
   try {
-    const { ids } = req.body; // Array of product IDs
+    const { ids } = req.body;
 
     if (!Array.isArray(ids) || ids.length === 0) {
       return res.status(400).json({ message: "No product IDs provided" });
@@ -141,7 +140,7 @@ export const getCartProducts = async (req, res) => {
 
     res.status(200).json({ products: formatted });
   } catch (err) {
-    console.error("❌ Error fetching cart products:", err);
+    console.error("Error fetching cart products:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
@@ -191,11 +190,10 @@ export const getSellerProductsWithStats = async (req, res) => {
 
     res.status(200).json({ success: true, products: enrichedProducts });
   } catch (error) {
-    console.error("❌ Error fetching seller products:", error);
+    console.error("Error fetching seller products:", error);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
-
 
 export const getProductById = async (req, res) => {
   try {
@@ -213,18 +211,16 @@ export const getProductById = async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    // Add seller info
     product.sellerName = product.seller?.name || "N/A";
     product.sellerAddress = product.seller?.address || "Not Provided";
 
     res.status(200).json({ product });
   } catch (error) {
-    console.error("❌ Error in getProductById:", error);
+    console.error("Error in getProductById:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// 2. Get related products from same society
 export const getRelatedProducts = async (req, res) => {
   try {
     const { societyId, exclude } = req.query;
@@ -243,7 +239,7 @@ export const getRelatedProducts = async (req, res) => {
     }
 
     const products = await Product.find(query)
-      .populate("seller", "name address") 
+      .populate("seller", "name address")
       .sort({ createdAt: -1 })
       .limit(10)
       .select("-__v");
@@ -257,7 +253,7 @@ export const getRelatedProducts = async (req, res) => {
 
     res.status(200).json({ products: formatted });
   } catch (error) {
-    console.error("❌ Error in getRelatedProducts:", error);
+    console.error("Error in getRelatedProducts:", error);
     res.status(500).json({ message: "Server error" });
   }
 };

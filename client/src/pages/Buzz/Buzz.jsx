@@ -27,7 +27,7 @@ import {
   Fab,
   Menu,
   MenuItem,
-  CircularProgress, // Added for upload indication
+  CircularProgress,
 } from "@mui/material";
 import { Send, Mic, CameraAlt } from "@mui/icons-material";
 import Groups2Icon from "@mui/icons-material/Groups2";
@@ -40,7 +40,7 @@ import AttachFileIcon from "@mui/icons-material/AttachFile";
 import { keyframes } from "@emotion/react";
 import WaveformPlayer from "../../components/WaveformPlayer";
 
-const SOCKET_SERVER_URL = "http://localhost:5000"; // adjust as needed
+const SOCKET_SERVER_URL = "http://localhost:5000";
 
 // Keyframe Animations
 const fadeIn = keyframes`
@@ -199,24 +199,29 @@ export default function SocietyBuzz() {
     });
 
     // Handle message deletion from other users
-    socket.on("buzzMessageDeleted", ({ messageId, type, userId: deletedByUserId }) => {
-      setMessages((prevMessages) =>
-        type === "me" && deletedByUserId !== userId // Only remove for the specific user who deleted "for me"
-          ? prevMessages.filter((msg) => msg._id !== messageId)
-          : prevMessages.map((msg) =>
-              msg._id === messageId
-                ? {
-                    ...msg,
-                    content: "🗑 Message deleted",
-                    fileUrl: null,
-                    audio: null, // ensure audio is also nullified
-                    deletedFor: type === "all" ? [...(msg.deletedFor || []), "all"] : [...(msg.deletedFor || []), deletedByUserId]
-                  }
-                : msg
-            )
-      );
-    });
-
+    socket.on(
+      "buzzMessageDeleted",
+      ({ messageId, type, userId: deletedByUserId }) => {
+        setMessages((prevMessages) =>
+          type === "me" && deletedByUserId !== userId // Only remove for the specific user who deleted "for me"
+            ? prevMessages.filter((msg) => msg._id !== messageId)
+            : prevMessages.map((msg) =>
+                msg._id === messageId
+                  ? {
+                      ...msg,
+                      content: "🗑 Message deleted",
+                      fileUrl: null,
+                      audio: null, // ensure audio is also nullified
+                      deletedFor:
+                        type === "all"
+                          ? [...(msg.deletedFor || []), "all"]
+                          : [...(msg.deletedFor || []), deletedByUserId],
+                    }
+                  : msg
+              )
+        );
+      }
+    );
 
     return () => {
       socket.disconnect();
@@ -380,7 +385,7 @@ export default function SocietyBuzz() {
           };
           socketRef.current.emit("sendBuzzMessage", payload);
         } catch (err) {
-          console.error("🎙 Audio Upload Failed", err);
+          console.error("Audio Upload Failed", err);
         } finally {
           setSendingMedia(false);
           stopStream();
@@ -452,8 +457,9 @@ export default function SocietyBuzz() {
       setShowCamera(true);
     } catch (err) {
       console.error("Camera access denied:", err);
-      // Optionally show a user-friendly message
-      alert("Camera access denied. Please allow camera permissions in your browser settings.");
+      alert(
+        "Camera access denied. Please allow camera permissions in your browser settings."
+      );
     }
   };
 
@@ -531,7 +537,9 @@ export default function SocietyBuzz() {
                     content: "🗑 Message deleted",
                     fileUrl: null,
                     audio: null,
-                    deletedFor: msg.deletedFor ? [...msg.deletedFor, 'all'] : ['all'] // Mark as deleted for all
+                    deletedFor: msg.deletedFor
+                      ? [...msg.deletedFor, "all"]
+                      : ["all"], // Mark as deleted for all
                   }
                 : msg
             )
@@ -551,7 +559,7 @@ export default function SocietyBuzz() {
       setBuzzGroups(newGroups); // updates context/global state
       return newGroups; // return to use after group creation
     } catch (err) {
-      console.error("❌ Failed to fetch groups after creation:", err);
+      console.error("Failed to fetch groups after creation:", err);
       return [];
     }
   };
@@ -604,7 +612,7 @@ export default function SocietyBuzz() {
         });
       }
     } catch (err) {
-      console.error("❌ Error creating group:", err);
+      console.error("Error creating group:", err);
       alert("Failed to create group.");
     } finally {
       setCreatingGroup(false);
@@ -627,7 +635,9 @@ export default function SocietyBuzz() {
           display: "flex",
           flexDirection: "column",
           p: isMobile ? 1 : 3,
-          boxShadow: isDark ? "0px 0px 15px rgba(0,0,0,0.5)" : "0px 0px 15px rgba(0,0,0,0.1)",
+          boxShadow: isDark
+            ? "0px 0px 15px rgba(0,0,0,0.5)"
+            : "0px 0px 15px rgba(0,0,0,0.1)",
           borderRadius: 3,
         }}
       >
@@ -645,14 +655,15 @@ export default function SocietyBuzz() {
               flexGrow: 1,
               "& .MuiTabs-indicator": {
                 backgroundColor: isDark ? "#f5f5f5" : "#122525",
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1) 0ms', // Smooth transition
+                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1) 0ms", // Smooth transition
               },
               "& .MuiTab-root": {
-                transition: 'color 0.2s ease-in-out, transform 0.2s ease-in-out',
-                '&:hover': {
-                    transform: 'translateY(-2px)',
-                }
-              }
+                transition:
+                  "color 0.2s ease-in-out, transform 0.2s ease-in-out",
+                "&:hover": {
+                  transform: "translateY(-2px)",
+                },
+              },
             }}
           >
             <Tab
@@ -691,9 +702,10 @@ export default function SocietyBuzz() {
                 ml: 1,
                 bgcolor: theme.palette.primary.main,
                 color: theme.palette.primary.contrastText,
-                transition: 'transform 0.2s ease-in-out, background-color 0.2s ease-in-out',
-                '&:hover': {
-                  transform: 'rotate(90deg) scale(1.1)',
+                transition:
+                  "transform 0.2s ease-in-out, background-color 0.2s ease-in-out",
+                "&:hover": {
+                  transform: "rotate(90deg) scale(1.1)",
                   bgcolor: theme.palette.primary.dark,
                 },
               }}
@@ -712,7 +724,7 @@ export default function SocietyBuzz() {
             borderRadius: 2,
             p: 2,
             bgcolor: isDark ? "#1a1a1a" : "#fff",
-            border: `1px solid ${isDark ? '#333' : '#e0e0e0'}`,
+            border: `1px solid ${isDark ? "#333" : "#e0e0e0"}`,
           }}
         >
           {/* Animated, tiled, blurred background */}
@@ -749,11 +761,15 @@ export default function SocietyBuzz() {
                 width: "8px",
               },
               "&::-webkit-scrollbar-thumb": {
-                backgroundColor: isDark ? theme.palette.grey[700] : theme.palette.grey[400],
+                backgroundColor: isDark
+                  ? theme.palette.grey[700]
+                  : theme.palette.grey[400],
                 borderRadius: "10px",
               },
               "&::-webkit-scrollbar-track": {
-                backgroundColor: isDark ? theme.palette.grey[900] : theme.palette.grey[200],
+                backgroundColor: isDark
+                  ? theme.palette.grey[900]
+                  : theme.palette.grey[200],
               },
               scrollBehavior: "smooth", // Ensure smooth scrolling
             }}
@@ -775,9 +791,15 @@ export default function SocietyBuzz() {
 
                   const isMyMessage = msg.sender === userId;
                   const messageBgColor = isMyMessage
-                    ? (isDark ? "#ccc" : theme.palette.grey[200])
+                    ? isDark
+                      ? "#ccc"
+                      : theme.palette.grey[200]
                     : "#000";
-                  const messageColor = isMyMessage ? "#000" : (isDark ? "#fff" : "#fff");
+                  const messageColor = isMyMessage
+                    ? "#000"
+                    : isDark
+                      ? "#fff"
+                      : "#fff";
 
                   return (
                     <React.Fragment key={msg._id}>
@@ -798,7 +820,8 @@ export default function SocietyBuzz() {
                               fontSize: "0.7rem",
                               fontWeight: 300,
                               boxShadow: 0,
-                              transition: 'background-color 0.3s ease-in-out, color 0.3s ease-in-out',
+                              transition:
+                                "background-color 0.3s ease-in-out, color 0.3s ease-in-out",
                             }}
                           >
                             {formattedDate}
@@ -814,8 +837,8 @@ export default function SocietyBuzz() {
                           animation: `${slideInFromSide} 0.4s ease-out ${index * 0.05}s forwards`, // Staggered message animation
                           opacity: 0, // Start invisible for animation
                           alignItems: "flex-end", // Align items to the bottom for better look with time
-                          pr: isMyMessage ? 0 : '10%', // Add some padding on the opposite side
-                          pl: isMyMessage ? '10%' : 0,
+                          pr: isMyMessage ? 0 : "10%", // Add some padding on the opposite side
+                          pl: isMyMessage ? "10%" : 0,
                         }}
                         onContextMenu={(e) => {
                           e.preventDefault();
@@ -855,11 +878,13 @@ export default function SocietyBuzz() {
                                 display: "block",
                                 marginTop: "4px",
                                 cursor: "pointer",
-                                boxShadow: isDark ? "0 4px 8px rgba(0,0,0,0.5)" : "0 4px 8px rgba(0,0,0,0.1)",
-                                transition: 'transform 0.2s ease-in-out',
-                                '&:hover': {
-                                    transform: 'scale(1.02)',
-                                }
+                                boxShadow: isDark
+                                  ? "0 4px 8px rgba(0,0,0,0.5)"
+                                  : "0 4px 8px rgba(0,0,0,0.1)",
+                                transition: "transform 0.2s ease-in-out",
+                                "&:hover": {
+                                  transform: "scale(1.02)",
+                                },
                               }}
                               onClick={() => openPreview("image", msg.fileUrl)}
                             />
@@ -873,11 +898,13 @@ export default function SocietyBuzz() {
                                 display: "block",
                                 marginTop: "4px",
                                 cursor: "pointer",
-                                boxShadow: isDark ? "0 4px 8px rgba(0,0,0,0.5)" : "0 4px 8px rgba(0,0,0,0.1)",
-                                transition: 'transform 0.2s ease-in-out',
-                                '&:hover': {
-                                    transform: 'scale(1.02)',
-                                }
+                                boxShadow: isDark
+                                  ? "0 4px 8px rgba(0,0,0,0.5)"
+                                  : "0 4px 8px rgba(0,0,0,0.1)",
+                                transition: "transform 0.2s ease-in-out",
+                                "&:hover": {
+                                  transform: "scale(1.02)",
+                                },
                               }}
                               muted
                               autoPlay
@@ -901,8 +928,11 @@ export default function SocietyBuzz() {
                                     : "default",
                                 boxShadow: isMyMessage
                                   ? `0 2px 5px ${theme.palette.primary.dark}40`
-                                  : (isDark ? "0 2px 5px rgba(0,0,0,0.3)" : "0 2px 5px rgba(0,0,0,0.1)"),
-                                transition: 'background-color 0.3s ease-in-out, color 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
+                                  : isDark
+                                    ? "0 2px 5px rgba(0,0,0,0.3)"
+                                    : "0 2px 5px rgba(0,0,0,0.1)",
+                                transition:
+                                  "background-color 0.3s ease-in-out, color 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
                               }}
                             >
                               {(msg.content === "🎤 Voice Message" &&
@@ -913,7 +943,9 @@ export default function SocietyBuzz() {
                                   fromSender={isMyMessage}
                                 />
                               ) : msg.fileUrl ? (
-                                msg.fileUrl.endsWith(".mp4") ? (
+                                msg.fileUrl.endsWith(".mp4") ||
+                                msg.fileUrl.endsWith(".mov") ||
+                                msg.fileUrl.includes("reels") ? (
                                   <video
                                     src={msg.fileUrl}
                                     controls
@@ -925,7 +957,9 @@ export default function SocietyBuzz() {
                                       maxHeight: 360,
                                       borderRadius: 8,
                                       marginTop: 8,
-                                      boxShadow: isDark ? "0 4px 8px rgba(0,0,0,0.5)" : "0 4px 8px rgba(0,0,0,0.1)",
+                                      boxShadow: isDark
+                                        ? "0 4px 8px rgba(0,0,0,0.5)"
+                                        : "0 4px 8px rgba(0,0,0,0.1)",
                                     }}
                                   />
                                 ) : msg.fileType?.includes("pdf") ? (
@@ -936,10 +970,12 @@ export default function SocietyBuzz() {
                                     sx={{
                                       textDecoration: "underline",
                                       cursor: "pointer",
-                                      color: isMyMessage ? 'inherit' : theme.palette.info.light,
-                                      '&:hover': {
-                                          opacity: 0.8,
-                                      }
+                                      color: isMyMessage
+                                        ? "inherit"
+                                        : theme.palette.info.light,
+                                      "&:hover": {
+                                        opacity: 0.8,
+                                      },
                                     }}
                                   >
                                     📄 View PDF
@@ -950,12 +986,14 @@ export default function SocietyBuzz() {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     style={{
-                                      color: isMyMessage ? 'inherit' : theme.palette.info.light,
+                                      color: isMyMessage
+                                        ? "inherit"
+                                        : theme.palette.info.light,
                                       textDecoration: "underline",
-                                      transition: 'opacity 0.2s ease-in-out',
-                                      '&:hover': {
-                                          opacity: 0.8,
-                                      }
+                                      transition: "opacity 0.2s ease-in-out",
+                                      "&:hover": {
+                                        opacity: 0.8,
+                                      },
                                     }}
                                   >
                                     📎 Download File
@@ -976,9 +1014,9 @@ export default function SocietyBuzz() {
                               mt: 0.5,
                               opacity: 0.6,
                               fontSize: "0.6rem",
-                              textAlign: isMyMessage ? "right" : "left", // Align time with message
-                              mr: isMyMessage ? 2 : 0, // Adjust margin for sent messages
-                              ml: isMyMessage ? 0 : 2, // Adjust margin for received messages
+                              textAlign: isMyMessage ? "right" : "left",
+                              mr: isMyMessage ? 2 : 0,
+                              ml: isMyMessage ? 0 : 2,
                               color: isDark ? "#aaa" : "#555",
                             }}
                           >
@@ -1009,12 +1047,14 @@ export default function SocietyBuzz() {
                 right: 16,
                 zIndex: 10,
                 animation: `${pulse} 1.5s infinite`, // Pulsing animation
-                boxShadow: isDark ? "0 4px 10px rgba(0,0,0,0.6)" : "0 4px 10px rgba(0,0,0,0.2)",
-                transition: 'transform 0.2s ease-in-out',
-                '&:hover': {
-                    transform: 'scale(1.1)',
-                    animation: 'none',
-                }
+                boxShadow: isDark
+                  ? "0 4px 10px rgba(0,0,0,0.6)"
+                  : "0 4px 10px rgba(0,0,0,0.2)",
+                transition: "transform 0.2s ease-in-out",
+                "&:hover": {
+                  transform: "scale(1.1)",
+                  animation: "none",
+                },
               }}
             >
               <ArrowDownwardIcon />
@@ -1036,21 +1076,27 @@ export default function SocietyBuzz() {
                   <Box position="relative" ref={emojiRef}>
                     <IconButton
                       onClick={() => setShowEmojiPicker((prev) => !prev)}
-                      sx={{ transition: 'color 0.2s ease-in-out, transform 0.2s ease-in-out', '&:hover': { transform: 'scale(1.1)' } }}
+                      sx={{
+                        transition:
+                          "color 0.2s ease-in-out, transform 0.2s ease-in-out",
+                        "&:hover": { transform: "scale(1.1)" },
+                      }}
                     >
-                      <EmojiEmotionsIcon color={showEmojiPicker ? "primary" : "inherit"} />
+                      <EmojiEmotionsIcon
+                        color={showEmojiPicker ? "primary" : "inherit"}
+                      />
                     </IconButton>
 
                     {/* Emoji Picker absolutely positioned */}
                     {showEmojiPicker && (
                       <Box
                         position="absolute"
-                        bottom="100%" // position above the icon
+                        bottom="100%"
                         left={0}
                         zIndex={999}
                         sx={{
-                            transformOrigin: 'bottom left',
-                            animation: `${fadeIn} 0.3s ease-out`, // Fade in emoji picker
+                          transformOrigin: "bottom left",
+                          animation: `${fadeIn} 0.3s ease-out`,
                         }}
                       >
                         <Picker
@@ -1075,12 +1121,18 @@ export default function SocietyBuzz() {
                       onChange={(e) => {
                         if (e.target.files.length > 0) {
                           handleFileUpload(e.target.files[0]);
-                          e.target.value = null; // reset input for re-uploading same file
+                          e.target.value = null;
                         }
                       }}
                     />
                     <label htmlFor="upload-file">
-                      <IconButton component="span" sx={{ transition: 'transform 0.2s ease-in-out', '&:hover': { transform: 'scale(1.1)' } }}>
+                      <IconButton
+                        component="span"
+                        sx={{
+                          transition: "transform 0.2s ease-in-out",
+                          "&:hover": { transform: "scale(1.1)" },
+                        }}
+                      >
                         <AttachFileIcon />
                       </IconButton>
                     </label>
@@ -1094,14 +1146,20 @@ export default function SocietyBuzz() {
                         handleStartRecording();
                       }
                     }}
-                    sx={{ transition: 'transform 0.2s ease-in-out', '&:hover': { transform: 'scale(1.1)' } }}
+                    sx={{
+                      transition: "transform 0.2s ease-in-out",
+                      "&:hover": { transform: "scale(1.1)" },
+                    }}
                   >
                     <Mic color={recording ? "error" : "inherit"} />
                   </IconButton>
 
                   <IconButton
                     onClick={startCamera}
-                    sx={{ transition: 'transform 0.2s ease-in-out', '&:hover': { transform: 'scale(1.1)' } }}
+                    sx={{
+                      transition: "transform 0.2s ease-in-out",
+                      "&:hover": { transform: "scale(1.1)" },
+                    }}
                   >
                     <CameraAlt />
                   </IconButton>
@@ -1110,7 +1168,10 @@ export default function SocietyBuzz() {
                     onClick={handleSend}
                     color="primary"
                     disabled={!message.trim()}
-                    sx={{ transition: 'transform 0.2s ease-in-out', '&:hover': { transform: 'scale(1.1)' } }}
+                    sx={{
+                      transition: "transform 0.2s ease-in-out",
+                      "&:hover": { transform: "scale(1.1)" },
+                    }}
                   >
                     <Send />
                   </IconButton>
@@ -1120,16 +1181,16 @@ export default function SocietyBuzz() {
             sx={{
               bgcolor: isDark ? "#2c2c2c" : "#fff",
               borderRadius: 2,
-              '& .MuiOutlinedInput-root': {
-                '& fieldset': {
-                  borderColor: isDark ? '#444' : '#ccc',
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": {
+                  borderColor: isDark ? "#444" : "#ccc",
                 },
-                '&:hover fieldset': {
-                  borderColor: isDark ? '#666' : '#999',
+                "&:hover fieldset": {
+                  borderColor: isDark ? "#666" : "#999",
                 },
-                '&.Mui-focused fieldset': {
+                "&.Mui-focused fieldset": {
                   borderColor: theme.palette.primary.main,
-                  borderWidth: '2px',
+                  borderWidth: "2px",
                   animation: `${inputFocus} 1s forwards`, // Focus animation
                 },
               },
@@ -1174,7 +1235,10 @@ export default function SocietyBuzz() {
                     setMediaRecorder(null);
                     setAudioChunks([]);
                   }}
-                  sx={{ transition: 'transform 0.2s ease-in-out', '&:hover': { transform: 'scale(1.05)' } }}
+                  sx={{
+                    transition: "transform 0.2s ease-in-out",
+                    "&:hover": { transform: "scale(1.05)" },
+                  }}
                 >
                   Delete
                 </Button>
@@ -1224,14 +1288,18 @@ export default function SocietyBuzz() {
         onClose={() => setOpenDialog(false)}
         TransitionProps={{ timeout: 300 }} // Smooth dialog entry
         PaperProps={{
-            sx: {
-                borderRadius: 2,
-                boxShadow: isDark ? "0 8px 30px rgba(0,0,0,0.8)" : "0 8px 30px rgba(0,0,0,0.2)",
-            }
+          sx: {
+            borderRadius: 2,
+            boxShadow: isDark
+              ? "0 8px 30px rgba(0,0,0,0.8)"
+              : "0 8px 30px rgba(0,0,0,0.2)",
+          },
         }}
       >
-        <DialogTitle sx={{ bgcolor: theme.palette.primary.main, color: '#fff' }}>
-            Create New Group
+        <DialogTitle
+          sx={{ bgcolor: theme.palette.primary.main, color: "#fff" }}
+        >
+          Create New Group
         </DialogTitle>
 
         <DialogContent dividers>
@@ -1250,7 +1318,7 @@ export default function SocietyBuzz() {
             Select Members:
           </Typography>
 
-          <FormGroup sx={{ maxHeight: 200, overflowY: 'auto', pr: 1 }}>
+          <FormGroup sx={{ maxHeight: 200, overflowY: "auto", pr: 1 }}>
             {loadingMembers ? (
               <Box display="flex" justifyContent="center" py={2}>
                 <CircularProgress size={24} />
@@ -1263,16 +1331,21 @@ export default function SocietyBuzz() {
                     <Checkbox
                       checked={selectedMembers.includes(m._id)}
                       onChange={() => handleToggleMember(m._id)}
-                      disabled={m._id === userId} // Disable checkbox for self
+                      disabled={m._id === userId}
                     />
                   }
                   label={m.name || m.email}
                   sx={{
-                    transition: 'background-color 0.2s ease-in-out',
-                    '&:hover': {
-                        bgcolor: isDark ? theme.palette.grey[800] : theme.palette.grey[100],
+                    transition: "background-color 0.2s ease-in-out",
+                    "&:hover": {
+                      bgcolor: isDark
+                        ? theme.palette.grey[800]
+                        : theme.palette.grey[100],
                     },
-                    ...(m._id === userId && { opacity: 0.7, fontStyle: 'italic' }) // Style for self
+                    ...(m._id === userId && {
+                      opacity: 0.7,
+                      fontStyle: "italic",
+                    }), // Style for self
                   }}
                 />
               ))
@@ -1303,7 +1376,11 @@ export default function SocietyBuzz() {
             }
             variant="contained"
             color="primary"
-            startIcon={creatingGroup ? <CircularProgress size={16} color="inherit" /> : null}
+            startIcon={
+              creatingGroup ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : null
+            }
           >
             {creatingGroup ? "Creating..." : "Create Group"}
           </Button>
@@ -1311,7 +1388,10 @@ export default function SocietyBuzz() {
       </Dialog>
 
       {/* Media Preview Dialog */}
-      <Dialog open={previewOpen} onClose={closePreview} fullScreen
+      <Dialog
+        open={previewOpen}
+        onClose={closePreview}
+        fullScreen
         TransitionProps={{ timeout: 300 }} // Smooth dialog entry
       >
         <Box
@@ -1320,32 +1400,36 @@ export default function SocietyBuzz() {
             width: "100vw",
             height: "100vh",
             display: "flex",
-            flexDirection: 'column', // Changed to column for better centering
+            flexDirection: "column", // Changed to column for better centering
             alignItems: "center",
             justifyContent: "center",
-            bgcolor: theme.palette.mode === "dark" ? "rgba(0,0,0,0.9)" : "rgba(255,255,255,0.9)",
-            backdropFilter: 'blur(5px)', // Subtle blur background
-            transition: 'background-color 0.3s ease-in-out',
+            bgcolor:
+              theme.palette.mode === "dark"
+                ? "rgba(0,0,0,0.9)"
+                : "rgba(255,255,255,0.9)",
+            backdropFilter: "blur(5px)", // Subtle blur background
+            transition: "background-color 0.3s ease-in-out",
           }}
         >
-            <IconButton
-                onClick={closePreview}
-                sx={{
-                    position: 'absolute',
-                    top: 16,
-                    right: 16,
-                    color: isDark ? 'white' : 'black',
-                    zIndex: 1000,
-                    bgcolor: 'rgba(0,0,0,0.3)',
-                    '&:hover': {
-                        bgcolor: 'rgba(0,0,0,0.5)',
-                        transform: 'scale(1.1)',
-                    },
-                    transition: 'transform 0.2s ease-in-out, background-color 0.2s ease-in-out',
-                }}
-            >
-                <AddIcon sx={{ transform: 'rotate(45deg)' }} /> {/* Close icon */}
-            </IconButton>
+          <IconButton
+            onClick={closePreview}
+            sx={{
+              position: "absolute",
+              top: 16,
+              right: 16,
+              color: isDark ? "white" : "black",
+              zIndex: 1000,
+              bgcolor: "rgba(0,0,0,0.3)",
+              "&:hover": {
+                bgcolor: "rgba(0,0,0,0.5)",
+                transform: "scale(1.1)",
+              },
+              transition:
+                "transform 0.2s ease-in-out, background-color 0.2s ease-in-out",
+            }}
+          >
+            <AddIcon sx={{ transform: "rotate(45deg)" }} /> {/* Close icon */}
+          </IconButton>
           {previewType === "image" && (
             <img
               src={previewUrl}
@@ -1354,8 +1438,10 @@ export default function SocietyBuzz() {
                 maxWidth: "90%",
                 maxHeight: "90%",
                 borderRadius: 8,
-                boxShadow: isDark ? "0 8px 30px rgba(0,0,0,0.8)" : "0 8px 30px rgba(0,0,0,0.2)",
-                objectFit: 'contain', // Ensure the image fits within bounds
+                boxShadow: isDark
+                  ? "0 8px 30px rgba(0,0,0,0.8)"
+                  : "0 8px 30px rgba(0,0,0,0.2)",
+                objectFit: "contain", // Ensure the image fits within bounds
               }}
             />
           )}
@@ -1369,7 +1455,9 @@ export default function SocietyBuzz() {
                 maxWidth: "90%",
                 maxHeight: "90%",
                 borderRadius: 8,
-                boxShadow: isDark ? "0 8px 30px rgba(0,0,0,0.8)" : "0 8px 30px rgba(0,0,0,0.2)",
+                boxShadow: isDark
+                  ? "0 8px 30px rgba(0,0,0,0.8)"
+                  : "0 8px 30px rgba(0,0,0,0.2)",
               }}
             />
           )}
@@ -1382,16 +1470,22 @@ export default function SocietyBuzz() {
                 height: "90%",
                 border: "none",
                 borderRadius: 8,
-                boxShadow: isDark ? "0 8px 30px rgba(0,0,0,0.8)" : "0 8px 30px rgba(0,0,0,0.2)",
+                boxShadow: isDark
+                  ? "0 8px 30px rgba(0,0,0,0.8)"
+                  : "0 8px 30px rgba(0,0,0,0.2)",
               }}
               title="PDF Preview"
             />
           )}
           {/* Add a descriptive text for larger screens, maybe not on mobile */}
           {!isMobile && (
-              <Typography variant="caption" color={isDark ? 'textSecondary' : 'textPrimary'} mt={2}>
-                  Click anywhere or press ESC to close.
-              </Typography>
+            <Typography
+              variant="caption"
+              color={isDark ? "textSecondary" : "textPrimary"}
+              mt={2}
+            >
+              Click anywhere or press ESC to close.
+            </Typography>
           )}
         </Box>
       </Dialog>
@@ -1416,41 +1510,53 @@ export default function SocietyBuzz() {
             justifyContent: "center",
             alignItems: "center",
             p: 2,
-            position: 'relative', // For absolute positioning of controls
+            position: "relative", // For absolute positioning of controls
           }}
         >
-            <IconButton
-                onClick={() => { stopCamera(); setCapturedImage(null); }}
-                sx={{
-                    position: 'absolute',
-                    top: 16,
-                    right: 16,
-                    color: 'white',
-                    zIndex: 1000,
-                    bgcolor: 'rgba(0,0,0,0.3)',
-                    '&:hover': {
-                        bgcolor: 'rgba(0,0,0,0.5)',
-                        transform: 'scale(1.1)',
-                    },
-                    transition: 'transform 0.2s ease-in-out, background-color 0.2s ease-in-out',
-                }}
-            >
-                <AddIcon sx={{ transform: 'rotate(45deg)' }} />
-            </IconButton>
+          <IconButton
+            onClick={() => {
+              stopCamera();
+              setCapturedImage(null);
+            }}
+            sx={{
+              position: "absolute",
+              top: 16,
+              right: 16,
+              color: "white",
+              zIndex: 1000,
+              bgcolor: "rgba(0,0,0,0.3)",
+              "&:hover": {
+                bgcolor: "rgba(0,0,0,0.5)",
+                transform: "scale(1.1)",
+              },
+              transition:
+                "transform 0.2s ease-in-out, background-color 0.2s ease-in-out",
+            }}
+          >
+            <AddIcon sx={{ transform: "rotate(45deg)" }} />
+          </IconButton>
 
           {capturedImage ? (
             <>
               <img
                 src={capturedImage}
                 alt="Captured"
-                style={{ maxWidth: "90%", maxHeight: "80vh", borderRadius: 10, objectFit: 'contain' }}
+                style={{
+                  maxWidth: "90%",
+                  maxHeight: "80vh",
+                  borderRadius: 10,
+                  objectFit: "contain",
+                }}
               />
               <Box mt={3} display="flex" gap={2} sx={{ zIndex: 10 }}>
                 <Button
                   variant="contained"
                   onClick={handleSendCapturedImage}
                   color="primary"
-                  sx={{ transition: 'transform 0.2s ease-in-out', '&:hover': { transform: 'scale(1.05)' } }}
+                  sx={{
+                    transition: "transform 0.2s ease-in-out",
+                    "&:hover": { transform: "scale(1.05)" },
+                  }}
                 >
                   Send Photo
                 </Button>
@@ -1461,7 +1567,10 @@ export default function SocietyBuzz() {
                     setCapturedImage(null);
                     startCamera(); // go back to camera
                   }}
-                  sx={{ transition: 'transform 0.2s ease-in-out', '&:hover': { transform: 'scale(1.05)' } }}
+                  sx={{
+                    transition: "transform 0.2s ease-in-out",
+                    "&:hover": { transform: "scale(1.05)" },
+                  }}
                 >
                   Retake
                 </Button>
@@ -1477,7 +1586,7 @@ export default function SocietyBuzz() {
                   maxHeight: "80vh",
                   maxWidth: "90vw",
                   borderRadius: 10,
-                  bgcolor: '#000', // Ensure black background for video area
+                  bgcolor: "#000", // Ensure black background for video area
                 }}
               />
               <Box mt={3} display="flex" gap={2} sx={{ zIndex: 10 }}>
@@ -1485,7 +1594,10 @@ export default function SocietyBuzz() {
                   variant="contained"
                   onClick={capturePhoto}
                   color="primary"
-                  sx={{ transition: 'transform 0.2s ease-in-out', '&:hover': { transform: 'scale(1.05)' } }}
+                  sx={{
+                    transition: "transform 0.2s ease-in-out",
+                    "&:hover": { transform: "scale(1.05)" },
+                  }}
                 >
                   Capture Photo
                 </Button>
@@ -1493,7 +1605,10 @@ export default function SocietyBuzz() {
                   variant="outlined"
                   color="error"
                   onClick={stopCamera}
-                  sx={{ transition: 'transform 0.2s ease-in-out', '&:hover': { transform: 'scale(1.05)' } }}
+                  sx={{
+                    transition: "transform 0.2s ease-in-out",
+                    "&:hover": { transform: "scale(1.05)" },
+                  }}
                 >
                   Cancel
                 </Button>
@@ -1514,10 +1629,12 @@ export default function SocietyBuzz() {
             : undefined
         }
         PaperProps={{
-            sx: {
-                borderRadius: 1.5,
-                boxShadow: isDark ? "0 4px 20px rgba(0,0,0,0.6)" : "0 4px 20px rgba(0,0,0,0.1)",
-            }
+          sx: {
+            borderRadius: 1.5,
+            boxShadow: isDark
+              ? "0 4px 20px rgba(0,0,0,0.6)"
+              : "0 4px 20px rgba(0,0,0,0.1)",
+          },
         }}
         TransitionProps={{ timeout: 150 }} // Smooth menu transition
       >
@@ -1527,11 +1644,12 @@ export default function SocietyBuzz() {
             setContextMenu(null);
           }}
           sx={{
-            py: 1, px: 2,
-            '&:hover': {
+            py: 1,
+            px: 2,
+            "&:hover": {
               bgcolor: theme.palette.action.hover,
             },
-            transition: 'background-color 0.2s ease-in-out',
+            transition: "background-color 0.2s ease-in-out",
           }}
         >
           🧍Delete for Me
@@ -1544,12 +1662,14 @@ export default function SocietyBuzz() {
               setContextMenu(null);
             }}
             sx={{
-                py: 1, px: 2,
-                color: theme.palette.error.main,
-                '&:hover': {
-                  bgcolor: theme.palette.error.light + '10', // Light red hover
-                },
-                transition: 'background-color 0.2s ease-in-out, color 0.2s ease-in-out',
+              py: 1,
+              px: 2,
+              color: theme.palette.error.main,
+              "&:hover": {
+                bgcolor: theme.palette.error.light + "10", // Light red hover
+              },
+              transition:
+                "background-color 0.2s ease-in-out, color 0.2s ease-in-out",
             }}
           >
             🌐 Delete for Everyone

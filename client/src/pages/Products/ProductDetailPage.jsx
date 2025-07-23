@@ -35,7 +35,7 @@ const ProductDetailPage = () => {
     cartItems,
     firstCartId,
     setFirstCartId,
-    products, // Ensure products are available from context to check quantity
+    products,
   } = useAppContext();
 
   const [product, setProduct] = useState(null);
@@ -94,7 +94,7 @@ const ProductDetailPage = () => {
         setProduct({ ...prod, description: parsedDescription });
         if (prod.images?.length) setThumbnail(prod.images[0].url);
       } catch (err) {
-        console.error("❌ Failed to fetch product:", err);
+        console.error("Failed to fetch product:", err);
         setProduct(null);
       } finally {
         setLoading(false);
@@ -115,7 +115,7 @@ const ProductDetailPage = () => {
 
         setRelatedProducts(data.products.slice(0, 5));
       } catch (err) {
-        console.error("❌ Failed to fetch related products:", err);
+        console.error("Failed to fetch related products:", err);
       }
     };
 

@@ -63,6 +63,8 @@ export const AppContextProvider = ({ children }) => {
   const [addresses, setAddresses] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState(null);
   let messageHandler = null;
+
+  
   // Notices
   const [notices, setNotices] = useState([]);
 
@@ -88,7 +90,7 @@ export const AppContextProvider = ({ children }) => {
         setUserId(data.user._id);
       } catch (err) {
         console.error(
-          "❌ Failed to fetch logged-in user:",
+          "Failed to fetch logged-in user:",
           err.response?.data || err.message
         );
       }
@@ -145,7 +147,7 @@ export const AppContextProvider = ({ children }) => {
     localStorage.setItem("theme-mode", themeMode);
   }, [themeMode]);
   useEffect(() => {
-    console.log("✅ Setting token in axios:", token);
+    console.log("Setting token in axios : ", token);
     if (token) {
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     } else {
@@ -155,7 +157,7 @@ export const AppContextProvider = ({ children }) => {
 
   useEffect(() => {
     const fetchSociety = async () => {
-      if (!societyId || !token) return; // ensure token exists
+      if (!societyId || !token) return; 
       try {
         const res = await axios.get(`/api/users/society/${societyId}/details`, {
           headers: {
@@ -196,13 +198,13 @@ export const AppContextProvider = ({ children }) => {
             name: opt.text,
             votes: opt.votes.length,
           })),
-          votedHouses: new Set(), // optional: support voting history later
+          votedHouses: new Set(), 
         }));
 
         setPolls(mapped);
       } catch (err) {
         console.error(
-          "❌ Failed to fetch polls:",
+          " Failed to fetch polls:",
           err.response?.data || err.message
         );
       }
@@ -222,7 +224,7 @@ export const AppContextProvider = ({ children }) => {
         setProducts(data.products);
       } catch (err) {
         console.error(
-          "❌ Failed to fetch products:",
+          "Failed to fetch products:",
           err.response?.data || err.message
         );
       } finally {
@@ -324,7 +326,7 @@ export const AppContextProvider = ({ children }) => {
     try {
       const endpoint =
         userRole === "admin"
-          ? `/api/admin/complaints/${societyId}` // ✅ corrected path
+          ? `/api/admin/complaints/${societyId}`
           : `/api/users/complaints/society/${societyId}`;
 
       const { data } = await axios.get(endpoint, {
@@ -336,7 +338,7 @@ export const AppContextProvider = ({ children }) => {
       return data;
     } catch (err) {
       console.error(
-        "❌ Failed to fetch complaints:",
+        "Failed to fetch complaints:",
         err.response?.data || err.message
       );
       return [];
@@ -355,7 +357,7 @@ export const AppContextProvider = ({ children }) => {
     socketRef.current = socket;
 
     socket.on("receive message", (msg) => {
-      console.log("📩 Message received via socket:", msg);
+      console.log("Message received via socket:", msg);
       if (typeof messageHandler === "function") {
         messageHandler(msg);
       }

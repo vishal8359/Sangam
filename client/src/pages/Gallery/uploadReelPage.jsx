@@ -182,7 +182,7 @@ const UploadReelPage = () => {
       setTags([]);
       setTagInput("");
     } catch (error) {
-      console.error("❌ Reel upload failed:", error);
+      console.error("Reel upload failed:", error);
       toast.dismiss(toastId);
       toast.error(
         error.response?.data?.message ||
@@ -191,7 +191,7 @@ const UploadReelPage = () => {
     }
   };
 
-  // --- Framer Motion Variants ---
+  // --- Framer Motion Variants:
   const pageVariants = {
     initial: { opacity: 0, y: 20 },
     animate: { opacity: 1, y: 0, transition: { duration: 0.7, ease: "easeOut" } },

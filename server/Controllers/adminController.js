@@ -63,7 +63,7 @@ export const getPendingJoinRequests = async (req, res) => {
 
     res.status(200).json({ requests: pendingRequests });
   } catch (err) {
-    console.error("❌ Error fetching pending join requests:", err);
+    console.error("Error fetching pending join requests:", err);
     res.status(500).json({ message: "Server error fetching requests" });
   }
 };
@@ -185,7 +185,7 @@ export const rejectJoinRequest = async (req, res) => {
 
     res.status(200).json({ message: "Request rejected and user notified" });
   } catch (err) {
-    console.error("❌ Rejection error:", err);
+    console.error("Rejection error:", err);
     res.status(500).json({ message: "Server error during rejection" });
   }
 };

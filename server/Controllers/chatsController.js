@@ -66,7 +66,7 @@ export const getSocietyUsers = async (req, res) => {
 
     res.status(200).json({ success: true, users: filtered });
   } catch (err) {
-    console.error("❌ Error fetching society users:", err);
+    console.error("Error fetching society users:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
@@ -84,7 +84,7 @@ export const getChatHistory = async (req, res) => {
 
     res.status(200).json({ success: true, messages });
   } catch (err) {
-    console.error("❌ Failed to fetch chat history:", err);
+    console.error("Failed to fetch chat history:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
@@ -128,7 +128,7 @@ export const uploadChatFile = async (req, res) => {
 
     res.status(200).json(newMessage);
   } catch (error) {
-    console.error("❌ Upload error:", error);
+    console.error("Upload error:", error);
     res.status(500).json({ error: error.message || "Internal Server Error" });
   }
 };

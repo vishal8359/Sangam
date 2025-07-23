@@ -23,7 +23,7 @@ export const createEvent = async (req, res) => {
     if (req.file) {
       const uploaded = await uploadToCloudinary(req.file.buffer, "events", req.file.mimetype);
       console.log("🔹 Cloudinary upload result:", uploaded);
-      imageUrl = uploaded.url;
+      imageUrl = uploaded.secure_url; // Corrected to secure_url
     }
 
     const event = new Event({
@@ -87,14 +87,13 @@ export const inviteToEvent = async (req, res) => {
   }
 };
 
-// Controllers/userController.js
 export const getSocietyMembers = async (req, res) => {
   try {
     const societyId = req.user.societyId;
 
     const members = await User.find({
       $or: [{ created_society: societyId }, { joined_societies: societyId }],
-    }).select("_id name avatar address"); // Add any fields needed in invite UI
+    }).select("_id name avatar address");
 
     res.status(200).json(members);
   } catch (err) {

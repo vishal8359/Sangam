@@ -5,8 +5,7 @@ import { verifyAdmin, verifyUser, verifyUserOrAdmin } from "../Middlewares/authM
 import { getSocietyById } from "../Controllers/societyController.js";
 import { createPoll, getPollsBySociety, voteInPoll, getPollResults, togglePollLock } from "../Controllers/pollController.js";
 import { createNotice, getNoticesBySociety } from "../Controllers/noticeController.js";
-import { getGroupsBySociety, getGroupDetails, postInGroup, createBuzzGroup, getSocietyMembers } from "../Controllers/buzzController.js";
-import { rejectGroupJoinRequest, approveGroupJoinRequest } from "../Controllers/groupJoinController.js";
+import { createBuzzGroup, getSocietyMembers } from "../Controllers/buzzController.js";
 import upload from "../Configs/multer.js";
 import { resolveComplaint, getComplaintsBySociety, getResolvedComplaints, deleteComplaint, addComplaintReply } from "../Controllers/complaintController.js";
 import { getNeighbouringSocieties } from "../Controllers/societyController.js";
@@ -50,9 +49,8 @@ router.get("/chats/me", verifyAdmin, getMyChats);
 router.post("/buzz/create-group", verifyAdmin, createBuzzGroup);
 // routes/adminRoutes.js
 
-router.post("/buzz/group/:groupId/post", verifyUser, postInGroup);
-router.post("/buzz/groups/requests/:requestId/approve", verifyAdmin, approveGroupJoinRequest);
-router.post("/buzz/groups/requests/:requestId/reject", verifyAdmin, rejectGroupJoinRequest);
+// router.post("/buzz/groups/requests/:requestId/approve", verifyAdmin, approveGroupJoinRequest);
+// router.post("/buzz/groups/requests/:requestId/reject", verifyAdmin, rejectGroupJoinRequest);
 
 // Product Delete
 

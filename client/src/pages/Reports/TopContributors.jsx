@@ -214,7 +214,7 @@ const TopContributorsPage = () => {
                     {contributor.avatar || contributor.name.charAt(0)}
                   </Avatar>
                   <Box>
-                    <Typography variant="h5" fontWeight="bold" sx={{ color: isDark ? theme.palette.info.light : theme.palette.primary.main }}>
+                    <Typography variant="h5" fontWeight="bold" sx={{ color: isDark ? "#fff" : theme.palette.primary.main }}>
                       {contributor.name}
                     </Typography>
                     <Typography

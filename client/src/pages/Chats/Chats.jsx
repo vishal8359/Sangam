@@ -56,7 +56,7 @@ export default function ChatsPage() {
   useEffect(() => {
     const fetchMembers = async () => {
       try {
-        console.log("🟡 Fetching members for:", societyId);
+        console.log("Fetching members for:", societyId);
         const { data } = await axios.get(
           `/api/users/society/${societyId}/users`,
           {
@@ -65,7 +65,7 @@ export default function ChatsPage() {
             },
           }
         );
-        console.log("✅ Members response:", data);
+        console.log("Members response:", data);
         if (data.success) {
           const filtered = data.users.filter((u) => u._id !== userId);
           setMembers(filtered);
@@ -94,7 +94,7 @@ export default function ChatsPage() {
       });
     }
 
-    console.log("🔎 userId:", userId, typeof userId);
+    // console.log("🔎 userId:", userId, typeof userId);
 
     return () => {
       socketRef?.current?.off("receive message");
@@ -116,7 +116,7 @@ export default function ChatsPage() {
           }));
         }
       } catch (err) {
-        console.error("❌ Failed to fetch chat history:", err);
+        console.error("Failed to fetch chat history:", err);
       }
     };
 

@@ -24,9 +24,8 @@ const OrderReceiptPage = () => {
 
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const receiptRefs = useRef({}); // Ref to store DOM elements for PDF generation
-
-  // Framer Motion Variants for animations
+  const receiptRefs = useRef({});
+  
   const pageVariants = {
     initial: { opacity: 0, y: 20 },
     animate: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
@@ -43,24 +42,16 @@ const OrderReceiptPage = () => {
     initial: { opacity: 0, x: -10 },
     animate: { opacity: 1, x: 0, transition: { duration: 0.3, ease: "easeOut" } },
   };
-
-  /**
-   * Fetches orders from the backend API.
-   * IMPORTANT: The backend API must populate the 'product' field within each item.
-   * For example, if using Mongoose, your query might look like:
-   * Order.find({ seller: sellerId }).populate('items.product');
-   */
   const fetchOrders = async () => {
     try {
       const { data } = await axios.get("/api/users/order/seller", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      // Sort orders by placedAt in descending order (most recent first)
+      
       const sortedOrders = data.orders.sort((a, b) => new Date(b.placedAt) - new Date(a.placedAt));
       setOrders(sortedOrders || []);
     } catch (err) {
-      console.error("❌ Failed to fetch orders:", err);
-      // You might want to show a user-friendly error message here, e.g., using toast.error
+      console.error("Failed to fetch orders:", err);
     } finally {
       setLoading(false);
     }

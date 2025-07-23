@@ -27,15 +27,9 @@ import ForumIcon from "@mui/icons-material/Forum";
 import ShowChartIcon from "@mui/icons-material/ShowChart";
 import MilitaryTechIcon from "@mui/icons-material/MilitaryTech";
 import HealthAndSafetyIcon from "@mui/icons-material/HealthAndSafety";
-import Diversity3Icon from "@mui/icons-material/Diversity3";
-import SocietyLogo from "./logo";
-import StorefrontIcon from "@mui/icons-material/Storefront";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import Switch from "@mui/material/Switch";
-import SangamLogo from "./sangamLogo";
 import MySociety from "../pages/Society/MySociety.jsx";
-import Typography from "@mui/material/Typography";
-import appLogo from "../assets/appLogo.png";
 import ChatsPage from "../pages/Chats/Chats";
 import PollsPage from "../pages/Polls/Polls";
 import ProductsPage from "../pages/Reports/Products.jsx";
@@ -59,6 +53,8 @@ import UserProfileCard from "../pages/Society/UserProfile.jsx";
 import logo_light from "../assets/logo_light.png"
 import logo_dark from "../assets/logo_dark.png"
 import { FaFilm } from "react-icons/fa";
+import MovieIcon from '@mui/icons-material/Movie';
+
 
 const NAVIGATION = [
   {
@@ -122,7 +118,7 @@ const NAVIGATION = [
   {
     segment: "gallery",
     title: "Reels",
-    icon: <FaFilm />,
+    icon: <MovieIcon />,
   },
   {
     kind: "divider",
@@ -156,11 +152,6 @@ const NAVIGATION = [
         title: "Society Health Score",
         icon: <HealthAndSafetyIcon />,
       },
-      // {
-      //   segment: "age_groups",
-      //   title: "Age Groups",
-      //   icon: <Diversity3Icon />,
-      // },
     ],
   },
   {

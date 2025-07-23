@@ -54,7 +54,6 @@ const UserEngagementPage = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isDark = theme.palette.mode === "dark";
   const {user} = useAppContext();
-  // Framer Motion Variants for staggered entry
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -115,7 +114,7 @@ const UserEngagementPage = () => {
           fontWeight: 700,
           fontSize: isMobile ? theme.typography.h5.fontSize : theme.typography.h4.fontSize,
           lineHeight: isMobile ? theme.typography.h5.lineHeight : theme.typography.h4.lineHeight,
-          background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.secondary.main} 90%)`,
+          background: `linear-gradient(45deg, ${isDark ? "#fff" : theme.palette.primary.main} 30%, ${theme.palette.secondary.main} 90%)`,
           WebkitBackgroundClip: "text",
           WebkitTextFillColor: "transparent",
           textShadow: isDark ? "0 0 8px rgba(255,255,255,0.1)" : "none",
@@ -330,7 +329,7 @@ const UserEngagementPage = () => {
                   fontWeight="700"
                   mb={1}
                   sx={{ userSelect: "none" }}
-                  color={theme.palette.primary.main}
+                  color={isDark ? "#fff" : theme.palette.primary.main}
                 >
                   {title}
                 </Typography>

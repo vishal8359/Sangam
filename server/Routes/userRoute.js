@@ -126,8 +126,8 @@ router.patch(
   toggleProductActiveStatus
 );
 router.post("/me/address/add", verifyUser, addDeliveryAddress);
-router.put("/me/address/default", verifyUser, setDefaultDeliveryAddress);
-router.delete("/me/address/:addressId", verifyUser, deleteDeliveryAddress);
+router.put("/me/delivery-address/default", verifyUser, setDefaultDeliveryAddress);
+router.delete("/me/delivery-address/:addressId", verifyUser, deleteDeliveryAddress);
 router.post("/order/create", verifyUser, createOrder);
 router.get("/order/seller", verifyUser, getSellerOrders);
 router.get("/order/my-orders", verifyUser, getMyOrders);

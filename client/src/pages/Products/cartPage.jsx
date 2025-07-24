@@ -397,6 +397,7 @@ const CartPage = () => {
 
       <motion.div
         flex={1}
+        style={{width: isMobile ? "" : 500, marginRight: isMobile ? "" : 10}}
         component={Paper}
         p={isMobile ? 2.5 : 4}
         sx={{

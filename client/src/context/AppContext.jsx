@@ -50,7 +50,6 @@ export const AppContextProvider = ({ children }) => {
 
   const [polls, setPolls] = useState([]);
 
-  // Removed addresses and selectedAddress from AppContext as they are now derived in CartPage
   let messageHandler = null;
 
   const [notices, setNotices] = useState([]);
@@ -62,7 +61,6 @@ export const AppContextProvider = ({ children }) => {
     return saved ? JSON.parse(saved) : [];
   });
 
-  // Function to fetch the current user data
   const fetchCurrentUser = async () => {
     if (!token) return;
     try {
@@ -81,13 +79,12 @@ export const AppContextProvider = ({ children }) => {
         "Failed to fetch logged-in user:",
         err.response?.data || err.message
       );
-      
     }
   };
 
   useEffect(() => {
     fetchCurrentUser();
-  }, [token]); // Fetch user when token changes
+  }, [token]);
 
   useEffect(() => {
     localStorage.setItem("gallery-images", JSON.stringify(galleryImages));
@@ -115,8 +112,9 @@ export const AppContextProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    const stored = JSON.parse(sessionStorage.getItem("sangam-user"));
-    const savedToken = sessionStorage.getItem("token");
+    // Changed from sessionStorage to localStorage
+    const stored = JSON.parse(localStorage.getItem("sangam-user"));
+    const savedToken = localStorage.getItem("token");
     const savedTheme = localStorage.getItem("theme-mode");
 
     if (stored && savedToken) {
@@ -287,8 +285,9 @@ export const AppContextProvider = ({ children }) => {
     setToken(token);
     axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-    sessionStorage.setItem("token", token);
-    sessionStorage.setItem(
+    // Changed from sessionStorage to localStorage
+    localStorage.setItem("token", token);
+    localStorage.setItem(
       "sangam-user",
       JSON.stringify({
         userId: userProfile?._id,
@@ -308,8 +307,9 @@ export const AppContextProvider = ({ children }) => {
     setUserProfile(null);
     setIsAuthenticated(false);
     setToken("");
-    sessionStorage.removeItem("sangam-user");
-    sessionStorage.removeItem("token");
+    // Changed from sessionStorage to localStorage
+    localStorage.removeItem("sangam-user");
+    localStorage.removeItem("token");
     setCartItems({});
     localStorage.removeItem("sangam-cart");
   };
@@ -337,6 +337,9 @@ export const AppContextProvider = ({ children }) => {
       return [];
     }
   };
+
+  // State for message used in socket handling
+  const [messages, setMessages] = useState([]); // This state was missing but referenced
 
   useEffect(() => {
     if (!userId || !token) return;
@@ -470,7 +473,7 @@ export const AppContextProvider = ({ children }) => {
     },
     user,
     setUser,
-    fetchCurrentUser, // Exposed for external components to trigger user data refresh
+    fetchCurrentUser,
     galleryImages,
     setGalleryImages,
     addGalleryImage,
@@ -505,7 +508,6 @@ export const AppContextProvider = ({ children }) => {
     notices,
     setNotices,
     addNotice,
-    // Removed addresses and selectedAddress from context value
     navigate,
     axios,
   };

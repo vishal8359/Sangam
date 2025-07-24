@@ -22,13 +22,13 @@ const getFormattedAddress = (addresses) => {
   if (!addresses || addresses.length === 0) {
     return "N/A";
   }
-  const defaultAddress = addresses.find(addr => addr.isDefault) || addresses[0];
+  const defaultAddress =
+    addresses.find((addr) => addr.isDefault) || addresses[0];
   if (defaultAddress) {
     return `${defaultAddress.street}, ${defaultAddress.city}, ${defaultAddress.state}, ${defaultAddress.zipcode}, ${defaultAddress.country}`;
   }
   return "N/A";
 };
-
 
 export const registerResident = async (req, res) => {
   try {
@@ -286,6 +286,16 @@ export const createSociety = async (req, res) => {
     const [houseNumber, ...rest] = house.split(",");
     const street = rest.join(",").trim();
 
+    // NEW VALIDATION: Check if street is empty after parsing
+    if (!street) {
+      return res
+        .status(400)
+        .json({
+          message:
+            "House field must include both house number and street name (e.g., 'D-1/408, Main Street').",
+        });
+    }
+
     const newHome = await Home.create({
       electricity_bill_no: "N/A-" + uuidv4().split("-")[0],
       houseNumber: houseNumber.trim(),
@@ -340,6 +350,48 @@ Admin: ${user.name}
 🔑 Use your password to login.`
     );
 
+    const emailContentHtml = `
+      <p>Dear ${user.name},</p>
+      <p>Congratulations! Your society, <strong>${
+        newSociety.name
+      }</strong>, has been successfully created on the Sangam Society App.</p>
+      <p>You are now registered as the admin of this society.</p>
+      <p><strong>Society Name:</strong> ${newSociety.name}</p>
+      <p><strong>Society ID:</strong> ${newSociety._id}</p>
+      <p><strong>Location:</strong> ${JSON.stringify(newSociety.location)}</p>
+      <p><strong>Your User ID:</strong> ${user.user_id}</p>
+      <p><strong>Your Home ID:</strong> ${newHome._id}</p>
+      <p>You can now invite other residents to join your society using the Society ID. Please keep your User ID and password secure.</p>
+      <p>Best regards,<br/>The Sangam Society App Team</p>
+    `;
+
+    const plainTextContent = `
+Dear ${user.name},
+
+Congratulations! Your society, ${
+      newSociety.name
+    }, has been successfully created on the Sangam Society App.
+You are now registered as the admin of this society.
+
+Society Name: ${newSociety.name}
+Society ID: ${newSociety._id}
+Location: ${JSON.stringify(newSociety.location)}
+Your User ID: ${user.user_id}
+Your Home ID: ${newHome._id}
+
+You can now invite other residents to join your society using the Society ID. Please keep your User ID and password secure.
+
+Best regards,
+The Sangam Society App Team
+`;
+
+    await sendEmail({
+      to: user.email,
+      subject: `🎉 Your Society "${newSociety.name}" Has Been Created!`,
+      html: emailContentHtml,
+      text: plainTextContent,
+    });
+
     return res.status(201).json({
       message: "Society created successfully.",
       society_id: newSociety._id,
@@ -353,7 +405,6 @@ Admin: ${user.name}
       .json({ message: "Server error during society creation" });
   }
 };
-
 export const requestJoinSociety = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -459,8 +510,7 @@ export const getUserById = async (req, res) => {
 export const updateCurrentUserProfile = async (req, res) => {
   try {
     const userId = req.user._id;
-    const user = await User.findById(userId)
-      .populate("delivery_addresses");
+    const user = await User.findById(userId).populate("delivery_addresses");
 
     if (!user) {
       return res.status(404).json({ message: "User not found." });
@@ -469,7 +519,7 @@ export const updateCurrentUserProfile = async (req, res) => {
     if (req.body.name) user.name = req.body.name;
     if (req.body.email) user.email = req.body.email;
     if (req.body.phone_no) user.phone_no = req.body.phone_no;
-    if (req.body.address) user.address = req.body.address; 
+    if (req.body.address) user.address = req.body.address;
 
     if (req.file) {
       if (user.avatar) {
@@ -514,10 +564,33 @@ export const updateCurrentUserProfile = async (req, res) => {
 export const addDeliveryAddress = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { firstName, lastName, email, street, city, state, zipcode, country, phone } = req.body;
+    const {
+      firstName,
+      lastName,
+      email,
+      street,
+      city,
+      state,
+      zipcode,
+      country,
+      phone,
+    } = req.body;
 
-    if (!firstName || !lastName || !email || !street || !city || !state || !zipcode || !country || !phone) {
-      return res.status(400).json({ success: false, message: "All delivery address fields are required." });
+    if (
+      !firstName ||
+      !lastName ||
+      !email ||
+      !street ||
+      !city ||
+      !state ||
+      !zipcode ||
+      !country ||
+      !phone
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "All delivery address fields are required.",
+      });
     }
 
     const newDeliveryAddress = new DeliveryAddress({
@@ -537,17 +610,22 @@ export const addDeliveryAddress = async (req, res) => {
     const user = await User.findById(userId);
 
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found." });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found." });
     }
 
     if (user.delivery_addresses.length === 0) {
       newDeliveryAddress.isDefault = true;
     } else {
       // If there are existing addresses, ensure only one is default
-      const currentDefault = await DeliveryAddress.findOne({ userId: userId, isDefault: true });
+      const currentDefault = await DeliveryAddress.findOne({
+        userId: userId,
+        isDefault: true,
+      });
       if (!currentDefault) {
-          // If no default is found, make this the default
-          newDeliveryAddress.isDefault = true;
+        // If no default is found, make this the default
+        newDeliveryAddress.isDefault = true;
       }
     }
 
@@ -556,27 +634,39 @@ export const addDeliveryAddress = async (req, res) => {
     await user.save();
 
     // Re-populate delivery_addresses to send the full objects in the response
-    const updatedUser = await User.findById(userId).populate("delivery_addresses");
+    const updatedUser = await User.findById(userId).populate(
+      "delivery_addresses"
+    );
 
-    res.status(200).json({ success: true, message: "Delivery address saved successfully!", user: updatedUser });
+    res.status(200).json({
+      success: true,
+      message: "Delivery address saved successfully!",
+      user: updatedUser,
+    });
   } catch (err) {
     console.error("Error saving delivery address:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 };
 
-export const setDefaultDeliveryAddress = async (req, res) => { // Renamed for clarity
+export const setDefaultDeliveryAddress = async (req, res) => {
+  // Renamed for clarity
   try {
     const userId = req.user._id;
     const { addressId } = req.body;
 
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found." });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found." });
     }
 
     // Unset current default address for this user
-    await DeliveryAddress.updateMany({ userId: userId, isDefault: true }, { $set: { isDefault: false } });
+    await DeliveryAddress.updateMany(
+      { userId: userId, isDefault: true },
+      { $set: { isDefault: false } }
+    );
 
     // Set the new default address
     const updatedAddress = await DeliveryAddress.findOneAndUpdate(
@@ -586,39 +676,58 @@ export const setDefaultDeliveryAddress = async (req, res) => { // Renamed for cl
     );
 
     if (!updatedAddress) {
-      return res.status(404).json({ success: false, message: "Delivery address not found or does not belong to user." });
+      return res.status(404).json({
+        success: false,
+        message: "Delivery address not found or does not belong to user.",
+      });
     }
 
     // Re-populate delivery_addresses for the response
-    const updatedUser = await User.findById(userId).populate("delivery_addresses");
+    const updatedUser = await User.findById(userId).populate(
+      "delivery_addresses"
+    );
 
-    res.status(200).json({ success: true, message: "Default delivery address set successfully!", user: updatedUser });
-
+    res.status(200).json({
+      success: true,
+      message: "Default delivery address set successfully!",
+      user: updatedUser,
+    });
   } catch (err) {
     console.error("Error setting default delivery address:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 };
 
-export const deleteDeliveryAddress = async (req, res) => { // Renamed for clarity
+export const deleteDeliveryAddress = async (req, res) => {
+  // Renamed for clarity
   try {
     const userId = req.user._id;
     const { addressId } = req.params;
 
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found." });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found." });
     }
 
     // Find the address to be deleted
-    const addressToDelete = await DeliveryAddress.findOne({ _id: addressId, userId: userId });
+    const addressToDelete = await DeliveryAddress.findOne({
+      _id: addressId,
+      userId: userId,
+    });
 
     if (!addressToDelete) {
-      return res.status(404).json({ success: false, message: "Delivery address not found or does not belong to user." });
+      return res.status(404).json({
+        success: false,
+        message: "Delivery address not found or does not belong to user.",
+      });
     }
 
     // Remove the address from the user's array of references
-    user.delivery_addresses = user.delivery_addresses.filter(id => id.toString() !== addressId);
+    user.delivery_addresses = user.delivery_addresses.filter(
+      (id) => id.toString() !== addressId
+    );
     await user.save();
 
     // Delete the actual DeliveryAddress document
@@ -627,14 +736,21 @@ export const deleteDeliveryAddress = async (req, res) => { // Renamed for clarit
     // If the deleted address was the default, set a new default if other addresses exist
     if (addressToDelete.isDefault && user.delivery_addresses.length > 0) {
       const firstRemainingAddressId = user.delivery_addresses[0];
-      await DeliveryAddress.findByIdAndUpdate(firstRemainingAddressId, { $set: { isDefault: true } });
+      await DeliveryAddress.findByIdAndUpdate(firstRemainingAddressId, {
+        $set: { isDefault: true },
+      });
     }
 
     // Re-populate delivery_addresses for the response
-    const updatedUser = await User.findById(userId).populate("delivery_addresses");
+    const updatedUser = await User.findById(userId).populate(
+      "delivery_addresses"
+    );
 
-    res.status(200).json({ success: true, message: "Delivery address deleted successfully!", user: updatedUser });
-
+    res.status(200).json({
+      success: true,
+      message: "Delivery address deleted successfully!",
+      user: updatedUser,
+    });
   } catch (err) {
     console.error("Error deleting delivery address:", err);
     res.status(500).json({ success: false, message: err.message });

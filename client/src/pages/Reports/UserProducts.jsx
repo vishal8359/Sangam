@@ -59,7 +59,7 @@ const YourProductsPage = () => {
       );
     } catch (err) {
       toast.error("Failed to update product listing");
-      console.error("❌ Toggle error:", err.response?.data || err.message);
+      console.error("Toggle error:", err.response?.data || err.message);
     }
   };
 
@@ -74,7 +74,7 @@ const YourProductsPage = () => {
         setProducts(data);
       } catch (err) {
         toast.error("Failed to load your products.");
-        console.error("❌ Fetch error:", err.response?.data || err.message);
+        console.error("Fetch error:", err.response?.data || err.message);
       }
     };
 
@@ -109,7 +109,7 @@ const YourProductsPage = () => {
 
         setPurchasedProducts(flattenedProducts);
       } catch (err) {
-        console.error("❌ Failed to fetch purchased products:", err);
+        console.error("Failed to fetch purchased products:", err);
       }
     };
 
@@ -208,7 +208,6 @@ const YourProductsPage = () => {
 
       <Divider sx={{ mb: 4, borderColor: theme.palette.divider }} />
 
-      {/* Uploaded Products Section */}
       <Typography variant="h5" fontWeight={600} mb={3} color={theme.palette.text.primary}>
         🛍️ Your Listed Products
       </Typography>
@@ -238,7 +237,6 @@ const YourProductsPage = () => {
                   transition: "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
                 }}
               >
-                {/* Product Image */}
                 <CardMedia
                   component="img"
                   image={
@@ -263,7 +261,6 @@ const YourProductsPage = () => {
                     }
                 />
 
-                {/* Product Info */}
                 <CardContent sx={{ flex: 1, px: 2, pt: 2, pb: 1 }}>
                   <Typography variant="h6" fontWeight={600} noWrap>
                     {product.name}
@@ -321,7 +318,6 @@ const YourProductsPage = () => {
 
       <Divider sx={{ mb: 5, borderColor: theme.palette.divider }} />
 
-      {/* Pie Chart Section */}
       <Card sx={{ mb: 5, p: 3, borderRadius: 3, boxShadow: theme.shadows[6], bgcolor: theme.palette.background.paper }}>
         <Typography variant="h5" fontWeight={600} mb={2} color={theme.palette.text.primary}>
           📈 Earnings Distribution
@@ -367,7 +363,6 @@ const YourProductsPage = () => {
 
       <Divider sx={{ mb: 5, borderColor: theme.palette.divider }} />
 
-      {/* Purchased Products Section */}
       <Card sx={{ borderRadius: 3, p: 3, boxShadow: theme.shadows[6], bgcolor: theme.palette.background.paper }}>
         <Typography variant="h5" fontWeight={600} mb={2} color={theme.palette.text.primary}>
           🛍️ Purchased Products

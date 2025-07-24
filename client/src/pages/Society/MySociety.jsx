@@ -127,6 +127,7 @@ const MySociety = () => {
       <MotionBox
         initial="hidden"
         animate="visible"
+        style={{backgroundColor: isDark ? "#121211" : ""}}
         variants={containerVariants}
         sx={{
           position: "relative",

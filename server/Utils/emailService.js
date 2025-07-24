@@ -1,7 +1,6 @@
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
-dotenv.config(); 
-
+dotenv.config();
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -11,16 +10,18 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const sendEmail = async ({ to, subject, text }) => {
+const sendEmail = async ({ to, subject, html, text }) => { // Now accepts 'html' and 'text'
 
   if (!to) {
     console.error("❌ Cannot send email: 'to' field is missing or empty");
     return;
   }
+
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to,
     subject,
+    html,
     text,
   };
 
@@ -31,6 +32,5 @@ const sendEmail = async ({ to, subject, text }) => {
     console.error("❌ Email error:", error);
   }
 };
-
 
 export default sendEmail;

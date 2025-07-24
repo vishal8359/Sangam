@@ -1,4 +1,5 @@
 import Product from "../Models/Product.js";
+import Order from "../Models/Order.js";
 import { uploadToCloudinary } from "../Utils/cloudinaryUpload.js";
 import mongoose from "mongoose";
 
@@ -23,7 +24,6 @@ export const addProduct = async (req, res) => {
           "sangam-products",
           file.mimetype
         );
-        // Correctly store secure_url as 'url' and public_id
         images.push({ url: result.secure_url, public_id: result.public_id });
       }
     }

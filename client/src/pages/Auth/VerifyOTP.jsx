@@ -112,7 +112,9 @@ export default function VerifyOtp() {
         </Typography>
 
         <Typography mb={2}>Enter the 6-digit OTP sent to your phone</Typography>
-
+        <div className="mb-2">
+          <strong>Type anything, as OTP service is unavialable due to limited money 😢</strong>
+        </div>
         <Box sx={{ display: "flex", justifyContent: "center", gap: 1 }}>
           {otp.map((digit, index) => (
             <TextField

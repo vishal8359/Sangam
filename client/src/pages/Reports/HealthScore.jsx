@@ -12,6 +12,7 @@ import {
   useTheme,
   lighten,
   darken,
+  useMediaQuery,
 } from "@mui/material";
 import {
   BarChart,
@@ -66,7 +67,9 @@ const calculateBMI = (feet, inches, weight) => {
 };
 
 export default function SocietyHealthScore() {
+  
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isDark = theme.palette.mode === "dark";
 
   const [allSocietyData, setAllSocietyData] = useState([]);
@@ -403,10 +406,10 @@ export default function SocietyHealthScore() {
       <Grid container spacing={3} mb={6}>
         {myUploadedEntriesData.map((item) => (
           <Grid item xs={12} md={4} key={item._id}>
-            {/* You could integrate Framer Motion here for entrance animations: */}
-            {/* <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}> */}
+            
             <Card
               sx={{
+                width: isMobile ? 180 : 250,
                 background: isDark
                   ? "linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%)"
                   : "linear-gradient(135deg, #fafafa 0%, #ffffff 100%)",

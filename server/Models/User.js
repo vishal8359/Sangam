@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-
 const userSchema = new mongoose.Schema(
   {
     user_id: { type: String, required: true, unique: true },
@@ -28,7 +27,7 @@ const userSchema = new mongoose.Schema(
     lastSeen: { type: Date, default: Date.now },
     avatar: {
       type: String,
-      default: "https://res.cloudinary.com/dxgshlglc/image/upload/v1753210282/avatars/qoqvmgirhleyfwhsutpm.jpg",
+      default: "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.vecteezy.com%2Ffree-vector%2Femoji-avatar&psig=AOvVaw2bjfsQ4xUfpnhf-L3biZUi&ust=1753440933468000&source=images&cd=vfe&opi=89978449&ved=0CBUQjRxqFwoTCLij09Sq1Y4DFQAAAAAdAAAAABAE",
     },
     // Reference to DeliveryAddress documents
     delivery_addresses: [{ type: mongoose.Schema.Types.ObjectId, ref: "DeliveryAddress" }],

@@ -10,12 +10,13 @@ import {
   CircularProgress,
   Slide,
   Fade,
+  Link,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
-import society_creation_bg from "../../assets/societyBg.jpg"; // Reusing background image
+import society_creation_bg from "../../assets/societyBg.jpg";
 
 const MotionBox = motion(Box);
 const MotionPaper = motion(Paper);
@@ -23,14 +24,14 @@ const MotionTextField = motion(TextField);
 const MotionButton = motion(Button);
 
 const CreateSociety = () => {
-  const { login, axios } = useAppContext(); // Removed 'colors' as we'll use theme.palette directly
+  const { login, axios } = useAppContext();
   const [formData, setFormData] = useState({
     name: "",
     house: "",
     contact: "",
     email: "",
     password: "",
-    location: "", // JSON string input
+    location: "",
   });
   const navigate = useNavigate();
 
@@ -69,12 +70,16 @@ const CreateSociety = () => {
       if (
         !parsedLocation.type ||
         parsedLocation.type !== "Polygon" ||
-        !Array.isArray(parsedLocation.coordinates)
+        !Array.isArray(parsedLocation.coordinates) ||
+        !Array.isArray(parsedLocation.coordinates[0]) || // Ensure it's an array of rings
+        parsedLocation.coordinates[0].length < 4 || // A polygon needs at least 4 points (start=end)
+        parsedLocation.coordinates[0][0][0] !== parsedLocation.coordinates[0][parsedLocation.coordinates[0].length - 1][0] ||
+        parsedLocation.coordinates[0][0][1] !== parsedLocation.coordinates[0][parsedLocation.coordinates[0].length - 1][1]
       ) {
-        throw new Error("Invalid GeoJSON format.");
+        throw new Error("Invalid GeoJSON Polygon format. Ensure it's a closed loop.");
       }
     } catch (err) {
-      setError("Invalid GeoJSON format for location.");
+      setError("Invalid GeoJSON format for location. " + err.message);
       toast.error("Invalid GeoJSON format for location.");
       setLoading(false);
       return;
@@ -87,11 +92,11 @@ const CreateSociety = () => {
       });
 
       login({
-        token: data.token, // Assuming token is returned upon society creation
+        token: data.token,
         userId: data.user_id,
         houseId: data.home_id,
         societyId: data.society_id,
-        userRole: "admin", // The creator is automatically an admin
+        userRole: "admin",
         userProfile: {
           name: formData.name,
           contact: formData.contact,
@@ -228,17 +233,14 @@ const CreateSociety = () => {
             <form onSubmit={handleSubmit}>
               {[
                 { label: "Society Name", name: "name" },
-                { label: "Your House Number", name: "house" },
+                {
+                  label: "Your House Number, Street Name",
+                  name: "house",
+                  helperText: "e.g., D-1/408, Pratap Vihar Part - 3",
+                },
                 { label: "Your Contact Number", name: "contact", type: "tel" },
                 { label: "Your Email (Optional)", name: "email", type: "email" },
                 { label: "Admin Password", name: "password", type: "password" },
-                {
-                  label: "Society Location (GeoJSON Polygon)",
-                  name: "location",
-                  multiline: true,
-                  rows: 4,
-                  helperText: 'e.g., {"type":"Polygon","coordinates":[[[10,10],[20,10],[20,20],[10,20],[10,10]]]}',
-                },
               ].map((field) => (
                 <MotionTextField
                   key={field.name}
@@ -248,17 +250,64 @@ const CreateSociety = () => {
                   fullWidth
                   value={formData[field.name]}
                   onChange={handleChange}
-                  required={field.name !== "email"} // Email is optional
-                  multiline={field.multiline || false}
-                  rows={field.rows || 1}
+                  required={field.name !== "email"}
                   margin="normal"
                   variant="outlined"
                   sx={{ mb: 1 }}
                   InputLabelProps={{ style: { color: theme.palette.text.secondary } }}
                   InputProps={{ style: { color: theme.palette.text.primary, borderRadius: theme.shape.borderRadius } }}
                   variants={itemVariants}
+                  helperText={field.helperText} // Add helperText here
                 />
               ))}
+
+              <MotionBox variants={itemVariants} sx={{ mt: 2, mb: 1 }}>
+                <Link
+                  href="https://geojson.io/#map=2/0/20"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  underline="none"
+                >
+                  <Button
+                    variant="outlined"
+                    color="secondary"
+                    fullWidth
+                    size="medium"
+                    sx={{
+                      py: 1,
+                      fontWeight: "bold",
+                      borderRadius: theme.shape.borderRadius * 1.5,
+                      borderColor: theme.palette.secondary.main,
+                      color: theme.palette.secondary.main,
+                      "&:hover": {
+                        bgcolor: theme.palette.secondary.light + '10',
+                        borderColor: theme.palette.secondary.dark,
+                      },
+                      transition: "all 0.3s ease-in-out",
+                    }}
+                  >
+                    Generate GeoJSON Location
+                  </Button>
+                </Link>
+              </MotionBox>
+
+              <MotionTextField
+                label="Society Location (GeoJSON Polygon)"
+                name="location"
+                multiline
+                rows={4}
+                fullWidth
+                value={formData.location}
+                onChange={handleChange}
+                required
+                margin="normal"
+                variant="outlined"
+                helperText='Go to geojson.io, draw a polygon, copy the GeoJSON from the right panel (e.g., {"type":"Polygon","coordinates":[[[10,10],[20,10],[20,20],[10,20],[10,10]]]}) and paste it here.'
+                sx={{ mb: 1 }}
+                InputLabelProps={{ style: { color: theme.palette.text.secondary } }}
+                InputProps={{ style: { color: theme.palette.text.primary, borderRadius: theme.shape.borderRadius } }}
+                variants={itemVariants}
+              />
 
               {error && (
                 <Fade in={Boolean(error)} timeout={500}>
@@ -302,9 +351,9 @@ const CreateSociety = () => {
               <Typography variant="body1" mt={2} color="text.primary">
                 <strong>Society ID:</strong> <Typography component="span" fontWeight="bold" color="primary.main">{createdDetails.societyId}</Typography>
               </Typography>
-              <Typography variant="body1" color="text.primary">
+              {/* <Typography variant="body1" color="text.primary">
                 <strong>Admin User ID:</strong> <Typography component="span" fontWeight="bold" color="primary.main">{createdDetails.userId}</Typography>
-              </Typography>
+              </Typography> */}
               <Typography variant="body1" color="text.primary" mb={3}>
                 <strong>Admin Password:</strong> <Typography component="span" fontWeight="bold" color="primary.main">{createdDetails.password}</Typography>
               </Typography>

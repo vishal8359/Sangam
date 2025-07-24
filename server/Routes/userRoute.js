@@ -65,6 +65,7 @@ import { addComment, addReply, deleteReelById, getAllReels, getEngagementStats, 
 import { getTopContributors } from "../Controllers/contributorController.js";
 import { addHealth, deleteHealthData, getHealth } from "../Controllers/addHealthController.js";
 import { getSocietyIntegration } from "../Controllers/integrationController.js";
+import { createRazorpayOrder, verifyRazorpayPayment } from "../Controllers/paymentController.js";
 
 
 const router = express.Router();
@@ -125,6 +126,8 @@ router.patch(
   verifyUser, 
   toggleProductActiveStatus
 );
+router.post("/razorpay/create-order", verifyUser, createRazorpayOrder);
+router.post("/razorpay/verify-payment", verifyUser, verifyRazorpayPayment);
 router.post("/me/address/add", verifyUser, addDeliveryAddress);
 router.put("/me/delivery-address/default", verifyUser, setDefaultDeliveryAddress);
 router.delete("/me/delivery-address/:addressId", verifyUser, deleteDeliveryAddress);

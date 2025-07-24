@@ -40,6 +40,7 @@ const buttonVariants = {
   hover: { scale: 1.02, boxShadow: "0px 6px 15px rgba(0,0,0,0.15)" },
   tap: { scale: 0.98 },
 };
+
 const CartPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -70,8 +71,20 @@ const CartPage = () => {
   const [addresses, setAddresses] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState(null);
 
+  const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID;
+
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
   useEffect(() => {
-    if (user && user.delivery_addresses) { // Use delivery_addresses
+    if (user && user.delivery_addresses) {
       setAddresses(user.delivery_addresses);
       const defaultAddr = user.delivery_addresses.find(addr => addr.isDefault) || user.delivery_addresses[0];
       setSelectedAddress(defaultAddr || null);
@@ -80,7 +93,7 @@ const CartPage = () => {
 
   const handleSetDefaultAddress = async (addressId) => {
     try {
-      const { data } = await axios.put(`/api/users/me/delivery-address/default`, { addressId }, { // Updated API route
+      const { data } = await axios.put(`/api/users/me/delivery-address/default`, { addressId }, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (data.success) {
@@ -97,7 +110,7 @@ const CartPage = () => {
 
   const handleDeleteAddress = async (addressId) => {
     try {
-      const { data } = await axios.delete(`/api/users/me/delivery-address/${addressId}`, { // Updated API route
+      const { data } = await axios.delete(`/api/users/me/delivery-address/${addressId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (data.success) {
@@ -117,21 +130,30 @@ const CartPage = () => {
     try {
       if (!selectedAddress) {
         toast.error("Please select a delivery address.");
+        setIsPlacingOrder(false);
         return;
       }
 
-      const payload = {
+      const subtotal = getCartAmount();
+      const shippingFee = Math.ceil(subtotal * 0.005);
+      const totalAmount = (subtotal + shippingFee).toFixed(2);
+
+      const itemsWithPrice = cartArray.map((item) => ({
+        product: item._id,
+        quantity: item.cartQuantity,
+        priceAtOrder: item.offerPrice ?? item.price,
+      }));
+
+      const orderPayload = {
         userId: user._id,
-        items: cartArray.map((item) => ({
-          product: item._id,
-          quantity: item.cartQuantity,
-        })),
+        items: itemsWithPrice,
         address: selectedAddress._id,
+        totalAmount: parseFloat(totalAmount),
         paymentMethod: paymentOption,
       };
 
       if (paymentOption === "COD") {
-        const { data } = await axios.post("/api/users/order/create", payload, {
+        const { data } = await axios.post("/api/users/order/create", orderPayload, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -146,17 +168,101 @@ const CartPage = () => {
         } else {
           toast.error(data.message);
         }
-      } else {
-        const { data } = await axios.post("/api/order/stripe", payload, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        if (data.success && data.url) {
-          window.location.replace(data.url);
-        } else {
-          toast.error(data.message || "Failed to initiate online payment.");
+      } else if (paymentOption === "Online") {
+        const res = await loadRazorpayScript();
+        if (!res) {
+          toast.error("Razorpay SDK failed to load. Please check your internet connection.");
+          setIsPlacingOrder(false);
+          return;
         }
+
+        try {
+          const { data: razorpayOrderData } = await axios.post(
+            "/api/users/razorpay/create-order",
+            { totalAmount: orderPayload.totalAmount },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (!razorpayOrderData.success) {
+            toast.error(razorpayOrderData.message || "Failed to create Razorpay order.");
+            setIsPlacingOrder(false);
+            return;
+          }
+
+          const options = {
+            key: RAZORPAY_KEY_ID,
+            amount: razorpayOrderData.amount,
+            currency: razorpayOrderData.currency,
+            name: "Sangam Society App",
+            description: "Product Purchase",
+            image: "https://your-app-logo-url.com/logo.png",
+            order_id: razorpayOrderData.orderId,
+            handler: async function (response) {
+              try {
+                const { data: verifyData } = await axios.post(
+                  "/api/users/razorpay/verify-payment",
+                  {
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_signature: response.razorpay_signature,
+                    orderPayload: orderPayload,
+                  },
+                  {
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                    },
+                  }
+                );
+
+                if (verifyData.success) {
+                  toast.success(verifyData.message);
+                  setCartItems({});
+                  localStorage.removeItem("sangam-cart");
+                  setCartArray([]);
+                  navigate("/reports/user_products");
+                } else {
+                  toast.error(verifyData.message || "Payment verification failed.");
+                }
+              } catch (verifyError) {
+                console.error("Payment verification API call failed:", verifyError);
+                toast.error(verifyError.response?.data?.message || "Payment verification failed due to an error.");
+              } finally {
+                setIsPlacingOrder(false);
+              }
+            },
+            prefill: {
+              name: user.name,
+              email: user.email,
+              contact: user.phone_no,
+            },
+            notes: {
+              address: `${selectedAddress.street}, ${selectedAddress.city}`,
+              userId: user._id,
+            },
+            theme: {
+              color: theme.palette.primary.main,
+            },
+          };
+
+          const rzp1 = new window.Razorpay(options);
+
+          rzp1.on("payment.failed", function (response) {
+            toast.error("Payment failed: " + response.error.description);
+            console.error("Razorpay Payment Failed:", response.error);
+            setIsPlacingOrder(false);
+          });
+
+          rzp1.open();
+        } catch (razorpayError) {
+          console.error("Error initiating Razorpay checkout:", razorpayError);
+          toast.error(razorpayError.response?.data?.message || "Failed to initiate online payment.");
+        }
+      } else {
+        toast.error("Invalid payment option selected.");
       }
     } catch (error) {
       console.error("Order placement failed:", error);

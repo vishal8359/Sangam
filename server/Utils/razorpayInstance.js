@@ -1,4 +1,3 @@
-// server/utils/razorpayInstance.js
 import Razorpay from "razorpay";
 import dotenv from "dotenv";
 

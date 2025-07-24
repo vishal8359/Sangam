@@ -1,4 +1,4 @@
-import razorpayInstance from "../utils/razorpayInstance.js";
+import razorpayInstance from "../Utils/razorpayInstance.js";
 import crypto from "crypto";
 import Order from "../Models/Order.js";
 import Product from "../Models/Product.js";

@@ -1,6 +1,4 @@
 import React, { useState, useRef, useEffect } from "react";
-import Picker from "@emoji-mart/react";
-import data from "@emoji-mart/data";
 import { useSearchParams } from "react-router-dom";
 import {
   Box,
@@ -26,7 +24,8 @@ import {
   Zoom,
 } from "@mui/material";
 import { useTheme, useMediaQuery } from "@mui/material";
-
+import data from "@emoji-mart/data";
+import Picker from "@emoji-mart/react";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import ShareIcon from "@mui/icons-material/Share";
 import CommentIcon from "@mui/icons-material/Comment";

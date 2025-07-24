@@ -129,13 +129,13 @@ export const getCartProducts = async (req, res) => {
     const products = await Product.find({
       _id: { $in: ids },
       isActive: true,
-    }).populate("createdBy", "name address");
+    }).populate("seller", "name address");
 
     const formatted = products.map((p) => ({
       ...p._doc,
       image: p.images?.[0]?.url || "",
-      sellerName: p.createdBy?.name || "Unknown",
-      sellerAddress: p.createdBy?.address || "N/A",
+      sellerName: p.seller?.name || "N/A",
+      sellerAddress: p.seller?.address || "Not Provided",
     }));
 
     res.status(200).json({ products: formatted });
@@ -144,6 +144,7 @@ export const getCartProducts = async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+
 
 export const getSellerProductsWithStats = async (req, res) => {
   try {
@@ -248,7 +249,7 @@ export const getRelatedProducts = async (req, res) => {
       ...p._doc,
       image: p.images?.[0]?.url || "",
       sellerName: p.seller?.name || "Unknown",
-      sellerAddress: p.seller?.address || "N/A",
+      sellerAddress: p.seller?.addresses || "N/A",
     }));
 
     res.status(200).json({ products: formatted });

@@ -9,6 +9,9 @@ import {
   getCurrentUser,
   getUserById,
   updateCurrentUserProfile,
+  addDeliveryAddress,
+  setDefaultDeliveryAddress,
+  deleteDeliveryAddress,
 } from "../Controllers/userController.js";
 
 import {
@@ -122,7 +125,9 @@ router.patch(
   verifyUser, 
   toggleProductActiveStatus
 );
-
+router.post("/me/address/add", verifyUser, addDeliveryAddress);
+router.put("/me/address/default", verifyUser, setDefaultDeliveryAddress);
+router.delete("/me/address/:addressId", verifyUser, deleteDeliveryAddress);
 router.post("/order/create", verifyUser, createOrder);
 router.get("/order/seller", verifyUser, getSellerOrders);
 router.get("/order/my-orders", verifyUser, getMyOrders);

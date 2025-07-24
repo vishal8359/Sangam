@@ -1,6 +1,8 @@
 // controllers/orderController.js
 import Order from "../Models/Order.js";
 import Product from "../Models/Product.js";
+import DeliveryAddress from "../Models/DeliveryAddress.js"; // Uncommented this import
+
 export const createOrder = async (req, res) => {
   try {
     const { userId, items, address, paymentMethod = "COD" } = req.body;
@@ -15,7 +17,7 @@ export const createOrder = async (req, res) => {
     const order = await Order.create({
       user: userId,
       items,
-      address,
+      address, // This should be the _id of the DeliveryAddress document
       paymentMethod,
     });
 
@@ -58,8 +60,8 @@ export const getSellerOrders = async (req, res) => {
     const sellerId = req.user._id;
 
     const allOrders = await Order.find()
-      .populate("user", "name phone_no address")
-
+      .populate("user", "name phone_no address") // Populates user details
+      .populate("address") // Populate the DeliveryAddress document
       .populate({
         path: "items.product",
         select: "name images seller offerPrice",
@@ -99,6 +101,7 @@ export const getSellerOrders = async (req, res) => {
 export const getMyOrders = async (req, res) => {
   try {
     const myOrders = await Order.find({ user: req.user._id })
+      .populate("address") // Populate the DeliveryAddress document for buyer's own orders
       .populate({
         path: "items.product",
         select: "name images description",

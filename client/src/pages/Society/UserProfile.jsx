@@ -33,6 +33,7 @@ export default function UserProfileCard() {
   const [editableName, setEditableName] = useState("");
   const [editableEmail, setEditableEmail] = useState("");
   const [editablePhoneNo, setEditablePhoneNo] = useState("");
+  const [editableAddress, setEditableAddress] = useState(""); // New state for editable address
   const [avatarFile, setAvatarFile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -45,6 +46,7 @@ export default function UserProfileCard() {
       setEditableName(appContextUser.name || "");
       setEditableEmail(appContextUser.email || "");
       setEditablePhoneNo(appContextUser.phone_no || "");
+      setEditableAddress(appContextUser.address || ""); // Initialize editable address
       setLoading(false);
     } else if (!appLoading && !isAuthenticated) {
       setLoading(false);
@@ -70,6 +72,7 @@ export default function UserProfileCard() {
       if (editableName !== user.name) formData.append("name", editableName);
       if (editableEmail !== user.email) formData.append("email", editableEmail);
       if (editablePhoneNo !== user.phone_no) formData.append("phone_no", editablePhoneNo);
+      if (editableAddress !== user.address) formData.append("address", editableAddress); // Add address to formData
       if (avatarFile) formData.append("avatar", avatarFile);
 
       if (Array.from(formData.entries()).length === 0) {
@@ -260,6 +263,19 @@ export default function UserProfileCard() {
                 value={editablePhoneNo}
                 onChange={(e) => setEditablePhoneNo(e.target.value)}
                 sx={{ mb: 2 }}
+              />
+            </motion.div>
+            {/* New TextField for Address */}
+            <motion.div variants={itemVariants} style={{ width: "100%", maxWidth: 350 }}>
+              <TextField
+                label="Address"
+                variant="outlined"
+                fullWidth
+                value={editableAddress}
+                onChange={(e) => setEditableAddress(e.target.value)}
+                sx={{ mb: 2 }}
+                multiline
+                rows={2}
               />
             </motion.div>
 

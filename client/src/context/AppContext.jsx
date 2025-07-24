@@ -1,4 +1,3 @@
-// context/AppContext.js
 import { useTheme } from "@emotion/react";
 import { createContext, useContext, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
@@ -15,7 +14,6 @@ export const AppContextProvider = ({ children }) => {
   const theme = useTheme();
   const socketRef = useRef(null);
 
-  // Auth and user info
   const [userId, setUserId] = useState(null);
   const [houseId, setHouseId] = useState("");
   const [societyId, setSocietyId] = useState("");
@@ -27,16 +25,12 @@ export const AppContextProvider = ({ children }) => {
   const [token, setToken] = useState("");
   const [buzzMessages, setBuzzMessages] = useState([]);
 
-  // Reels
   const [userReels, setUserReels] = useState([]);
 
-  // Theme
   const [themeMode, setThemeMode] = useState("light");
 
-  // General user and data
   const [user, setUser] = useState(null);
 
-  // Marketplace
   const [products, setProducts] = useState([]);
   const [cartItems, setCartItems] = useState(() => {
     const stored = localStorage.getItem("sangam-cart");
@@ -48,56 +42,52 @@ export const AppContextProvider = ({ children }) => {
   const currency = import.meta.env.VITE_CURRENCY;
   const [cartArray, setCartArray] = useState([]);
 
-  // Events
   const [events, setEvents] = useState([]);
   const [invitations, setInvitations] = useState([]);
 
-  // Members
   const [members, setMembers] = useState([]);
   const [buzzGroups, setBuzzGroups] = useState([]);
 
-  //polls
   const [polls, setPolls] = useState([]);
 
-  //Address
-  const [addresses, setAddresses] = useState([]);
-  const [selectedAddress, setSelectedAddress] = useState(null);
+  // Removed addresses and selectedAddress from AppContext as they are now derived in CartPage
   let messageHandler = null;
 
-  
-  // Notices
   const [notices, setNotices] = useState([]);
 
   const [onlineStatus, setOnlineStatus] = useState({});
 
-  // Gallery Images (visible only to society members)
   const [galleryImages, setGalleryImages] = useState(() => {
     const saved = localStorage.getItem("gallery-images");
     return saved ? JSON.parse(saved) : [];
   });
 
-  // AppContext.js
-  useEffect(() => {
-    const fetchUser = async () => {
-      if (!token || user) return; 
-      try {
-        const { data } = await axios.get("/api/users/me", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setUser(data.user); 
-        setUserId(data.user._id);
-      } catch (err) {
-        console.error(
-          "Failed to fetch logged-in user:",
-          err.response?.data || err.message
-        );
-      }
-    };
+  // Function to fetch the current user data
+  const fetchCurrentUser = async () => {
+    if (!token) return;
+    try {
+      const { data } = await axios.get("/api/users/me", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setUser(data.user);
+      setUserId(data.user._id);
+      setUserProfile(data.user);
 
-    fetchUser();
-  }, [token]);
+      console.log("User data fetched and set in AppContext:", data.user);
+    } catch (err) {
+      console.error(
+        "Failed to fetch logged-in user:",
+        err.response?.data || err.message
+      );
+      
+    }
+  };
+
+  useEffect(() => {
+    fetchCurrentUser();
+  }, [token]); // Fetch user when token changes
 
   useEffect(() => {
     localStorage.setItem("gallery-images", JSON.stringify(galleryImages));
@@ -127,7 +117,7 @@ export const AppContextProvider = ({ children }) => {
   useEffect(() => {
     const stored = JSON.parse(sessionStorage.getItem("sangam-user"));
     const savedToken = sessionStorage.getItem("token");
-    const savedTheme = localStorage.getItem("theme-mode"); // keep theme in localStorage
+    const savedTheme = localStorage.getItem("theme-mode");
 
     if (stored && savedToken) {
       setUserId(stored.userId || null);
@@ -146,8 +136,8 @@ export const AppContextProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem("theme-mode", themeMode);
   }, [themeMode]);
+
   useEffect(() => {
-    console.log("Setting token in axios : ", token);
     if (token) {
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     } else {
@@ -157,7 +147,7 @@ export const AppContextProvider = ({ children }) => {
 
   useEffect(() => {
     const fetchSociety = async () => {
-      if (!societyId || !token) return; 
+      if (!societyId || !token) return;
       try {
         const res = await axios.get(`/api/users/society/${societyId}/details`, {
           headers: {
@@ -174,6 +164,7 @@ export const AppContextProvider = ({ children }) => {
     };
     fetchSociety();
   }, [societyId, token]);
+
   useEffect(() => {
     const fetchPolls = async () => {
       if (!societyId || !token) return;
@@ -198,13 +189,13 @@ export const AppContextProvider = ({ children }) => {
             name: opt.text,
             votes: opt.votes.length,
           })),
-          votedHouses: new Set(), 
+          votedHouses: new Set(),
         }));
 
         setPolls(mapped);
       } catch (err) {
         console.error(
-          " Failed to fetch polls:",
+          "Failed to fetch polls:",
           err.response?.data || err.message
         );
       }
@@ -212,6 +203,7 @@ export const AppContextProvider = ({ children }) => {
 
     fetchPolls();
   }, [societyId, token, userRole]);
+
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -278,9 +270,11 @@ export const AppContextProvider = ({ children }) => {
   const toggleTheme = () => {
     setThemeMode((prev) => (prev === "light" ? "dark" : "light"));
   };
+
   const setMessageHandler = (handlerFn) => {
     messageHandler = handlerFn;
   };
+
   const login = (data) => {
     const { userId, houseId, societyId, userRole, userProfile, token } = data;
 
@@ -293,7 +287,6 @@ export const AppContextProvider = ({ children }) => {
     setToken(token);
     axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-    // Use sessionStorage instead of localStorage
     sessionStorage.setItem("token", token);
     sessionStorage.setItem(
       "sangam-user",
@@ -385,7 +378,6 @@ export const AppContextProvider = ({ children }) => {
         setMessages((prevMessages) =>
           type === "me"
             ? prevMessages.filter((msg) =>
-                // Only remove if it's the deleter’s own message (for "me" delete)
                 deleterId === userId ? msg._id !== messageId : true
               )
             : prevMessages.map((msg) =>
@@ -411,7 +403,6 @@ export const AppContextProvider = ({ children }) => {
     };
   }, [userId, token]);
 
-  // Cart logic
   const updateCartItem = (productId, quantity) => {
     setCartItems((prev) => {
       const updated = { ...prev };
@@ -450,7 +441,6 @@ export const AppContextProvider = ({ children }) => {
   };
 
   const value = {
-    // auth
     userId,
     houseId,
     societyId,
@@ -467,7 +457,6 @@ export const AppContextProvider = ({ children }) => {
     setToken,
     fetchComplaints,
     onlineStatus,
-    // theme
     theme,
     themeMode,
     toggleTheme,
@@ -479,17 +468,12 @@ export const AppContextProvider = ({ children }) => {
       text: themeMode === "dark" ? "#ffffff" : "#000000",
       primary: themeMode === "dark" ? "#90caf9" : "#1976d2",
     },
-
-    // user data
     user,
     setUser,
-
-    // gallery
+    fetchCurrentUser, // Exposed for external components to trigger user data refresh
     galleryImages,
     setGalleryImages,
     addGalleryImage,
-
-    // products and cart
     products,
     setProducts,
     cartItems,
@@ -506,8 +490,6 @@ export const AppContextProvider = ({ children }) => {
     productsLoading,
     cartArray,
     setCartArray,
-
-    // society features
     members,
     setMembers,
     buzzGroups,
@@ -518,23 +500,12 @@ export const AppContextProvider = ({ children }) => {
     setInvitations,
     userReels,
     setUserReels,
-
-    //polls
     polls,
     setPolls,
-
-    // notices
     notices,
     setNotices,
     addNotice,
-
-    //address
-    addresses,
-    setAddresses,
-    selectedAddress,
-    setSelectedAddress,
-
-    // utils
+    // Removed addresses and selectedAddress from context value
     navigate,
     axios,
   };

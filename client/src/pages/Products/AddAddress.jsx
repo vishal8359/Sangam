@@ -16,7 +16,7 @@ import { motion } from "framer-motion";
 import AddressImage from "../../assets/add_adress.svg";
 
 const AddAddress = () => {
-  const { axios, user, navigate, setAddresses, setSelectedAddress } =
+  const { axios, user, navigate, fetchCurrentUser } =
     useAppContext();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -80,24 +80,20 @@ const AddAddress = () => {
     }
 
     try {
-      const newAddress = {
-        ...address,
-        _id: Date.now().toString(),
-      };
+      const { data } = await axios.post("/api/users/me/address/add", address);
 
-      setAddresses((prev) => {
-        const updated = [...prev, newAddress];
-        localStorage.setItem("mock-addresses", JSON.stringify(updated));
-        return updated;
-      });
-
-      setSelectedAddress(newAddress);
-
-      toast.success("Address saved successfully!");
-      navigate("/my-society/ads/cart");
+      if (data.success) {
+        toast.success(data.message);
+        if (fetchCurrentUser) {
+          await fetchCurrentUser();
+        }
+        navigate("/my-society/ads/cart");
+      } else {
+        toast.error(data.message);
+      }
     } catch (error) {
       console.error("Failed to save address:", error);
-      toast.error("Failed to save address. Please try again.");
+      toast.error(error.response?.data?.message || "Failed to save address. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

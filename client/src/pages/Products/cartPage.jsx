@@ -10,17 +10,40 @@ import {
   CircularProgress,
   Divider,
   CardMedia,
+  IconButton,
 } from "@mui/material";
 import toast from "react-hot-toast";
 import { useAppContext } from "../../context/AppContext";
 import { useMediaQuery, useTheme } from "@mui/material";
 import { motion, AnimatePresence } from "framer-motion";
+import DeleteIcon from '@mui/icons-material/Delete';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 
+const pageVariants = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
+  exit: { opacity: 0, y: -20, transition: { duration: 0.4, ease: "easeIn" } },
+};
+
+const itemCardVariants = {
+  initial: { opacity: 0, x: -50, scale: 0.8 },
+  animate: { opacity: 1, x: 0, scale: 1, transition: { type: "spring", stiffness: 120, damping: 14 } },
+  exit: { opacity: 0, x: 50, scale: 0.8, transition: { duration: 0.3 } },
+};
+
+const summaryCardVariants = {
+  initial: { opacity: 0, y: 50 },
+  animate: { opacity: 1, y: 0, transition: { delay: 0.3, duration: 0.6, ease: "easeOut" } },
+};
+
+const buttonVariants = {
+  hover: { scale: 1.02, boxShadow: "0px 6px 15px rgba(0,0,0,0.15)" },
+  tap: { scale: 0.98 },
+};
 const CartPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const {
-    products,
     cartItems,
     removeFromCart,
     updateCartItem,
@@ -30,14 +53,11 @@ const CartPage = () => {
     user,
     setCartItems,
     currency,
-    addresses,
-    setAddresses,
-    selectedAddress,
-    setSelectedAddress,
     token,
     productsLoading,
     cartArray,
     setCartArray,
+    fetchCurrentUser,
   } = useAppContext();
 
   const theme = useTheme();
@@ -47,27 +67,49 @@ const CartPage = () => {
   const [paymentOption, setPaymentOption] = useState("COD");
   const [showAddress, setShowAddress] = useState(false);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [addresses, setAddresses] = useState([]);
+  const [selectedAddress, setSelectedAddress] = useState(null);
 
-  const pageVariants = {
-    initial: { opacity: 0, y: 20 },
-    animate: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
-    exit: { opacity: 0, y: -20, transition: { duration: 0.4, ease: "easeIn" } },
+  useEffect(() => {
+    if (user && user.delivery_addresses) { // Use delivery_addresses
+      setAddresses(user.delivery_addresses);
+      const defaultAddr = user.delivery_addresses.find(addr => addr.isDefault) || user.delivery_addresses[0];
+      setSelectedAddress(defaultAddr || null);
+    }
+  }, [user]);
+
+  const handleSetDefaultAddress = async (addressId) => {
+    try {
+      const { data } = await axios.put(`/api/users/me/delivery-address/default`, { addressId }, { // Updated API route
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (data.success) {
+        toast.success("Default address set!");
+        await fetchCurrentUser();
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      console.error("Error setting default address:", error);
+      toast.error("Failed to set default address.");
+    }
   };
 
-  const itemCardVariants = {
-    initial: { opacity: 0, x: -50, scale: 0.8 },
-    animate: { opacity: 1, x: 0, scale: 1, transition: { type: "spring", stiffness: 120, damping: 14 } },
-    exit: { opacity: 0, x: 50, scale: 0.8, transition: { duration: 0.3 } },
-  };
-
-  const summaryCardVariants = {
-    initial: { opacity: 0, y: 50 },
-    animate: { opacity: 1, y: 0, transition: { delay: 0.3, duration: 0.6, ease: "easeOut" } },
-  };
-
-  const buttonVariants = {
-    hover: { scale: 1.02, boxShadow: "0px 6px 15px rgba(0,0,0,0.15)" },
-    tap: { scale: 0.98 },
+  const handleDeleteAddress = async (addressId) => {
+    try {
+      const { data } = await axios.delete(`/api/users/me/delivery-address/${addressId}`, { // Updated API route
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (data.success) {
+        toast.success("Address deleted successfully!");
+        await fetchCurrentUser();
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      console.error("Error deleting address:", error);
+      toast.error("Failed to delete address.");
+    }
   };
 
   const placeOrder = async () => {
@@ -123,36 +165,6 @@ const CartPage = () => {
       setIsPlacingOrder(false);
     }
   };
-
-  useEffect(() => {
-    const loadAddress = async () => {
-      if (addresses.length > 0 || selectedAddress) {
-        return;
-      }
-
-      const stored = JSON.parse(localStorage.getItem("mock-addresses") || "[]");
-
-      if (stored.length > 0) {
-        setAddresses(stored);
-        setSelectedAddress(stored[0]);
-      } else if (user?.address) {
-        const fallback = {
-          _id: "default",
-          street: user.address,
-          city: "",
-          state: "",
-          country: "",
-        };
-        setAddresses([fallback]);
-        setSelectedAddress(fallback);
-      }
-    };
-
-    if (user && !productsLoading) {
-      loadAddress();
-    }
-  }, [user, addresses.length, selectedAddress, setAddresses, setSelectedAddress, productsLoading]);
-
 
   if (productsLoading || !user) {
     return (
@@ -371,11 +383,11 @@ const CartPage = () => {
           </AnimatePresence>
         </Box>
 
-        <motion.div whileHover="hover" whileTap="tap" variants={buttonVariants}>
+        <motion.div whileHover="hover" whileTap="tap" variants={buttonVariants} style={{width: "200px", height:"0px"}}>
           <Button
             variant="text"
             color="primary"
-            sx={{ mt: isMobile ? 3 : 4, borderRadius: 2 }}
+            sx={{ mt: isMobile ? 3 : 4, borderRadius: 2, width: "100%" }}
             onClick={() => navigate("/my-society/ads")}
           >
             Continue Shopping
@@ -406,11 +418,11 @@ const CartPage = () => {
         <Typography variant="subtitle1" fontWeight={500} mb={0.5}>Delivery Address</Typography>
         <Typography color="text.secondary" mb={1.5}>
           {selectedAddress
-            ? `${selectedAddress.street}, ${selectedAddress.city}, ${selectedAddress.state}, ${selectedAddress.country}`
-            : user?.address || "No address selected"}
+            ? `${selectedAddress.street}, ${selectedAddress.city}, ${selectedAddress.state}, ${selectedAddress.zipcode}, ${selectedAddress.country}`
+            : "No address selected"}
         </Typography>
 
-        <motion.div whileHover="hover" whileTap="tap" variants={buttonVariants}>
+        <motion.div whileHover="hover" whileTap="tap" variants={buttonVariants} style={{width: "127px", height : "40px"}}>
           <Button
             size="small"
             onClick={() => navigate("/my-society/ads/add-address")}
@@ -420,7 +432,7 @@ const CartPage = () => {
           </Button>
         </motion.div>
 
-        {addresses.length > 1 && (
+        {addresses.length > 0 && (
           <Button
             size="small"
             onClick={() => setShowAddress((prev) => !prev)}
@@ -441,7 +453,7 @@ const CartPage = () => {
             >
               <Box
                 sx={{
-                  border: `1px solid ${selectedAddress?._id === address._id ? theme.palette.primary.main : theme.palette.grey[400]}`,
+                  border: `1px solid ${selectedAddress?._id === address._id ? theme.palette.primary.main : (isDark ? theme.palette.grey[700] : theme.palette.grey[400])}`,
                   p: 1.5,
                   mb: 1,
                   borderRadius: 2,
@@ -451,16 +463,50 @@ const CartPage = () => {
                   "&:hover": {
                     bgcolor: isDark ? theme.palette.grey[800] : theme.palette.grey[100],
                   },
-                }}
-                onClick={() => {
-                  setSelectedAddress(address);
-                  setShowAddress(false);
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
                 }}
               >
-                <Typography variant="body2">
-                  {address.street}, {address.city}, {address.state},{" "}
-                  {address.country}
-                </Typography>
+                <Box onClick={() => {
+                  setSelectedAddress(address);
+                  setShowAddress(false);
+                }} sx={{ flexGrow: 1 }}>
+                  <Typography variant="body2" fontWeight={selectedAddress?._id === address._id ? 600 : 400}>
+                    {address.firstName} {address.lastName}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {address.street}, {address.city}, {address.state}, {address.zipcode}, {address.country}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Phone: {address.phone}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  {selectedAddress?._id === address._id && (
+                    <CheckCircleOutlineIcon color="primary" sx={{ fontSize: 20 }} />
+                  )}
+                  {!address.isDefault && (
+                    <IconButton
+                      size="small"
+                      color="primary"
+                      onClick={() => handleSetDefaultAddress(address._id)}
+                      title="Set as Default"
+                    >
+                      <CheckCircleOutlineIcon sx={{ fontSize: 20 }} />
+                    </IconButton>
+                  )}
+                  {addresses.length > 1 && (
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={() => handleDeleteAddress(address._id)}
+                      title="Delete Address"
+                    >
+                      <DeleteIcon sx={{ fontSize: 20 }} />
+                    </IconButton>
+                  )}
+                </Box>
               </Box>
             </motion.div>
           ))}

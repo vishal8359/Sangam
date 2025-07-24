@@ -84,7 +84,7 @@ const OrderReceiptPage = () => {
     const pdf = new jsPDF("p", "mm", "a4"); // 'p' for portrait, 'mm' for millimeters, 'a4' for A4 size
     const imgProps = pdf.getImageProperties(imgData);
     const pdfWidth = pdf.internal.pageSize.getWidth();
- 
+  
     const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
     // Add the image to the PDF
@@ -223,16 +223,23 @@ const OrderReceiptPage = () => {
                     <Typography variant="subtitle1" fontWeight={600} mb={1}>
                       Customer Information:
                     </Typography>
-                    <Typography variant="body2">Name: {order.user?.name || "N/A"}</Typography>
-                    <Typography variant="body2">Phone: {order.user?.phone_no || "N/A"}</Typography>
+                    {/* Updated to use firstName and lastName from delivery address */}
+                    <Typography variant="body2">
+                      Name: {order.address?.firstName || "N/A"} {order.address?.lastName || ""}
+                    </Typography>
+                    {/* Updated to use phone from delivery address */}
+                    <Typography variant="body2">
+                      Phone: {order.address?.phone || "N/A"}
+                    </Typography>
+                    {/* Updated to use full delivery address from order.address */}
                     <Typography variant="body2">
                       Address:{" "}
-                      {order.address?.street || order.address?.city || order.address?.state || order.address?.country
-                        ? `${order.address?.street || ""}${order.address?.street ? ", " : ""}` +
-                          `${order.address?.city || ""}${order.address?.city ? ", " : ""}` +
-                          `${order.address?.state || ""}${order.address?.state ? ", " : ""}` +
-                          `${order.address?.country || ""}`
-                        : order.user?.address || "N/A"}
+                      {order.address ?
+                        [order.address.street, order.address.city, order.address.state, order.address.zipcode, order.address.country]
+                          .filter(Boolean)
+                          .join(", ")
+                        : "N/A"
+                      }
                     </Typography>
                   </motion.div>
 
@@ -243,7 +250,6 @@ const OrderReceiptPage = () => {
                     Products Ordered:
                   </Typography>
                   {order.items.map((item, index) => {
-                    // Use offerPrice if available, otherwise regular price
                     const itemPrice = item.product?.offerPrice || item.product?.price || 0;
                     const itemTotalPrice = (itemPrice * item.quantity).toFixed(2);
 

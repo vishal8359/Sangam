@@ -13,8 +13,23 @@ const pendingRegistrations = new Map();
 import { uploadToCloudinary } from "../Utils/cloudinaryUpload.js";
 import { deleteFileFromCloudinary } from "../Utils/cloudinaryUpload.js";
 import sendEmail from "../Utils/emailService.js";
+import DeliveryAddress from "../Models/DeliveryAddress.js"; // Import the new model
+import Product from "../Models/Product.js"; // Import Product model
+import Order from "../Models/Order.js"; // Import Order model
 
-// Register without society_id
+// Helper function to get formatted address from delivery_addresses array (now an array of populated objects)
+const getFormattedAddress = (addresses) => {
+  if (!addresses || addresses.length === 0) {
+    return "N/A";
+  }
+  const defaultAddress = addresses.find(addr => addr.isDefault) || addresses[0];
+  if (defaultAddress) {
+    return `${defaultAddress.street}, ${defaultAddress.city}, ${defaultAddress.state}, ${defaultAddress.zipcode}, ${defaultAddress.country}`;
+  }
+  return "N/A";
+};
+
+
 export const registerResident = async (req, res) => {
   try {
     const {
@@ -95,7 +110,6 @@ export const registerResident = async (req, res) => {
   }
 };
 
-// OTP Verification (No society linked yet)
 export const verifyOtp = async (req, res) => {
   const { phone_no, otp } = req.body;
 
@@ -105,10 +119,6 @@ export const verifyOtp = async (req, res) => {
     if (!pendingData) {
       return res.status(400).json({ message: "No pending registration found" });
     }
-
-    // if (pendingData.otp !== otp || Date.now() > pendingData.otpExpiry) {
-    //   return res.status(400).json({ message: "Invalid or expired OTP" });
-    // }
 
     const hashedPassword = await bcrypt.hash(pendingData.password, 10);
     const [houseNumber, ...rest] = pendingData.address.split(",");
@@ -123,8 +133,8 @@ export const verifyOtp = async (req, res) => {
     if (!home) {
       home = await Home.create({
         electricity_bill_no: pendingData.electricity_bill_no,
-        street,
         houseNumber: houseNumber.trim(),
+        street,
         houseSortOrder: extractSortOrder(houseNumber),
         residents: [],
       });
@@ -142,6 +152,7 @@ export const verifyOtp = async (req, res) => {
       is_approved: false,
       roles: [],
       avatar: pendingData.avatar || "",
+      delivery_addresses: [], // Initialize as empty array of ObjectIds
     });
 
     home.residents.push(newUser._id);
@@ -170,7 +181,6 @@ export const verifyOtp = async (req, res) => {
   }
 };
 
-// Login with society_id and user_id (also triggers joinRequest if needed)
 export const loginUser = async (req, res) => {
   const { user_id, password, society_id } = req.body;
 
@@ -210,7 +220,6 @@ export const loginUser = async (req, res) => {
       (r) => r.role === "resident" && r.society_id.toString() === society_id
     );
 
-    // PENDING USERS
     if (!hasRole || !user.is_approved) {
       const existing = await JoinRequest.findOne({
         user_id: user._id,
@@ -233,7 +242,6 @@ export const loginUser = async (req, res) => {
       });
     }
 
-    // Approved user: allow login
     const token = jwt.sign(
       { id: user._id, role: "resident" },
       process.env.JWT_SECRET,
@@ -264,7 +272,6 @@ export const loginUser = async (req, res) => {
   }
 };
 
-// POST : /api/society/create
 export const createSociety = async (req, res) => {
   try {
     const { name, house, contact, email, password, location } = req.body;
@@ -284,7 +291,7 @@ export const createSociety = async (req, res) => {
       houseNumber: houseNumber.trim(),
       street,
       houseSortOrder: extractSortOrder(houseNumber),
-      residents: [], 
+      residents: [],
     });
 
     if (!user) {
@@ -300,21 +307,19 @@ export const createSociety = async (req, res) => {
         is_verified: true,
         roles: [],
         home_id: newHome._id,
+        delivery_addresses: [],
       });
 
       await user.save();
       isNewUser = true;
     } else {
-      // Existing user: assign new home_id
       user.home_id = newHome._id;
       await user.save();
     }
 
-    // Add user to the home
     newHome.residents.push(user._id);
     await newHome.save();
 
-    // Create Society
     const newSociety = await Society.create({
       name: `${name}'s Society`,
       location,
@@ -322,7 +327,6 @@ export const createSociety = async (req, res) => {
       residents: [user._id],
     });
 
-    // Assign admin role
     user.roles.push({ society_id: newSociety._id, role: "admin" });
     user.created_society = newSociety._id;
     await user.save();
@@ -350,24 +354,20 @@ Admin: ${user.name}
   }
 };
 
-// POST : /api/society/:id/join
 export const requestJoinSociety = async (req, res) => {
   try {
     const userId = req.user._id;
     const societyId = req.params.id;
 
-    // Validate ObjectId
     if (!mongoose.Types.ObjectId.isValid(societyId)) {
       return res.status(400).json({ message: "Invalid society ID." });
     }
 
-    // Check if society exists
     const society = await Society.findById(societyId);
     if (!society) {
       return res.status(404).json({ message: "Society not found." });
     }
 
-    // Check for duplicate pending/approved request
     const existing = await JoinRequest.findOne({
       user_id: userId,
       society_id: societyId,
@@ -381,7 +381,6 @@ export const requestJoinSociety = async (req, res) => {
       });
     }
 
-    // Create request
     const request = await JoinRequest.create({
       user_id: userId,
       society_id: societyId,
@@ -401,8 +400,8 @@ export const getEventInvitations = async (req, res) => {
     const userId = req.user._id;
 
     const invitations = await Invitation.find({ invitedUser: userId })
-      .populate("event") 
-      .populate("invitedBy", "name"); 
+      .populate("event")
+      .populate("invitedBy", "name");
 
     res.status(200).json({ invitations });
   } catch (err) {
@@ -413,9 +412,9 @@ export const getEventInvitations = async (req, res) => {
 
 export const getCurrentUser = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select(
-      "-password -otp -otp_expiry"
-    );
+    const user = await User.findById(req.user._id)
+      .populate("delivery_addresses") // Populate delivery_addresses
+      .select("-password -otp -otp_expiry");
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -428,6 +427,7 @@ export const getCurrentUser = async (req, res) => {
         email: user.email,
         phone_no: user.phone_no,
         address: user.address,
+        delivery_addresses: user.delivery_addresses || [],
         avatar: user.avatar,
         electricity_bill_no: user.electricity_bill_no,
         home_id: user.home_id,
@@ -445,8 +445,8 @@ export const getCurrentUser = async (req, res) => {
 export const getUserById = async (req, res) => {
   try {
     const user = await User.findById(req.params.id)
-      .populate("followers", "_id") 
-      .select("name avatar address followers"); 
+      .populate("followers", "_id")
+      .select("name avatar address followers");
 
     if (!user) return res.status(404).json({ message: "User not found" });
     res.json(user);
@@ -459,7 +459,8 @@ export const getUserById = async (req, res) => {
 export const updateCurrentUserProfile = async (req, res) => {
   try {
     const userId = req.user._id;
-    const user = await User.findById(userId);
+    const user = await User.findById(userId)
+      .populate("delivery_addresses");
 
     if (!user) {
       return res.status(404).json({ message: "User not found." });
@@ -468,8 +469,8 @@ export const updateCurrentUserProfile = async (req, res) => {
     if (req.body.name) user.name = req.body.name;
     if (req.body.email) user.email = req.body.email;
     if (req.body.phone_no) user.phone_no = req.body.phone_no;
+    if (req.body.address) user.address = req.body.address; 
 
-    console.log("avatar : ", user.avatar);
     if (req.file) {
       if (user.avatar) {
         const publicId = user.avatar.split("/").pop().split(".")[0];
@@ -479,7 +480,7 @@ export const updateCurrentUserProfile = async (req, res) => {
         req.file.buffer,
         "avatars",
         req.file.mimetype
-      ); 
+      );
       user.avatar = result.secure_url;
     }
 
@@ -495,6 +496,7 @@ export const updateCurrentUserProfile = async (req, res) => {
         email: user.email,
         phone_no: user.phone_no,
         address: user.address,
+        delivery_addresses: user.delivery_addresses || [],
         avatar: user.avatar,
         electricity_bill_no: user.electricity_bill_no,
         home_id: user.home_id,
@@ -506,5 +508,135 @@ export const updateCurrentUserProfile = async (req, res) => {
   } catch (error) {
     console.error("Error updating user profile:", error);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const addDeliveryAddress = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { firstName, lastName, email, street, city, state, zipcode, country, phone } = req.body;
+
+    if (!firstName || !lastName || !email || !street || !city || !state || !zipcode || !country || !phone) {
+      return res.status(400).json({ success: false, message: "All delivery address fields are required." });
+    }
+
+    const newDeliveryAddress = new DeliveryAddress({
+      userId: userId,
+      firstName,
+      lastName,
+      email,
+      street,
+      city,
+      state,
+      zipcode,
+      country,
+      phone,
+      isDefault: false,
+    });
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+
+    if (user.delivery_addresses.length === 0) {
+      newDeliveryAddress.isDefault = true;
+    } else {
+      // If there are existing addresses, ensure only one is default
+      const currentDefault = await DeliveryAddress.findOne({ userId: userId, isDefault: true });
+      if (!currentDefault) {
+          // If no default is found, make this the default
+          newDeliveryAddress.isDefault = true;
+      }
+    }
+
+    await newDeliveryAddress.save();
+    user.delivery_addresses.push(newDeliveryAddress._id);
+    await user.save();
+
+    // Re-populate delivery_addresses to send the full objects in the response
+    const updatedUser = await User.findById(userId).populate("delivery_addresses");
+
+    res.status(200).json({ success: true, message: "Delivery address saved successfully!", user: updatedUser });
+  } catch (err) {
+    console.error("Error saving delivery address:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+export const setDefaultDeliveryAddress = async (req, res) => { // Renamed for clarity
+  try {
+    const userId = req.user._id;
+    const { addressId } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+
+    // Unset current default address for this user
+    await DeliveryAddress.updateMany({ userId: userId, isDefault: true }, { $set: { isDefault: false } });
+
+    // Set the new default address
+    const updatedAddress = await DeliveryAddress.findOneAndUpdate(
+      { _id: addressId, userId: userId },
+      { $set: { isDefault: true } },
+      { new: true }
+    );
+
+    if (!updatedAddress) {
+      return res.status(404).json({ success: false, message: "Delivery address not found or does not belong to user." });
+    }
+
+    // Re-populate delivery_addresses for the response
+    const updatedUser = await User.findById(userId).populate("delivery_addresses");
+
+    res.status(200).json({ success: true, message: "Default delivery address set successfully!", user: updatedUser });
+
+  } catch (err) {
+    console.error("Error setting default delivery address:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+export const deleteDeliveryAddress = async (req, res) => { // Renamed for clarity
+  try {
+    const userId = req.user._id;
+    const { addressId } = req.params;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+
+    // Find the address to be deleted
+    const addressToDelete = await DeliveryAddress.findOne({ _id: addressId, userId: userId });
+
+    if (!addressToDelete) {
+      return res.status(404).json({ success: false, message: "Delivery address not found or does not belong to user." });
+    }
+
+    // Remove the address from the user's array of references
+    user.delivery_addresses = user.delivery_addresses.filter(id => id.toString() !== addressId);
+    await user.save();
+
+    // Delete the actual DeliveryAddress document
+    await DeliveryAddress.deleteOne({ _id: addressId });
+
+    // If the deleted address was the default, set a new default if other addresses exist
+    if (addressToDelete.isDefault && user.delivery_addresses.length > 0) {
+      const firstRemainingAddressId = user.delivery_addresses[0];
+      await DeliveryAddress.findByIdAndUpdate(firstRemainingAddressId, { $set: { isDefault: true } });
+    }
+
+    // Re-populate delivery_addresses for the response
+    const updatedUser = await User.findById(userId).populate("delivery_addresses");
+
+    res.status(200).json({ success: true, message: "Delivery address deleted successfully!", user: updatedUser });
+
+  } catch (err) {
+    console.error("Error deleting delivery address:", err);
+    res.status(500).json({ success: false, message: err.message });
   }
 };

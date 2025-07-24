@@ -40,7 +40,7 @@ import AttachFileIcon from "@mui/icons-material/AttachFile";
 import { keyframes } from "@emotion/react";
 import WaveformPlayer from "../../components/WaveformPlayer";
 
-const SOCKET_SERVER_URL = "http://localhost:5000";
+const SOCKET_SERVER_URL = import.meta.env.VITE_BACKEND_URL;
 
 // Keyframe Animations
 const fadeIn = keyframes`

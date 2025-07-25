@@ -50,6 +50,9 @@ export const AppContextProvider = ({ children }) => {
 
   const [polls, setPolls] = useState([]);
 
+  // Removed addresses and selectedAddress as they were not used or defined elsewhere
+  // const [addresses, setAddresses] = useState([]);
+  // const [selectedAddress, setSelectedAddress] = useState(null);
   let messageHandler = null;
 
   const [notices, setNotices] = useState([]);
@@ -112,7 +115,7 @@ export const AppContextProvider = ({ children }) => {
   };
 
   useEffect(() => {
-
+    
     const stored = JSON.parse(localStorage.getItem("sangam-user"));
     const savedToken = localStorage.getItem("token");
     const savedTheme = localStorage.getItem("theme-mode");

@@ -2,6 +2,7 @@ import Product from "../Models/Product.js";
 import Order from "../Models/Order.js";
 import { uploadToCloudinary } from "../Utils/cloudinaryUpload.js";
 import mongoose from "mongoose";
+import User from "../Models/User.js";
 
 export const addProduct = async (req, res) => {
   try {
@@ -53,12 +54,21 @@ export const getMyProducts = async (req, res) => {
   try {
     const myProducts = await Product.find({
       createdBy: req.user._id,
-    }).sort({ createdAt: -1 });
+    })
+      .populate("seller", "name address")
+      .sort({ createdAt: -1 })
+      .lean();
 
-    const updatedProducts = myProducts.map((p) => ({
-      ...p._doc,
-      earnings: (p.price || 0) * (p.soldQuantity || 0),
-    }));
+    const updatedProducts = myProducts.map((p) => {
+      const price = p.offerPrice ?? p.price;
+      const earnings = (price || 0) * (p.soldQuantity || 0);
+      return {
+        ...p,
+        earnings: earnings,
+        sellerName: p.seller?.name || "Unknown",
+        sellerAddress: p.seller?.address || "N/A",
+      };
+    });
 
     res.status(200).json(updatedProducts);
   } catch (error) {
@@ -69,26 +79,54 @@ export const getMyProducts = async (req, res) => {
 
 export const getSocietyProducts = async (req, res) => {
   try {
-    const { societyId } = req.user;
+    const { societyId } = req.query;
+    const currentUserId = req.user._id;
+
+    if (!societyId) {
+      return res.status(400).json({ message: "societyId is required" });
+    }
 
     const products = await Product.find({
       societyId,
       isActive: true,
+      seller: { $ne: currentUserId },
     })
-      .populate("createdBy", "name address")
-      .sort({ createdAt: -1 });
+      .populate("seller", "name address")
+      .sort({ createdAt: -1 })
+      .lean();
 
     const formatted = products.map((p) => ({
-      ...p._doc,
+      ...p,
       image: p.images?.[0]?.url || "",
-      sellerName: p.createdBy?.name || "Unknown",
-      sellerAddress: p.createdBy?.address || "N/A",
+      sellerName: p.seller?.name || "Unknown",
+      sellerAddress: p.seller?.address || "N/A",
     }));
 
-    res.status(200).json(formatted);
+    res.status(200).json({ products: formatted });
   } catch (err) {
     console.error("Error in getSocietyProducts:", err);
     res.status(500).json({ message: "Failed to fetch society products." });
+  }
+};
+
+export const getAllProductsForAdmin = async (req, res) => {
+  try {
+    const products = await Product.find({})
+      .populate("seller", "name address")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const formattedProducts = products.map((p) => ({
+      ...p,
+      image: p.images?.[0]?.url || "",
+      sellerName: p.seller?.name || "Unknown",
+      sellerAddress: p.seller?.address || "N/A",
+    }));
+
+    res.status(200).json({ products: formattedProducts });
+  } catch (error) {
+    console.error("Error in getAllProductsForAdmin:", error);
+    res.status(500).json({ message: "Failed to fetch all products for admin." });
   }
 };
 
@@ -129,10 +167,12 @@ export const getCartProducts = async (req, res) => {
     const products = await Product.find({
       _id: { $in: ids },
       isActive: true,
-    }).populate("seller", "name address");
+    })
+      .populate("seller", "name address")
+      .lean();
 
     const formatted = products.map((p) => ({
-      ...p._doc,
+      ...p,
       image: p.images?.[0]?.url || "",
       sellerName: p.seller?.name || "N/A",
       sellerAddress: p.seller?.address || "Not Provided",
@@ -144,7 +184,6 @@ export const getCartProducts = async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
-
 
 export const getSellerProductsWithStats = async (req, res) => {
   try {
@@ -215,6 +254,8 @@ export const getProductById = async (req, res) => {
     product.sellerName = product.seller?.name || "N/A";
     product.sellerAddress = product.seller?.address || "Not Provided";
 
+    delete product.seller;
+
     res.status(200).json({ product });
   } catch (error) {
     console.error("Error in getProductById:", error);
@@ -243,13 +284,14 @@ export const getRelatedProducts = async (req, res) => {
       .populate("seller", "name address")
       .sort({ createdAt: -1 })
       .limit(10)
-      .select("-__v");
+      .select("-__v")
+      .lean();
 
     const formatted = products.map((p) => ({
-      ...p._doc,
+      ...p,
       image: p.images?.[0]?.url || "",
       sellerName: p.seller?.name || "Unknown",
-      sellerAddress: p.seller?.addresses || "N/A",
+      sellerAddress: p.seller?.address || "N/A",
     }));
 
     res.status(200).json({ products: formatted });

@@ -291,7 +291,7 @@ export default function UserProfileCard() {
             </motion.div>
             <motion.div variants={itemVariants}>
               <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                <FaIdBadge color={theme.palette.warning.main} /> User ID : {user._id || user.user_id || "N/A"}
+                <FaIdBadge color={theme.palette.warning.main} /> User ID : {user.user_id || "N/A"}
               </Typography>
             </motion.div>
             <motion.div variants={itemVariants}>

@@ -62,8 +62,6 @@ const MySociety = () => {
       fetchSociety();
     } else {
       setLoading(false);
-      if (!token) toast.error("Authentication token missing. Please log in.");
-      if (!societyId) toast.error("Society ID missing. Please join a society.");
     }
   }, [token, societyId, axios]);
 

@@ -112,7 +112,7 @@ export const AppContextProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    // Changed from sessionStorage to localStorage
+
     const stored = JSON.parse(localStorage.getItem("sangam-user"));
     const savedToken = localStorage.getItem("token");
     const savedTheme = localStorage.getItem("theme-mode");
@@ -204,9 +204,15 @@ export const AppContextProvider = ({ children }) => {
 
   useEffect(() => {
     const fetchProducts = async () => {
+      // Ensure both token and societyId are available before fetching products
+      if (!token || !societyId) {
+        setProductsLoading(false);
+        return;
+      }
       try {
         setProductsLoading(true);
-        const { data } = await axios.get("/api/users/products", {
+        // Include societyId as a query parameter in the GET request
+        const { data } = await axios.get(`/api/users/products?societyId=${societyId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -221,11 +227,10 @@ export const AppContextProvider = ({ children }) => {
         setProductsLoading(false);
       }
     };
-
-    if (token && products.length === 0) {
+    if (token && societyId) {
       fetchProducts();
     }
-  }, [token]);
+  }, [token, societyId]); // Add societyId to the dependency array
 
   useEffect(() => {
     const fetchCartProducts = async () => {
@@ -338,8 +343,7 @@ export const AppContextProvider = ({ children }) => {
     }
   };
 
-  // State for message used in socket handling
-  const [messages, setMessages] = useState([]); // This state was missing but referenced
+  const [messages, setMessages] = useState([]); 
 
   useEffect(() => {
     if (!userId || !token) return;
@@ -403,6 +407,11 @@ export const AppContextProvider = ({ children }) => {
     return () => {
       socket.disconnect();
       socket.off("user status");
+      socket.off("receive message");
+      socket.off("online status");
+      socket.off("buzz message deleted for me");
+      socket.off("buzz message deleted for all");
+      // socket.off("buzzMessageDeleted"); // If uncommented above, uncomment this too
     };
   }, [userId, token]);
 

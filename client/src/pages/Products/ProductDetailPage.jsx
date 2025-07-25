@@ -484,7 +484,7 @@ const ProductDetailPage = () => {
                       backgroundColor: isDark ? theme.palette.grey[900] : theme.palette.background.paper,
                       color: theme.palette.text.primary,
                       transition: "box-shadow 0.3s ease-in-out",
-                      width: isMobile ? 170 : 200
+                      width: isMobile ? 160 : 200
                     }}
                   >
                     <Box

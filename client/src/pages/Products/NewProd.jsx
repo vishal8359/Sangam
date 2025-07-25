@@ -35,6 +35,7 @@ const Products = () => {
   const {
     axios,
     token,
+    societyId, // Destructure societyId from useAppContext
     products,
     setProducts,
     cartItems,
@@ -87,14 +88,19 @@ const Products = () => {
 
   useEffect(() => {
     const fetchProducts = async () => {
-      if (!token) return;
+      // Ensure both token and societyId are available before fetching products
+      if (!token || !societyId) {
+        setLoading(false);
+        return;
+      }
 
       setLoading(true); // Start loading
       try {
-        const { data } = await axios.get("/api/users/products/society", {
+        // Updated API endpoint to include societyId as a query parameter
+        const { data } = await axios.get(`/api/users/products?societyId=${societyId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setProducts(data);
+        setProducts(data.products); // Assuming the backend returns { products: [...] }
       } catch (err) {
         console.error("❌ Error fetching society products:", err);
         toast.error("Failed to load products.");
@@ -104,7 +110,7 @@ const Products = () => {
     };
 
     fetchProducts();
-  }, [token, setProducts, axios]); // Added axios to dependencies
+  }, [token, societyId, setProducts, axios]); // Added societyId to dependencies
 
   const handleQtyChange = (productId, delta) => {
     const currentQty = cartItems[productId] || 0;

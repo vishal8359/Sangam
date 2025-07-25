@@ -20,7 +20,7 @@ await connectCloudinary();
 const app = express();
 const server = http.createServer(app);
 
-const allowedOrigins = ["http://localhost:5173", "https://sangam-frontend-492o.onrender.com"];
+const allowedOrigins = ["http://localhost:5173", "https://sangam-frontend-492o.onrender.com", "https://sangam-6cb1.vercel.app"];
 
 const corsOptions = {
   origin: function (origin, callback) {

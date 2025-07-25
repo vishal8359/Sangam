@@ -88,19 +88,17 @@ const Products = () => {
 
   useEffect(() => {
     const fetchProducts = async () => {
-      // Ensure both token and societyId are available before fetching products
       if (!token || !societyId) {
         setLoading(false);
         return;
       }
 
-      setLoading(true); // Start loading
+      setLoading(true);
       try {
-        // Updated API endpoint to include societyId as a query parameter
         const { data } = await axios.get(`/api/users/products?societyId=${societyId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setProducts(data.products); // Assuming the backend returns { products: [...] }
+        setProducts(data.products); 
       } catch (err) {
         console.error("❌ Error fetching society products:", err);
         toast.error("Failed to load products.");

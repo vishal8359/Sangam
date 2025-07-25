@@ -119,7 +119,7 @@ router.post("/buzz/upload", verifyUser, upload.single("file"), uploadBuzzFile);
 // products
 router.post("/add", verifyUser, upload.array("images", 4), addProduct);
 router.get("/products/mine", verifyUser, getMyProducts);
-router.get("/products/society", verifyUser, getSocietyProducts);
+// router.get("/products/society", verifyUser, getSocietyProducts);
 router.post("/products/cart", verifyUser, getCartProducts);
 router.patch(
   "/products/:id/toggle",
@@ -136,7 +136,7 @@ router.get("/order/seller", verifyUser, getSellerOrders);
 router.get("/order/my-orders", verifyUser, getMyOrders);
 router.get("/products/stats", verifyUser, getSellerProductsWithStats);
 router.get("/products/:id", getProductById);
-router.get("/products", getRelatedProducts);
+router.get("/products", verifyUser, getSocietyProducts);
 // Complaint
 
 router.post(

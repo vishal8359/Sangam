@@ -79,8 +79,21 @@ export const getMyProducts = async (req, res) => {
 
 export const getSocietyProducts = async (req, res) => {
   try {
+    console.log("--- DEBUGGING getSocietyProducts ---");
+    console.log("Request Headers:", req.headers); // See if Authorization header is present
+    console.log("req.user:", req.user);
     const { societyId } = req.query;
     const currentUserId = req.user._id;
+
+    if (!currentUserId) {
+      console.log("Error: currentUserId is UNDEFINED or NULL.");
+      return res
+        .status(401)
+        .json({ message: "Authentication required or user ID not found." });
+    }
+
+    console.log("Current User ID (from req.user._id):", currentUserId);
+    console.log("Society ID:", societyId);
 
     if (!societyId) {
       return res.status(400).json({ message: "societyId is required" });
@@ -126,7 +139,9 @@ export const getAllProductsForAdmin = async (req, res) => {
     res.status(200).json({ products: formattedProducts });
   } catch (error) {
     console.error("Error in getAllProductsForAdmin:", error);
-    res.status(500).json({ message: "Failed to fetch all products for admin." });
+    res
+      .status(500)
+      .json({ message: "Failed to fetch all products for admin." });
   }
 };
 
@@ -280,10 +295,10 @@ export const getRelatedProducts = async (req, res) => {
       query._id = { $ne: exclude };
     }
 
+    // Removed .limit(10) to fetch all related products
     const products = await Product.find(query)
       .populate("seller", "name address")
       .sort({ createdAt: -1 })
-      .limit(10)
       .select("-__v")
       .lean();
 

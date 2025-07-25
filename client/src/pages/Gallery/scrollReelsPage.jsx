@@ -148,7 +148,7 @@ export default function ScrollReelsPage() {
   useEffect(() => {
     if (reelIdFromUrl && videoRefs.current[reelIdFromUrl]) {
       videoRefs.current[reelIdFromUrl].scrollIntoView({
-        behavior: "smooth",
+        behavior: "hard",
         block: "center",
       });
     }
@@ -255,27 +255,57 @@ export default function ScrollReelsPage() {
     const observerOptions = {
       root: null,
       rootMargin: "0px",
-      threshold: 0.9,
+      threshold: 0.9, // Adjust this threshold as needed (e.g., 0.75 or 0.8)
     };
 
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         const reelId = entry.target.getAttribute("data-id");
+        const video = videoRefs.current[reelId];
+
+        if (!video) return; // Ensure video element exists
 
         if (entry.isIntersecting) {
-          setActiveReelId(reelId);
+          // When a video enters the viewport and is significantly visible
+          setActiveReelId(reelId); // Set the new active reel
 
+          // Pause all other videos
+          Object.values(videoRefs.current).forEach((vid) => {
+            if (vid && vid.getAttribute("data-id") !== reelId && !vid.paused) {
+              vid.pause();
+            }
+          });
+
+          // Play the active video
+          video.play().catch((err) => {
+            // Handle play promise rejection (e.g., user hasn't interacted yet)
+            if (err.name === "NotAllowedError") {
+              console.warn("Autoplay was prevented. User interaction needed.");
+              // Optionally, show a play button to the user
+            } else {
+              console.error("Error playing video:", err);
+            }
+          });
+
+          // Update view count
           axios
             .put(`/api/users/gallery/reels/${reelId}/view`)
             .catch((err) => console.error("View update failed:", err));
+        } else {
+          // When a video leaves the viewport
+          if (!video.paused) {
+            video.pause(); // Explicitly pause videos that are no longer intersecting
+          }
         }
       });
     }, observerOptions);
 
+    // Observe all video elements
     Object.values(videoRefs.current).forEach((video) => {
       if (video) observer.observe(video);
     });
 
+    // Cleanup function
     return () => {
       Object.values(videoRefs.current).forEach((video) => {
         if (video) observer.unobserve(video);

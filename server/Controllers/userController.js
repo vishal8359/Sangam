@@ -238,7 +238,7 @@ export const loginUser = async (req, res) => {
 
       return res.status(403).json({
         success: false,
-        message: "Join request sent for approval.",
+        message: "Join request sent for approval. You will be notify via email after approval by admin",
       });
     }
 

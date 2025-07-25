@@ -57,6 +57,7 @@ export default function VerifyOtp() {
       });
 
       toast.success(data.message || "OTP verified");
+      toast.success("your User Id is sent to registered email");
       localStorage.removeItem("otp_phone");
       navigate("/resident-login");
     } catch (err) {

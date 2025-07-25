@@ -342,7 +342,7 @@ export default function SocietyBuzz() {
       streamRef.current = stream;
       const recorder = new MediaRecorder(stream);
 
-      audioChunksRef.current = []; // Clear previous chunks
+      audioChunksRef.current = [];
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) audioChunksRef.current.push(e.data);
       };
@@ -351,7 +351,7 @@ export default function SocietyBuzz() {
         const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
         if (discardRecordingRef.current) {
           discardRecordingRef.current = false;
-          stopStream(); // Clean up mic
+          stopStream();
           return;
         }
 
@@ -390,7 +390,7 @@ export default function SocietyBuzz() {
           console.error("Audio Upload Failed", err);
         } finally {
           setSendingMedia(false);
-          stopStream();
+          stopStream(); // Ensure stream is stopped here after upload attempt
           setRecording(false);
           setMediaRecorder(null);
           audioChunksRef.current = [];
@@ -836,10 +836,10 @@ export default function SocietyBuzz() {
                         justifyContent={isMyMessage ? "flex-end" : "flex-start"}
                         mb={1}
                         sx={{
-                          animation: `${slideInFromSide} 0.4s ease-out ${index * 0.05}s forwards`, // Staggered message animation
-                          opacity: 0, // Start invisible for animation
-                          alignItems: "flex-end", // Align items to the bottom for better look with time
-                          pr: isMyMessage ? 0 : "10%", // Add some padding on the opposite side
+                          animation: `${slideInFromSide} 0.4s ease-out ${index * 0.05}s forwards`,
+                          opacity: 0,
+                          alignItems: "flex-end",
+                          pr: isMyMessage ? 0 : "10%",
                           pl: isMyMessage ? "10%" : 0,
                         }}
                         onContextMenu={(e) => {
@@ -860,7 +860,7 @@ export default function SocietyBuzz() {
                               sx={{
                                 display: "block",
                                 mb: 0.5,
-                                ml: 2, // Align with message bubble
+                                ml: 2,
                                 fontWeight: 500,
                                 opacity: 0.8,
                               }}
@@ -890,29 +890,132 @@ export default function SocietyBuzz() {
                               }}
                               onClick={() => openPreview("image", msg.fileUrl)}
                             />
-                          ) : msg.fileUrl &&
-                            msg.fileType?.startsWith("video") ? (
-                            <video
-                              src={msg.fileUrl}
-                              style={{
-                                width: "300px",
-                                borderRadius: 15,
-                                display: "block",
-                                marginTop: "4px",
-                                cursor: "pointer",
-                                boxShadow: isDark
-                                  ? "0 4px 8px rgba(0,0,0,0.5)"
-                                  : "0 4px 8px rgba(0,0,0,0.1)",
-                                transition: "transform 0.2s ease-in-out",
-                                "&:hover": {
-                                  transform: "scale(1.02)",
-                                },
+                          ) : msg.content === "🎤 Voice Message" ||
+                            msg.fileType?.startsWith("audio") ? (
+                            <Box
+                              sx={{
+                                bgcolor: messageBgColor,
+                                color: messageColor,
+                                mx: 2,
+                                p: 1.5,
+                                borderRadius: 2,
+                                mt: 0.5,
+                                maxWidth: "80%",
+                                wordBreak: "break-word",
+                                boxShadow: isMyMessage
+                                  ? `0 2px 5px ${theme.palette.primary.dark}40`
+                                  : isDark
+                                    ? "0 2px 5px rgba(0,0,0,0.3)"
+                                    : "0 2px 5px rgba(0,0,0,0.1)",
+                                transition:
+                                  "background-color 0.3s ease-in-out, color 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
                               }}
-                              muted
-                              autoPlay
-                              loop
-                              onClick={() => openPreview("video", msg.fileUrl)}
-                            />
+                            >
+                              <WaveformPlayer
+                                audioUrl={msg.audio || msg.fileUrl}
+                                fromSender={isMyMessage}
+                              />
+                            </Box>
+                          ) : msg.fileUrl ? (
+                            msg.fileUrl.endsWith(".mp4") ||
+                            msg.fileUrl.endsWith(".mov") ||
+                            msg.fileUrl.includes("reels") ? (
+                              <video
+                                src={msg.fileUrl}
+                                controls
+                                muted
+                                autoPlay
+                                loop
+                                playsInline
+                                style={{
+                                  width: "100%",
+                                  maxHeight: 360,
+                                  borderRadius: 8,
+                                  marginTop: 8,
+                                  boxShadow: isDark
+                                    ? "0 4px 8px rgba(0,0,0,0.5)"
+                                    : "0 4px 8px rgba(0,0,0,0.1)",
+                                }}
+                              />
+                            ) : msg.fileType?.includes("pdf") ? (
+                              <Box
+                                sx={{
+                                  bgcolor: messageBgColor,
+                                  color: messageColor,
+                                  mx: 2,
+                                  p: 1.5,
+                                  borderRadius: 2,
+                                  mt: 0.5,
+                                  maxWidth: "80%",
+                                  wordBreak: "break-word",
+                                  cursor: "pointer",
+                                  boxShadow: isMyMessage
+                                    ? `0 2px 5px ${theme.palette.primary.dark}40`
+                                    : isDark
+                                      ? "0 2px 5px rgba(0,0,0,0.3)"
+                                      : "0 2px 5px rgba(0,0,0,0.1)",
+                                  transition:
+                                    "background-color 0.3s ease-in-out, color 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
+                                }}
+                              >
+                                <Typography
+                                  onClick={() =>
+                                    openPreview("pdf", msg.fileUrl)
+                                  }
+                                  sx={{
+                                    textDecoration: "underline",
+                                    cursor: "pointer",
+                                    color: isMyMessage
+                                      ? "inherit"
+                                      : theme.palette.info.light,
+                                    "&:hover": {
+                                      opacity: 0.8,
+                                    },
+                                  }}
+                                >
+                                  📄 View PDF
+                                </Typography>
+                              </Box>
+                            ) : (
+                              <Box
+                                sx={{
+                                  bgcolor: messageBgColor,
+                                  color: messageColor,
+                                  mx: 2,
+                                  p: 1.5,
+                                  borderRadius: 2,
+                                  mt: 0.5,
+                                  maxWidth: "80%",
+                                  wordBreak: "break-word",
+                                  cursor: "pointer",
+                                  boxShadow: isMyMessage
+                                    ? `0 2px 5px ${theme.palette.primary.dark}40`
+                                    : isDark
+                                      ? "0 2px 5px rgba(0,0,0,0.3)"
+                                      : "0 2px 5px rgba(0,0,0,0.1)",
+                                  transition:
+                                    "background-color 0.3s ease-in-out, color 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
+                                }}
+                              >
+                                <a
+                                  href={msg.fileUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{
+                                    color: isMyMessage
+                                      ? "inherit"
+                                      : theme.palette.info.light,
+                                    textDecoration: "underline",
+                                    transition: "opacity 0.2s ease-in-out",
+                                    "&:hover": {
+                                      opacity: 0.8,
+                                    },
+                                  }}
+                                >
+                                  📎 Download File
+                                </a>
+                              </Box>
+                            )
                           ) : (
                             <Box
                               sx={{
@@ -924,10 +1027,7 @@ export default function SocietyBuzz() {
                                 mt: 0.5,
                                 maxWidth: "80%",
                                 wordBreak: "break-word",
-                                cursor:
-                                  msg.content === "🎤 Voice Message"
-                                    ? "pointer"
-                                    : "default",
+                                cursor: "default",
                                 boxShadow: isMyMessage
                                   ? `0 2px 5px ${theme.palette.primary.dark}40`
                                   : isDark
@@ -937,75 +1037,9 @@ export default function SocietyBuzz() {
                                   "background-color 0.3s ease-in-out, color 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
                               }}
                             >
-                              {(msg.content === "🎤 Voice Message" &&
-                                msg.audio) ||
-                              msg.fileType?.startsWith("audio") ? (
-                                <WaveformPlayer
-                                  audioUrl={msg.audio || msg.fileUrl}
-                                  fromSender={isMyMessage}
-                                />
-                              ) : msg.fileUrl ? (
-                                msg.fileUrl.endsWith(".mp4") ||
-                                msg.fileUrl.endsWith(".mov") ||
-                                msg.fileUrl.includes("reels") ? (
-                                  <video
-                                    src={msg.fileUrl}
-                                    controls
-                                    muted
-                                    loop
-                                    playsInline
-                                    style={{
-                                      width: "100%",
-                                      maxHeight: 360,
-                                      borderRadius: 8,
-                                      marginTop: 8,
-                                      boxShadow: isDark
-                                        ? "0 4px 8px rgba(0,0,0,0.5)"
-                                        : "0 4px 8px rgba(0,0,0,0.1)",
-                                    }}
-                                  />
-                                ) : msg.fileType?.includes("pdf") ? (
-                                  <Typography
-                                    onClick={() =>
-                                      openPreview("pdf", msg.fileUrl)
-                                    }
-                                    sx={{
-                                      textDecoration: "underline",
-                                      cursor: "pointer",
-                                      color: isMyMessage
-                                        ? "inherit"
-                                        : theme.palette.info.light,
-                                      "&:hover": {
-                                        opacity: 0.8,
-                                      },
-                                    }}
-                                  >
-                                    📄 View PDF
-                                  </Typography>
-                                ) : (
-                                  <a
-                                    href={msg.fileUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    style={{
-                                      color: isMyMessage
-                                        ? "inherit"
-                                        : theme.palette.info.light,
-                                      textDecoration: "underline",
-                                      transition: "opacity 0.2s ease-in-out",
-                                      "&:hover": {
-                                        opacity: 0.8,
-                                      },
-                                    }}
-                                  >
-                                    📎 Download File
-                                  </a>
-                                )
-                              ) : (
-                                <Typography variant="body2">
-                                  {msg.content}
-                                </Typography>
-                              )}
+                              <Typography variant="body2">
+                                {msg.content}
+                              </Typography>
                             </Box>
                           )}
 
@@ -1110,7 +1144,6 @@ export default function SocietyBuzz() {
                       >
                         <EmojiPicker
                           onEmojiSelect={(emoji) => {
-                            
                             console.dir("Full emoji object:", emoji);
                             // debugger;
                             setMessage((prev) => prev + emoji);
@@ -1158,7 +1191,12 @@ export default function SocietyBuzz() {
                   <IconButton
                     onClick={() => {
                       if (recording) {
-                        mediaRecorder?.stop();
+                        if (
+                          mediaRecorder &&
+                          mediaRecorder.state === "recording"
+                        ) {
+                          mediaRecorder.stop();
+                        }
                       } else {
                         handleStartRecording();
                       }
@@ -1242,36 +1280,32 @@ export default function SocietyBuzz() {
                   color="error"
                   variant="outlined"
                   onClick={() => {
-                    discardRecordingRef.current = true;
+                    discardRecordingRef.current = true; // Mark to discard
                     if (mediaRecorder && mediaRecorder.state === "recording") {
-                      mediaRecorder.onstop = null; // Prevent onstop from firing upload logic
-                      mediaRecorder.stop();
+                      mediaRecorder.onstop = null; // Important: prevent onstop from firing upload
+                      mediaRecorder.stop(); // Stop the recorder
                     }
                     stopStream();
                     setRecording(false);
                     setMediaRecorder(null);
                     setAudioChunks([]);
                   }}
-                  sx={{
-                    transition: "transform 0.2s ease-in-out",
-                    "&:hover": { transform: "scale(1.05)" },
-                  }}
                 >
                   Delete
                 </Button>
-                {/* Optional: Add a send button for recording if desired */}
-                {/* <Button
+
+                <Button
                   size="small"
                   color="success"
                   variant="contained"
                   onClick={() => {
                     if (mediaRecorder && mediaRecorder.state === "recording") {
-                      mediaRecorder.stop(); // This will trigger onstop and upload
+                      mediaRecorder.stop();
                     }
                   }}
                 >
                   Send
-                </Button> */}
+                </Button>
               </Box>
             </Box>
           )}

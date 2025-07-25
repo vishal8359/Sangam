@@ -493,7 +493,7 @@ const CartPage = () => {
           <Button
             variant="text"
             color="primary"
-            sx={{ mt: isMobile ? 3 : 4, borderRadius: 2, width: "100%" }}
+            sx={{ mt: isMobile ? 1 : 4, borderRadius: 2, width: "100%", mb: isMobile ? 2 : 0 }}
             onClick={() => navigate("/my-society/ads")}
           >
             Continue Shopping

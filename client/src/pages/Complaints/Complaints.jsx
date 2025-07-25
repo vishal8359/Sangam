@@ -322,6 +322,7 @@ const ComplaintsPage = () => {
                       target="_blank"
                       rel="noopener noreferrer"
                       fullWidth
+                      sx={{color : theme.palette.mode === "dark" ? "#fff" : ""}}
                     >
                       View Attached File
                     </Button>

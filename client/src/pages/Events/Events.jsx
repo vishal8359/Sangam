@@ -20,6 +20,7 @@ import bbq from "../../assets/bbq.jpeg";
 import Events_Bg from "../../assets/Events_Bg.jpg";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../../context/AppContext";
+import toast from "react-hot-toast";
 
 export default function EventPage() {
   const [events, setEvents] = useState([]);
@@ -142,7 +143,7 @@ export default function EventPage() {
 
       setEvents((prev) => [newEvent, ...prev]);
 
-      alert("Event created successfully.");
+      toast.success("Event created successfully.");
       navigate(`/my-society/events/send_invites/${newEvent._id}`);
     } catch (err) {
       console.error(
@@ -208,7 +209,13 @@ export default function EventPage() {
         }),
       }}
     >
-      <Slide direction="down" in={true} mountOnEnter unmountOnExit timeout={700}>
+      <Slide
+        direction="down"
+        in={true}
+        mountOnEnter
+        unmountOnExit
+        timeout={700}
+      >
         <Box
           display="flex"
           alignItems="center"
@@ -220,7 +227,10 @@ export default function EventPage() {
           justifyContent="space-between"
         >
           <Box display="flex" alignItems="center" gap={1}>
-            <EventAvailableIcon color="primary" sx={{ fontSize: isMobile ? 40 : 50 }} />
+            <EventAvailableIcon
+              color="primary"
+              sx={{ fontSize: isMobile ? 40 : 50 }}
+            />
             <Typography
               component="h4"
               fontWeight="bold"
@@ -237,7 +247,12 @@ export default function EventPage() {
               Upcoming Events
             </Typography>
           </Box>
-          <Box display="flex" alignItems="center" gap={isMobile ? 1 : 2} mt={isMobile ? 2 : 0}>
+          <Box
+            display="flex"
+            alignItems="center"
+            gap={isMobile ? 1 : 2}
+            mt={isMobile ? 2 : 0}
+          >
             <Paper
               elevation={4}
               sx={{
@@ -331,7 +346,8 @@ export default function EventPage() {
                   : "rgba(255, 255, 255, 0.9)",
                 backdropFilter: "blur(5px)",
                 border: `1px solid ${theme.palette.divider}`,
-                transition: "transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
+                transition:
+                  "transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
                 "&:hover": {
                   transform: "translateY(-5px) scale(1.01)",
                   boxShadow: theme.shadows[10],
@@ -373,24 +389,36 @@ export default function EventPage() {
                 </Typography>
                 <Typography
                   variant="body2"
-                  color={isDark? "#ccc" : ""}
+                  color={isDark ? "#ccc" : ""}
                   mb={0.5}
                   noWrap
                 >
-                  <Typography component="span" fontWeight="medium">Organizer:</Typography> {ev.organiserName}
+                  <Typography component="span" fontWeight="medium">
+                    Organizer:
+                  </Typography>{" "}
+                  {ev.organiserName}
                 </Typography>
 
-                <Typography variant="body2" color={isDark? "#ccc" : ""} mb={0.5}>
-                  <Typography component="span" fontWeight="medium">Date:</Typography>{" "}
+                <Typography
+                  variant="body2"
+                  color={isDark ? "#ccc" : ""}
+                  mb={0.5}
+                >
+                  <Typography component="span" fontWeight="medium">
+                    Date:
+                  </Typography>{" "}
                   {new Date(ev.date).toLocaleDateString()} at {ev.time}
                 </Typography>
                 <Typography
                   variant="body2"
-                  color= {isDark? "#ccc" : ""}
+                  color={isDark ? "#ccc" : ""}
                   mb={0.5}
                   noWrap
                 >
-                  <Typography component="span" fontWeight="medium">Place:</Typography> {ev.place}
+                  <Typography component="span" fontWeight="medium">
+                    Place:
+                  </Typography>{" "}
+                  {ev.place}
                 </Typography>
                 <Typography
                   variant="caption"
@@ -405,7 +433,9 @@ export default function EventPage() {
                       : theme.palette.info.light + "20",
                   }}
                 >
-                  {ev.isNeighbourEvent ? "Neighbourhood Event" : "Society Event"}
+                  {ev.isNeighbourEvent
+                    ? "Neighbourhood Event"
+                    : "Society Event"}
                 </Typography>
               </Box>
             </Paper>
@@ -423,25 +453,27 @@ export default function EventPage() {
               ? "rgba(35, 35, 35, 0.9)"
               : "rgba(245, 245, 245, 0.95)",
             m: isMobile ? 2 : 4,
-            transition: "transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
+            transition:
+              "transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
             "&:hover": {
               transform: "translateY(-3px)",
               boxShadow: theme.shadows[12],
             },
           }}
         >
-          <Typography
-            variant="h4"
-            fontWeight="bold"
-            mb={4}
+          <Box
+            component="h4"
             sx={{
               textAlign: "center",
+              fontWeight: "bold",
+              mb: 4,
+              fontSize: "2rem", // adjust to match Typography variant="h4"
               color: theme.palette.text.primary,
               textShadow: isDark ? "0 0 5px rgba(255,255,255,0.1)" : "none",
             }}
           >
             Organize a New Event
-          </Typography>
+          </Box>
 
           <Box
             component="form"
@@ -454,9 +486,25 @@ export default function EventPage() {
             }}
           >
             {[
-              { label: "Event Name", name: "name", type: "text", required: true },
-              { label: "Organizer Name", name: "organizer", type: "text", required: true },
-              { label: "Date", name: "date", type: "date", required: true, inputProps: { min: new Date().toISOString().split("T")[0] } },
+              {
+                label: "Event Name",
+                name: "name",
+                type: "text",
+                required: true,
+              },
+              {
+                label: "Organizer Name",
+                name: "organizer",
+                type: "text",
+                required: true,
+              },
+              {
+                label: "Date",
+                name: "date",
+                type: "date",
+                required: true,
+                inputProps: { min: new Date().toISOString().split("T")[0] },
+              },
               { label: "Time", name: "time", type: "time", required: true },
               { label: "Place", name: "place", type: "text", required: true },
             ].map((field) => (
@@ -472,9 +520,11 @@ export default function EventPage() {
                 InputLabelProps={{ shrink: true }}
                 inputProps={field.inputProps}
                 sx={{
+                  maxWidth: isMobile ? 140 : "100%",
                   "& .MuiOutlinedInput-root": {
                     borderRadius: 2,
-                    transition: "border-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
+                    transition:
+                      "border-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
                     "& fieldset": {
                       borderColor: theme.palette.divider,
                     },
@@ -512,7 +562,8 @@ export default function EventPage() {
                 gridColumn: "span 2",
                 "& .MuiOutlinedInput-root": {
                   borderRadius: 2,
-                  transition: "border-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
+                  transition:
+                    "border-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
                   "& fieldset": {
                     borderColor: theme.palette.divider,
                   },
@@ -537,7 +588,13 @@ export default function EventPage() {
               }}
             />
 
-            <Box gridColumn="span 2" display="flex" alignItems="center" gap={2} flexWrap="wrap">
+            <Box
+              gridColumn="span 2"
+              display="flex"
+              alignItems="center"
+              gap={2}
+              flexWrap="wrap"
+            >
               <Button
                 variant="contained"
                 component="label"

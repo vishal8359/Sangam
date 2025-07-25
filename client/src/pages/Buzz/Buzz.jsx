@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import io from "socket.io-client";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
-import data from "@emoji-mart/data";
-import Picker from "@emoji-mart/react";
+import { EmojiPicker } from "@ferrucc-io/emoji-picker";
 import {
   Box,
   Typography,
@@ -267,6 +266,10 @@ export default function SocietyBuzz() {
     };
     socketRef.current.emit("sendBuzzMessage", payload);
     setMessage("");
+  };
+
+  const handleEmojiSelect = (emoji) => {
+    setMessage((prevMessage) => prevMessage + emoji.unified);
   };
 
   // Fetch groups on initial load
@@ -1094,17 +1097,32 @@ export default function SocietyBuzz() {
                         left={0}
                         zIndex={999}
                         sx={{
+                          cursor: "pointer",
                           transformOrigin: "bottom left",
+                          bgcolor: (theme) => theme.palette.background.paper,
+                          boxShadow: 8,
+                          borderRadius: 2,
+                          overflow: "hidden",
+                          border: (theme) =>
+                            `1px solid ${theme.palette.divider}`,
                           animation: `${fadeIn} 0.3s ease-out`,
                         }}
                       >
-                        <Picker
-                          data={data}
-                          onEmojiSelect={(emoji) =>
-                            setMessage((prev) => prev + emoji.native)
-                          }
-                          theme={theme.palette.mode}
-                        />
+                        <EmojiPicker
+                          onEmojiSelect={(emoji) => {
+                            
+                            console.dir("Full emoji object:", emoji);
+                            // debugger;
+                            setMessage((prev) => prev + emoji);
+                          }}
+                        >
+                          <EmojiPicker.Header>
+                            <EmojiPicker.Input placeholder="Search emoji" />
+                          </EmojiPicker.Header>
+                          <EmojiPicker.Group>
+                            <EmojiPicker.List />
+                          </EmojiPicker.Group>
+                        </EmojiPicker>
                       </Box>
                     )}
                   </Box>

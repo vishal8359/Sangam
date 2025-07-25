@@ -1,11 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import data from "@emoji-mart/data";
-import Picker from "@emoji-mart/react";
 import InsertEmoticonIcon from "@mui/icons-material/InsertEmoticon";
 import DoneAllIcon from "@mui/icons-material/DoneAll";
 import chat_bg from "../../assets/chats_bg.jpg";
+import { EmojiPicker } from "@ferrucc-io/emoji-picker";
 
 import {
   Box,
@@ -45,7 +44,7 @@ export default function ChatContainer({
     token,
     onlineStatus,
     setMessageHandler,
-    navigate
+    navigate,
   } = useAppContext();
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const emojiPickerRef = useRef(null);
@@ -60,7 +59,6 @@ export default function ChatContainer({
   const [selectedMsg, setSelectedMsg] = useState(null);
   const scrollRef = useRef(null);
   const contextMenuRef = useRef(null);
-  
 
   const MAX_SIZE = 10 * 1024 * 1024;
 
@@ -705,7 +703,7 @@ export default function ChatContainer({
                     <Box
                       px={1}
                       py={1}
-                      maxWidth= {isMobile ? "55%" : "30%"}
+                      maxWidth={isMobile ? "55%" : "30%"}
                       borderRadius={2}
                       bgcolor={isYou ? "#f5f5f5" : "#000"}
                       sx={{
@@ -716,9 +714,9 @@ export default function ChatContainer({
                       {msg.fileUrl ? (
                         <>
                           {msg.fileType?.startsWith("video") ||
-                          msg.fileUrl.endsWith(".mp4") || msg.fileUrl.includes("reels") ? (
+                          msg.fileUrl.endsWith(".mp4") ||
+                          msg.fileUrl.includes("reels") ? (
                             <div
-                              
                               style={{
                                 cursor: "pointer",
                                 maxWidth: "100%",
@@ -892,23 +890,41 @@ export default function ChatContainer({
           <Box
             ref={emojiPickerRef}
             position="absolute"
-            bottom={50}
+            bottom="100%"
             left={0}
-            zIndex={10}
+            zIndex={999}
+            sx={{
+              height: isMobile? 250 : 410,
+              cursor: "pointer",
+              transformOrigin: "bottom left",
+              bgcolor: (theme) => theme.palette.background.paper,
+              boxShadow: 8,
+              borderRadius: 2,
+              overflow: "hidden",
+              border: (theme) => `1px solid ${theme.palette.divider}`,
+              
+            }}
           >
-            <Picker
-              data={data}
-              onEmojiSelect={(emoji) =>
-                setNewMessage((prev) => prev + emoji.native)
-              }
-              theme={isDark ? "dark" : "light"}
-            />
+            <EmojiPicker
+              onEmojiSelect={(emoji) => {
+                console.dir("Full emoji object:", emoji);
+                // debugger;
+                setNewMessage((prev) => prev + emoji);
+              }}
+            >
+              <EmojiPicker.Header>
+                <EmojiPicker.Input placeholder="Search emoji" />
+              </EmojiPicker.Header>
+              <EmojiPicker.Group>
+                <EmojiPicker.List />
+              </EmojiPicker.Group>
+            </EmojiPicker>
           </Box>
         )}
         {openImage && (
           <Box
             position="fixed"
-            top={0}
+            top={10}
             left={30}
             width="100vw"
             height="100vh"

@@ -24,8 +24,6 @@ import {
   Zoom,
 } from "@mui/material";
 import { useTheme, useMediaQuery } from "@mui/material";
-import data from "@emoji-mart/data";
-import Picker from "@emoji-mart/react";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import ShareIcon from "@mui/icons-material/Share";
 import CommentIcon from "@mui/icons-material/Comment";
@@ -40,6 +38,7 @@ import { useAppContext } from "../../context/AppContext";
 import { toast } from "react-hot-toast";
 import VolumeUpIcon from "@mui/icons-material/VolumeUp";
 import VolumeOffIcon from "@mui/icons-material/VolumeOff";
+import { EmojiPicker } from "@ferrucc-io/emoji-picker";
 
 const theme = createTheme({
   palette: {
@@ -918,23 +917,30 @@ export default function ScrollReelsPage() {
                             sx={{
                               position: "absolute",
                               bottom: -300,
-                              right: 10,
+                              right: 0,
                               zIndex: 1000,
                               boxShadow: theme.shadows[4],
                               borderRadius: "30px",
                               overflow: "hidden",
+                              bgcolor: theme.palette.background.paper,
+                              border: `1px solid ${theme.palette.divider}`,
                             }}
                           >
-                            <Picker
-                              data={data}
-                              onEmojiSelect={(emoji) =>
+                            <EmojiPicker
+                              onEmojiSelect={(emoji) => {
                                 setReplyInput((prev) => ({
                                   ...prev,
-                                  text: prev.text + emoji.native,
-                                }))
-                              }
-                              theme="light"
-                            />
+                                  text: prev.text + emoji,
+                                }));
+                              }}
+                            >
+                              <EmojiPicker.Header>
+                                <EmojiPicker.Input placeholder="Search emoji" />
+                              </EmojiPicker.Header>
+                              <EmojiPicker.Group>
+                                <EmojiPicker.List />
+                              </EmojiPicker.Group>
+                            </EmojiPicker>
                           </Box>
                         )}
                       </Stack>
@@ -995,21 +1001,34 @@ export default function ScrollReelsPage() {
                 ref={emojiPickerRef}
                 sx={{
                   position: "absolute",
-                  bottom: 70,
-                  left: 60,
+                  bottom: isMobile ? 70 : 50,
+                  height: isMobile ? 350 : 420,
+                  left: isMobile ? 15 : 60,
                   zIndex: 9999,
                   boxShadow: theme.shadows[4],
                   borderRadius: "30px",
                   overflow: "hidden",
+                  bgcolor: theme.palette.background.paper,
+                  border: `1px solid ${theme.palette.divider}`,
+                  "&::-webkit-scrollbar": {
+                    display: "none",
+                  },
+                  scrollbarWidth: "none",
+                  msOverflowStyle: "none",
                 }}
               >
-                <Picker
-                  data={data}
-                  onEmojiSelect={(emoji) =>
-                    setNewComment((prev) => prev + emoji.native)
-                  }
-                  theme="light"
-                />
+                <EmojiPicker
+                  onEmojiSelect={(emoji) => {
+                    setNewComment((prev) => prev + emoji);
+                  }}
+                >
+                  <EmojiPicker.Header>
+                    <EmojiPicker.Input placeholder="Search emoji" />
+                  </EmojiPicker.Header>
+                  <EmojiPicker.Group>
+                    <EmojiPicker.List />
+                  </EmojiPicker.Group>
+                </EmojiPicker>
               </Box>
             )}
           </Box>

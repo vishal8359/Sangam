@@ -16,6 +16,7 @@ import {
   DialogActions,
   TextField,
   Button,
+  CircularProgress, // Added CircularProgress for loading state
 } from "@mui/material";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import StarsIcon from "@mui/icons-material/Stars";
@@ -27,25 +28,34 @@ const TopContributorsPage = () => {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const [contributors, setContributors] = useState([]);
+  const [loadingContributors, setLoadingContributors] = useState(true); // New loading state
   const [openDialog, setOpenDialog] = useState(false);
+  const [isAddingContributor, setIsAddingContributor] = useState(false); // Loading state for adding
   const [newContributor, setNewContributor] = useState({
     name: "",
     house: "",
     designation: "",
     achievements: "",
   });
-  const { userRole, token, axios, user } = useAppContext();
+  const { userRole, token, axios, societyId } = useAppContext(); // Destructure societyId from useAppContext
   const isAdmin = userRole === "admin";
 
+  // Log userRole and societyId for debugging
   useEffect(() => {
-    if (!token || !axios) return;
+    console.log("Current userRole:", userRole);
+    console.log("Current societyId:", societyId);
+  }, [userRole, societyId]);
+
+  useEffect(() => {
 
     fetchContributors();
-  }, [token, axios]);
+  }, [token, axios, societyId]); // Added societyId to dependencies
 
   const fetchContributors = async () => {
+    setLoadingContributors(true); // Start loading
     try {
-      const res = await axios.get("/api/users/contributors/all", {
+      // Modified API endpoint to include societyId as a query parameter
+      const res = await axios.get(`/api/users/contributors/all?societyId=${societyId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -61,11 +71,15 @@ const TopContributorsPage = () => {
         err.response?.data?.message ||
           "Unauthorized or failed to fetch contributors."
       );
+    } finally {
+      setLoadingContributors(false); // End loading
     }
   };
 
   const handleMarkContributor = async () => {
+    setIsAddingContributor(true); // Start adding loading
     try {
+      // Ensure the backend URL is correctly configured in your .env file
       const url = `${import.meta.env.VITE_BACKEND_URL}/api/admin/contributors/mark`;
 
       await axios.post(
@@ -77,6 +91,7 @@ const TopContributorsPage = () => {
           achievements: newContributor.achievements
             .split(",")
             .map((ach) => ach.trim()),
+          society_id: societyId, // Ensure society_id is sent for admin actions
         },
         {
           headers: {
@@ -93,10 +108,12 @@ const TopContributorsPage = () => {
         achievements: "",
       });
       setOpenDialog(false);
-      fetchContributors();
+      fetchContributors(); // Re-fetch contributors to update the list
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to add contributor");
       console.error(err.response?.data || err.message);
+    } finally {
+      setIsAddingContributor(false); // End adding loading
     }
   };
 
@@ -104,7 +121,7 @@ const TopContributorsPage = () => {
     <Box
       p={3}
       sx={{
-        bgcolor: isDark? theme.palette.background.default : "#fff",
+        bgcolor: isDark ? theme.palette.background.default : "#fff",
         minHeight: "100vh",
         background: isDark
           ? `linear-gradient(180deg, ${theme.palette.background.default}, ${theme.palette.background.paper})`
@@ -171,128 +188,155 @@ const TopContributorsPage = () => {
           </motion.div>
         </Box>
       )}
-      <Grid container spacing={4} justifyContent="center">
-        {contributors.map((contributor, idx) => (
-          <Grid item xs={12} sm={6} md={4} key={idx}>
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              transition={{ delay: idx * 0.1, duration: 0.6, type: "spring", stiffness: 100 }}
-              viewport={{ once: true, amount: 0.5 }}
-            >
-              <Card
-                elevation={10}
-                sx={{
-                  borderRadius: 5,
-                  background: isDark
-                    ? `linear-gradient(to bottom right, ${theme.palette.background.paper}, ${theme.palette.background.default})`
-                    : `linear-gradient(to bottom right, ${theme.palette.background.default}, ${theme.palette.grey[50]})`,
-                  color: theme.palette.text.primary,
-                  boxShadow: isDark ? `0 8px 32px 0 ${theme.palette.common.black}80` : theme.shadows[10],
-                  overflow: "hidden",
-                  px: 3,
-                  pt: 3,
-                  pb: 2,
-                  border: `1px solid ${theme.palette.divider}`,
-                  backdropFilter: "blur(5px)",
-                }}
+
+      {loadingContributors ? (
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="300px">
+          <CircularProgress color="primary" size={60} />
+          <Typography variant="h6" ml={2} color="text.secondary">
+            Loading Top Contributors...
+          </Typography>
+        </Box>
+      ) : contributors.length === 0 ? (
+        <Box textAlign="center" py={5}>
+          <Typography variant="h6" color="text.secondary">
+            No top contributors found yet.
+          </Typography>
+          {isAdmin && (
+            <Typography variant="body1" color="text.secondary">
+              Add the first one using the button above!
+            </Typography>
+          )}
+        </Box>
+      ) : (
+        <Grid container spacing={4} justifyContent="center">
+          {contributors.map((contributor, idx) => (
+            <Grid item xs={12} sm={6} md={4} key={idx}>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ delay: idx * 0.1, duration: 0.6, type: "spring", stiffness: 100 }}
+                viewport={{ once: true, amount: 0.5 }}
               >
-                <Box display="flex" alignItems="center" gap={2} mb={2}>
-                  <Avatar
-                    src={contributor.avatar}
-                    sx={{
-                      background: "linear-gradient(to right, #FF6B6B, #FFD93D)",
-                      fontWeight: "bold",
-                      fontSize: "1.8rem",
-                      width: 70,
-                      height: 70,
-                      color: "#fff",
-                      border: `3px solid ${theme.palette.background.paper}`,
-                      boxShadow: theme.shadows[3],
-                    }}
-                  >
-                    {contributor.avatar || contributor.name.charAt(0)}
-                  </Avatar>
-                  <Box>
-                    <Typography variant="h5" fontWeight="bold" sx={{ color: isDark ? "#fff" : theme.palette.primary.main }}>
-                      {contributor.name}
-                    </Typography>
-                    <Typography
-                      variant="body1"
-                      color="text.secondary"
-                      sx={{ fontStyle: "italic", mt: 0.5 }}
-                    >
-                      {contributor.house}
-                    </Typography>
-                  </Box>
-                </Box>
-
-                <Chip
-                  icon={<StarsIcon />}
-                  label={contributor.designation}
-                  color="secondary"
-                  size="medium"
+                <Card
+                  elevation={10}
                   sx={{
-                    mt: 1,
-                    mb: 2,
-                    fontWeight: "bold",
-                    borderRadius: "10px",
-                    px: 2,
-                    background: theme.palette.secondary.main,
-                    color: theme.palette.secondary.contrastText,
-                    boxShadow: theme.shadows[2],
-                  }}
-                />
-
-                <Divider sx={{ my: 2.5, borderColor: theme.palette.divider, borderStyle: "dashed" }} />
-
-                <Typography
-                  variant="h6"
-                  fontWeight={700}
-                  gutterBottom
-                  sx={{
-                    textTransform: "uppercase",
-                    color: isDark ? theme.palette.info.light : theme.palette.primary.dark,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
-                    mb: 1.5,
+                    borderRadius: 5,
+                    background: isDark
+                      ? `linear-gradient(to bottom right, ${theme.palette.background.paper}, ${theme.palette.background.default})`
+                      : `linear-gradient(to bottom right, ${theme.palette.background.default}, ${theme.palette.grey[50]})`,
+                    color: theme.palette.text.primary,
+                    boxShadow: isDark ? `0 8px 32px 0 ${theme.palette.common.black}80` : theme.shadows[10],
+                    overflow: "hidden",
+                    px: 3,
+                    pt: 3,
+                    pb: 2,
+                    border: `1px solid ${theme.palette.divider}`,
+                    backdropFilter: "blur(5px)",
                   }}
                 >
-                  <EmojiEventsIcon sx={{ color: theme.palette.warning.main }} /> Achievements
-                </Typography>
-
-                <Box sx={{ maxHeight: 150, overflowY: "auto", pr: 1 }}>
-                  {contributor.achievements.map((ach, i) => (
-                    <Box
-                      key={i}
-                      display="flex"
-                      alignItems="flex-start"
-                      gap={1.5}
-                      mb={1}
+                  <Box display="flex" alignItems="center" gap={2} mb={2}>
+                    <Avatar
+                      src={contributor.avatar}
                       sx={{
-                        background: isDark ? theme.palette.action.hover : theme.palette.action.selected,
-                        p: 1,
-                        borderRadius: 2,
-                        "&:last-child": { mb: 0 },
+                        background: "linear-gradient(to right, #FF6B6B, #FFD93D)",
+                        fontWeight: "bold",
+                        fontSize: "1.8rem",
+                        width: 70,
+                        height: 70,
+                        color: "#fff",
+                        border: `3px solid ${theme.palette.background.paper}`,
+                        boxShadow: theme.shadows[3],
                       }}
                     >
-                      <Tooltip title="Achievement" arrow>
-                        <EmojiEventsIcon
-                          fontSize="small"
-                          color="warning"
-                          sx={{ mt: "3px", flexShrink: 0 }}
-                        />
-                      </Tooltip>
-                      <Typography variant="body2" color="text.secondary">{ach}</Typography>
+                      {contributor.avatar || (contributor.name ? contributor.name.charAt(0).toUpperCase() : '')}
+                    </Avatar>
+                    <Box>
+                      <Typography variant="h5" fontWeight="bold" sx={{ color: isDark ? "#fff" : theme.palette.primary.main }}>
+                        {contributor.name}
+                      </Typography>
+                      <Typography
+                        variant="body1"
+                        color="text.secondary"
+                        sx={{ fontStyle: "italic", mt: 0.5 }}
+                      >
+                        {contributor.house}
+                      </Typography>
                     </Box>
-                  ))}
-                </Box>
-              </Card>
-            </motion.div>
-          </Grid>
-        ))}
-      </Grid>
+                  </Box>
+
+                  <Chip
+                    icon={<StarsIcon />}
+                    label={contributor.designation}
+                    color="secondary"
+                    size="medium"
+                    sx={{
+                      mt: 1,
+                      mb: 2,
+                      fontWeight: "bold",
+                      borderRadius: "10px",
+                      px: 2,
+                      background: theme.palette.secondary.main,
+                      color: theme.palette.secondary.contrastText,
+                      boxShadow: theme.shadows[2],
+                    }}
+                  />
+
+                  <Divider sx={{ my: 2.5, borderColor: theme.palette.divider, borderStyle: "dashed" }} />
+
+                  <Typography
+                    variant="h6"
+                    fontWeight={700}
+                    gutterBottom
+                    sx={{
+                      textTransform: "uppercase",
+                      color: isDark ? theme.palette.info.light : theme.palette.primary.dark,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      mb: 1.5,
+                    }}
+                  >
+                    <EmojiEventsIcon sx={{ color: theme.palette.warning.main }} /> Achievements
+                  </Typography>
+
+                  <Box sx={{ maxHeight: 150, overflowY: "auto", pr: 1 }}>
+                    {contributor.achievements && contributor.achievements.length > 0 ? (
+                      contributor.achievements.map((ach, i) => (
+                        <Box
+                          key={i}
+                          display="flex"
+                          alignItems="flex-start"
+                          gap={1.5}
+                          mb={1}
+                          sx={{
+                            background: isDark ? theme.palette.action.hover : theme.palette.action.selected,
+                            p: 1,
+                            borderRadius: 2,
+                            "&:last-child": { mb: 0 },
+                          }}
+                        >
+                          <Tooltip title="Achievement" arrow>
+                            <EmojiEventsIcon
+                              fontSize="small"
+                              color="warning"
+                              sx={{ mt: "3px", flexShrink: 0 }}
+                            />
+                          </Tooltip>
+                          <Typography variant="body2" color="text.secondary">{ach}</Typography>
+                        </Box>
+                      ))
+                    ) : (
+                      <Typography variant="body2" color="text.secondary" fontStyle="italic">
+                        No achievements listed.
+                      </Typography>
+                    )}
+                  </Box>
+                </Card>
+              </motion.div>
+            </Grid>
+          ))}
+        </Grid>
+      )}
       <Dialog
         open={openDialog}
         onClose={() => setOpenDialog(false)}
@@ -394,6 +438,7 @@ const TopContributorsPage = () => {
             color="primary"
             variant="outlined"
             sx={{ px: 3, py: 1 }}
+            disabled={isAddingContributor}
           >
             Cancel
           </Button>
@@ -402,8 +447,10 @@ const TopContributorsPage = () => {
             onClick={handleMarkContributor}
             color="secondary"
             sx={{ px: 3, py: 1, boxShadow: theme.shadows[3] }}
+            disabled={isAddingContributor}
+            startIcon={isAddingContributor ? <CircularProgress size={20} color="inherit" /> : null}
           >
-            Submit
+            {isAddingContributor ? "Submitting..." : "Submit"}
           </Button>
         </DialogActions>
       </Dialog>

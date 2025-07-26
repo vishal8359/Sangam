@@ -6,14 +6,20 @@ import mongoose from "mongoose";
 // GET /api/users/gethealth
 export const getHealth = async (req, res) => {
   try {
-    const userId = req.user._id;
-    const societyId = req.user.societyId;
-    if (!societyId) {
+    // Get societyId from query parameters as sent by the frontend
+    const societyIdFromQuery = req.query.societyId;
+
+    // Log for debugging: Check what societyId is received and the user object
+    console.log("Backend: getHealth - societyId from query:", societyIdFromQuery);
+    console.log("Backend: getHealth - req.user:", req.user);
+
+    if (!societyIdFromQuery) {
       return res
         .status(400)
-        .json({ message: "User is not associated with a society." });
+        .json({ message: "Society ID is required as a query parameter." });
     }
-    const healthData = await Health.find({ society: societyId }).sort({
+
+    const healthData = await Health.find({ society: societyIdFromQuery }).sort({
       createdAt: -1,
     });
 
@@ -41,7 +47,8 @@ export const addHealth = async (req, res) => {
     } = req.body;
 
     const userId = req.user._id;
-    const societyId = req.user.societyId;
+    const societyId = req.user.societyId; // Assuming societyId is correctly populated by auth middleware
+
     if (
       !name ||
       !age ||
@@ -87,7 +94,7 @@ export const deleteHealthData = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user._id;
-    const societyId = req.user.societyId;
+    const societyId = req.user.societyId; // Assuming societyId is correctly populated by auth middleware
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res

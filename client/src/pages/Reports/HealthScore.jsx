@@ -13,6 +13,7 @@ import {
   lighten,
   darken,
   useMediaQuery,
+  CircularProgress, // Added CircularProgress for loading state
 } from "@mui/material";
 import {
   BarChart,
@@ -67,15 +68,17 @@ const calculateBMI = (feet, inches, weight) => {
 };
 
 export default function SocietyHealthScore() {
-  
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isDark = theme.palette.mode === "dark";
 
   const [allSocietyData, setAllSocietyData] = useState([]);
   const [person, setPerson] = useState(initialPerson);
-  const { axios, token, user } = useAppContext();
+  const [loadingHealthData, setLoadingHealthData] = useState(true); // New loading state
+  const [addingHealthEntry, setAddingHealthEntry] = useState(false); // Loading state for adding
+  const { axios, token, user, societyId } = useAppContext(); // Destructure societyId
 
+  // Filter data for the current user's uploaded entries
   const myUploadedEntriesData = allSocietyData.filter(
     (item) => user && item.user === user._id
   );
@@ -86,6 +89,7 @@ export default function SocietyHealthScore() {
     setPerson({ ...person, [e.target.name]: e.target.value });
   };
 
+  // Calculate average health scores per family for the chart
   const familyScores = Object.values(
     allSocietyData.reduce((acc, cur) => {
       if (!acc[cur.house])
@@ -99,6 +103,7 @@ export default function SocietyHealthScore() {
     avgScore: parseFloat((item.total / item.count).toFixed(2)),
   }));
 
+  // Auto-fill house number from user's address
   useEffect(() => {
     if (user?.address) {
       const houseNo = user.address.split(",")[0]?.trim();
@@ -120,7 +125,8 @@ export default function SocietyHealthScore() {
       !condition ||
       !house
     ) {
-      return alert("Fill all fields");
+      alert("Please fill all fields."); // Use toast for better UX in a real app
+      return;
     }
 
     const calculatedBmi = calculateBMI(feet, inches, weight);
@@ -131,6 +137,7 @@ export default function SocietyHealthScore() {
       condition,
     });
 
+    setAddingHealthEntry(true); // Start loading for add operation
     try {
       const res = await axios.post(
         "/api/users/addhealth",
@@ -145,33 +152,68 @@ export default function SocietyHealthScore() {
           bmi: calculatedBmi,
           healthScore,
           house: person.house,
+          societyId: societyId, // Ensure societyId is sent with the new entry
         },
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
 
+      // After successful addition, re-fetch all data to update the lists and chart
       fetchHealthData();
-      setPerson(initialPerson);
+      setPerson(initialPerson); // Reset form
+      toast.success("Health entry added successfully!");
     } catch (err) {
       console.error("Submit error", err.response?.data || err.message);
+      toast.error(err.response?.data?.message || "Failed to add health entry.");
+    } finally {
+      setAddingHealthEntry(false); // End loading for add operation
     }
   };
 
   const fetchHealthData = async () => {
+    setLoadingHealthData(true); // Start loading for fetch operation
     try {
-      const res = await axios.get("/api/users/gethealth", {
+      // IMPORTANT: Pass societyId as a query parameter
+      const res = await axios.get(`/api/users/gethealth?societyId=${societyId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setAllSocietyData(res.data);
     } catch (err) {
       console.error("Fetch error", err);
+      toast.error("Failed to load health data.");
+    } finally {
+      setLoadingHealthData(false); // End loading for fetch operation
     }
   };
 
+  // Fetch data when token or societyId changes
   useEffect(() => {
-    if (token) fetchHealthData();
-  }, [token]);
+    if (token && societyId) { // Ensure both are present before fetching
+      fetchHealthData();
+    } else if (!societyId) {
+      setLoadingHealthData(false);
+      // Optionally, show a toast or message if societyId is missing
+      // toast.error("Society ID not available. Cannot fetch health data.");
+    }
+  }, [token, societyId]); // Added societyId to dependency array
+
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete(`/api/users/health/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success("Health entry deleted successfully!");
+      fetchHealthData(); // Re-fetch data after deletion
+    } catch (err) {
+      console.error(
+        "Delete failed",
+        err.response?.data || err.message
+      );
+      toast.error(err.response?.data?.message || "Failed to delete health entry.");
+    }
+  };
+
 
   return (
     <Box
@@ -370,6 +412,7 @@ export default function SocietyHealthScore() {
               variant="contained"
               fullWidth
               onClick={handleAdd}
+              disabled={addingHealthEntry} // Disable button while adding
               sx={{
                 mt: 2,
                 py: 1.5,
@@ -387,7 +430,7 @@ export default function SocietyHealthScore() {
               }}
               required
             >
-              <PersonAddIcon sx={{ mr: 1 }} /> Add Person
+              {addingHealthEntry ? <CircularProgress size={24} color="inherit" /> : <PersonAddIcon sx={{ mr: 1 }} />} Add Person
             </Button>
           </Grid>
         </Grid>
@@ -403,109 +446,113 @@ export default function SocietyHealthScore() {
         <HealthAndSafetyIcon sx={{ mr: 1, fontSize: "inherit" }} /> My Uploaded
         Health Entries
       </Typography>
-      <Grid container spacing={3} mb={6}>
-        {myUploadedEntriesData.map((item) => (
-          <Grid item xs={12} md={4} key={item._id}>
-            
-            <Card
-              sx={{
-                width: isMobile ? 180 : 250,
-                background: isDark
-                  ? "linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%)"
-                  : "linear-gradient(135deg, #fafafa 0%, #ffffff 100%)",
-                borderRadius: 3,
-                boxShadow: isDark
-                  ? "0px 6px 15px rgba(0,0,0,0.6)"
-                  : "0px 6px 15px rgba(0,0,0,0.1)",
-                transition: "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
-                "&:hover": {
-                  transform: "translateY(-5px)",
+      {loadingHealthData ? (
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+          <CircularProgress color="primary" size={60} />
+          <Typography variant="h6" ml={2} color="text.secondary">
+            Loading Health Data...
+          </Typography>
+        </Box>
+      ) : myUploadedEntriesData.length === 0 ? (
+        <Box textAlign="center" py={5}>
+          <Typography variant="h6" color="text.secondary">
+            No health entries uploaded by you yet.
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Use the form above to add your first entry!
+          </Typography>
+        </Box>
+      ) : (
+        <Grid container spacing={3} mb={6} justifyContent="center">
+          {myUploadedEntriesData.map((item) => (
+            <Grid item xs={12} sm={6} md={4} key={item._id} sx={{ display: 'flex', justifyContent: 'center' }}>
+              <Card
+                sx={{
+                  width: isMobile ? '100%' : 250, // Adjusted width for better responsiveness
+                  background: isDark
+                    ? "linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%)"
+                    : "linear-gradient(135deg, #fafafa 0%, #ffffff 100%)",
+                  borderRadius: 3,
                   boxShadow: isDark
-                    ? "0px 10px 25px rgba(0,0,0,0.9)"
-                    : "0px 10px 25px rgba(0,0,0,0.3)",
-                },
-              }}
-            >
-              <CardContent>
-                <Typography variant="h6" color="text.primary" sx={{ mb: 1 }}>
-                  {item.name}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  House: **{item.house}**
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Age: {item.age}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  BMI: {item.bmi}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Fat %: {item.fat}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: SEVERE_CONDITIONS.includes(item.condition)
-                      ? theme.palette.error.main
-                      : theme.palette.info.main,
-                    fontWeight: "medium",
-                    mt: 0.5,
-                  }}
-                >
-                  Condition: {item.condition}
-                </Typography>
-                <Box mt={2}>
-                  <Typography variant="body1" sx={{ fontWeight: "bold", mb: 0.5 }}>
-                    Health Score: {item.healthScore} / 10 ⭐
+                    ? "0px 6px 15px rgba(0,0,0,0.6)"
+                    : "0px 6px 15px rgba(0,0,0,0.1)",
+                  transition: "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
+                  "&:hover": {
+                    transform: "translateY(-5px)",
+                    boxShadow: isDark
+                      ? "0px 10px 25px rgba(0,0,0,0.9)"
+                      : "0px 10px 25px rgba(0,0,0,0.3)",
+                  },
+                }}
+              >
+                <CardContent>
+                  <Typography variant="h6" color="text.primary" sx={{ mb: 1 }}>
+                    {item.name}
                   </Typography>
-                  <LinearProgress
-                    variant="determinate"
-                    value={(item.healthScore / 10) * 100}
+                  <Typography variant="body2" color="text.secondary">
+                    House: <strong>{item.house}</strong>
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Age: {item.age}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    BMI: {item.bmi}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Fat %: {item.fat}
+                  </Typography>
+                  <Typography
+                    variant="body2"
                     sx={{
-                      height: 12,
-                      borderRadius: 5,
-                      bgcolor: isDark
-                        ? darken(theme.palette.background.paper, 0.3)
-                        : lighten(theme.palette.background.paper, 0.3),
-                      "& .MuiLinearProgress-bar": {
-                        bgcolor:
-                          item.healthScore >= 7
-                            ? theme.palette.success.main
-                            : item.healthScore >= 4
-                            ? theme.palette.warning.main
-                            : theme.palette.error.main,
-                        transition: "width 0.5s ease-in-out",
-                      },
+                      color: SEVERE_CONDITIONS.includes(item.condition)
+                        ? theme.palette.error.main
+                        : theme.palette.info.main,
+                      fontWeight: "medium",
+                      mt: 0.5,
                     }}
-                  />
-                  <Button
-                    size="small"
-                    color="error"
-                    startIcon={<DeleteIcon />}
-                    onClick={async () => {
-                      try {
-                        await axios.delete(`/api/users/health/${item._id}`, {
-                          headers: { Authorization: `Bearer ${token}` },
-                        });
-                        fetchHealthData();
-                      } catch (err) {
-                        console.error(
-                          "Delete failed",
-                          err.response?.data || err.message
-                        );
-                      }
-                    }}
-                    sx={{ mt: 1, borderRadius: 1 }}
                   >
-                    Delete
-                  </Button>
-                </Box>
-              </CardContent>
-            </Card>
-            {/* </motion.div> */}
-          </Grid>
-        ))}
-      </Grid>
+                    Condition: {item.condition}
+                  </Typography>
+                  <Box mt={2}>
+                    <Typography variant="body1" sx={{ fontWeight: "bold", mb: 0.5 }}>
+                      Health Score: {item.healthScore} / 10 ⭐
+                    </Typography>
+                    <LinearProgress
+                      variant="determinate"
+                      value={(item.healthScore / 10) * 100}
+                      sx={{
+                        height: 12,
+                        borderRadius: 5,
+                        bgcolor: isDark
+                          ? darken(theme.palette.background.paper, 0.3)
+                          : lighten(theme.palette.background.paper, 0.3),
+                        "& .MuiLinearProgress-bar": {
+                          bgcolor:
+                            item.healthScore >= 7
+                              ? theme.palette.success.main
+                              : item.healthScore >= 4
+                              ? theme.palette.warning.main
+                              : theme.palette.error.main,
+                          transition: "width 0.5s ease-in-out",
+                        },
+                      }}
+                    />
+                    <Button
+                      size="small"
+                      color="error"
+                      startIcon={<DeleteIcon />}
+                      onClick={() => handleDelete(item._id)} // Call handleDelete with item._id
+                      sx={{ mt: 1, borderRadius: 1 }}
+                    >
+                      Delete
+                    </Button>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      )}
 
       <Box
         p={3}
@@ -531,41 +578,56 @@ export default function SocietyHealthScore() {
         >
           <TrendingUpIcon sx={{ mr: 1 }} /> Average Health Score Per Family
         </Typography>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={familyScores} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-            <XAxis
-              dataKey="house"
-              stroke={isDark ? theme.palette.grey[300] : theme.palette.grey[700]}
-              tickLine={false}
-              axisLine={{ stroke: isDark ? theme.palette.grey[600] : theme.palette.grey[400] }}
-            />
-            <YAxis
-              domain={[0, 10]}
-              stroke={isDark ? theme.palette.grey[300] : theme.palette.grey[700]}
-              tickLine={false}
-              axisLine={{ stroke: isDark ? theme.palette.grey[600] : theme.palette.grey[400] }}
-            />
-            <Tooltip
-              cursor={{ fill: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }}
-              contentStyle={{
-                backgroundColor: isDark ? "#333333" : "#ffffff",
-                color: isDark ? "#ffffff" : "#000000",
-                borderRadius: 8,
-                border: `1px solid ${isDark ? "#555" : "#ddd"}`,
-                boxShadow: isDark
-                  ? "0 4px 10px rgba(0,0,0,0.5)"
-                  : "0 4px 10px rgba(0,0,0,0.1)",
-              }}
-              itemStyle={{ color: isDark ? "#ffffff" : "#000000" }}
-            />
-            <Bar
-              dataKey="avgScore"
-              fill={theme.palette.success.main}
-              radius={[10, 10, 0, 0]}
-              barSize={30}
-            />
-          </BarChart>
-        </ResponsiveContainer>
+        {loadingHealthData ? (
+          <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+            <CircularProgress color="primary" size={60} />
+          </Box>
+        ) : familyScores.length === 0 ? (
+          <Box textAlign="center" py={5}>
+            <Typography variant="h6" color="text.secondary">
+              No family health scores available yet.
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Add some health entries to see the chart!
+            </Typography>
+          </Box>
+        ) : (
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={familyScores} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+              <XAxis
+                dataKey="house"
+                stroke={isDark ? theme.palette.grey[300] : theme.palette.grey[700]}
+                tickLine={false}
+                axisLine={{ stroke: isDark ? theme.palette.grey[600] : theme.palette.grey[400] }}
+              />
+              <YAxis
+                domain={[0, 10]}
+                stroke={isDark ? theme.palette.grey[300] : theme.palette.grey[700]}
+                tickLine={false}
+                axisLine={{ stroke: isDark ? theme.palette.grey[600] : theme.palette.grey[400] }}
+              />
+              <Tooltip
+                cursor={{ fill: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }}
+                contentStyle={{
+                  backgroundColor: isDark ? "#333333" : "#ffffff",
+                  color: isDark ? "#ffffff" : "#000000",
+                  borderRadius: 8,
+                  border: `1px solid ${isDark ? "#555" : "#ddd"}`,
+                  boxShadow: isDark
+                    ? "0 4px 10px rgba(0,0,0,0.5)"
+                    : "0 4px 10px rgba(0,0,0,0.1)",
+                }}
+                itemStyle={{ color: isDark ? "#ffffff" : "#000000" }}
+              />
+              <Bar
+                dataKey="avgScore"
+                fill={theme.palette.success.main}
+                radius={[10, 10, 0, 0]}
+                barSize={30}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
       </Box>
     </Box>
   );

@@ -37,7 +37,7 @@ const TopContributorsPage = () => {
     designation: "",
     achievements: "",
   });
-  const { userRole, token, axios, societyId } = useAppContext(); // Destructure societyId from useAppContext
+  const { userRole, token, axios, societyId } = useAppContext(); 
   const isAdmin = userRole === "admin";
 
   // Log userRole and societyId for debugging
@@ -67,10 +67,10 @@ const TopContributorsPage = () => {
         "Failed to fetch contributors:",
         err.response?.data || err.message
       );
-      toast.error(
-        err.response?.data?.message ||
-          "Unauthorized or failed to fetch contributors."
-      );
+      // toast.error(
+      //   err.response?.data?.message ||
+      //     "Unauthorized or failed to fetch contributors."
+      // );
     } finally {
       setLoadingContributors(false); // End loading
     }

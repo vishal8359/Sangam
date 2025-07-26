@@ -1,6 +1,6 @@
 import SocietyIntegration from "../Models/Integration.js";
 import User from "../Models/User.js";
-import { uploadToCloudinary } from "../Utils/cloudinaryUpload.js";
+import { uploadToCloudinary } from "../Utils/cloudinaryUpload.js"; // Changed import to uploadToCloudinary
 
 export const upsertSocietyIntegration = async (req, res) => {
   try {
@@ -24,26 +24,26 @@ export const upsertSocietyIntegration = async (req, res) => {
       const mapImageFile = req.files.mapImage ? req.files.mapImage[0] : null;
 
       if (adminImageFile) {
-        const result = await uploadToCloudinary(
+        const result = await uploadToCloudinary( // Changed function call
           adminImageFile.buffer,
-          "society-integration/admin-images",
+          "society-integration/admin-images", // Added folder argument
           adminImageFile.mimetype
         );
-        adminImage = result.url;
+        adminImage = result.secure_url;
       }
 
       if (mapImageFile) {
-        const result = await uploadToCloudinary(
+        const result = await uploadToCloudinary( // Changed function call
           mapImageFile.buffer,
-          "society-integration/maps",
+          "society-integration/maps", // Added folder argument
           mapImageFile.mimetype
         );
-        mapImage = result.url;
+        mapImage = result.secure_url;
       }
     }
 
     if (!adminDetails || !adminDetails.name || !adminDetails.contact || !adminDetails.address) {
-      return res.status(400).json({ message: "Admin details are required." });
+      return res.status(400).json({ message: "Admin details (name, contact, address) are required." });
     }
     if (!stats) {
       return res.status(400).json({ message: "Statistics data is required." });
@@ -101,13 +101,16 @@ export const upsertSocietyIntegration = async (req, res) => {
 
 export const getSocietyIntegration = async (req, res) => {
   try {
-    const userSocietyId = req.user.societyId;
+    const societyIdFromQuery = req.query.societyId;
 
-    if (!userSocietyId) {
-      return res.status(400).json({ message: "Could not determine user's society." });
+    console.log("Backend: getSocietyIntegration - societyId from query:", societyIdFromQuery);
+    console.log("Backend: getSocietyIntegration - req.user:", req.user);
+
+    if (!societyIdFromQuery) {
+      return res.status(400).json({ message: "Society ID is required as a query parameter." });
     }
 
-    const integrationData = await SocietyIntegration.findOne({ society_id: userSocietyId }).lean();
+    const integrationData = await SocietyIntegration.findOne({ society_id: societyIdFromQuery }).lean();
 
     if (!integrationData) {
       return res.status(404).json({ message: "Society integration data not found for your society." });

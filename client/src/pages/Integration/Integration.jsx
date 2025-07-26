@@ -21,6 +21,7 @@ import {
   DialogActions,
   TextField,
   Slide,
+  CircularProgress, // Import CircularProgress for loading states
 } from "@mui/material";
 import HomeIcon from "@mui/icons-material/Home";
 import PeopleIcon from "@mui/icons-material/People";
@@ -59,10 +60,62 @@ const initialSocietyData = {
   mapImage: "",
 };
 
+// Helper component for animal stats to keep the main component cleaner
+const CardStatAnimals = ({ dogs, cows, isDark, theme }) => (
+  <Grid item xs={12} sm={6} md={3}>
+    <Card
+      sx={{
+        p: 3,
+        bgcolor: isDark ? "#1e1e1e" : "#fff",
+        boxShadow: 5,
+        borderRadius: 3,
+        height: "100%",
+        transition: "box-shadow 0.3s ease",
+        "&:hover": { boxShadow: 7 },
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+      }}
+    >
+      <Box display="flex" alignItems="center" gap={1} mb={1}>
+        <PetsIcon fontSize="large" color={isDark ? "#fff" : ""} />
+        <Typography
+          variant="h6"
+          fontWeight="bold"
+          color={isDark ? "#fff" : ""}
+        >
+          Animals
+        </Typography>
+      </Box>
+      <Stack direction="row" spacing={2} mt={1}>
+        <Chip
+          label={`Dogs: ${dogs}`}
+          icon={<PetsIcon sx={{ color: theme.palette.info.main }} />}
+          sx={{
+            bgcolor: isDark ? theme.palette.grey[800] : theme.palette.info.light + '20',
+            color: isDark ? "#fff" : theme.palette.info.dark,
+            fontWeight: "bold",
+          }}
+        />
+        <Chip
+          label={`Cows: ${cows}`}
+          icon={<PetsIcon sx={{ color: theme.palette.success.main }} />}
+          sx={{
+            bgcolor: isDark ? theme.palette.grey[800] : theme.palette.success.light + '20',
+            color: isDark ? "#fff" : theme.palette.success.dark,
+            fontWeight: "bold",
+          }}
+        />
+      </Stack>
+    </Card>
+  </Grid>
+);
+
 export default function IntegrationPage() {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
-  const { userRole, token, axios, user } = useAppContext();
+  const { userRole, token, axios, user, societyId } = useAppContext(); // Destructure societyId
   const isAdmin = userRole === "admin";
 
   const [societyData, setSocietyData] = useState(initialSocietyData);
@@ -70,11 +123,25 @@ export default function IntegrationPage() {
   const [formData, setFormData] = useState(initialSocietyData);
   const [adminImageFile, setAdminImageFile] = useState(null);
   const [mapImageFile, setMapImageFile] = useState(null);
+  const [loading, setLoading] = useState(true); // New loading state for fetching data
+  const [submitting, setSubmitting] = useState(false); // New loading state for form submission
+
+  // Log societyId for debugging
+  useEffect(() => {
+    console.log("IntegrationPage: Current societyId:", societyId);
+    console.log("IntegrationPage: Current user:", user);
+    console.log("IntegrationPage: Is Admin:", isAdmin);
+  }, [societyId, user, isAdmin]);
 
   useEffect(() => {
-    if (!token || !axios) return;
+    if (!token || !axios || !societyId) {
+      setLoading(false); // Stop loading if prerequisites are not met
+      if (!token) toast.error("Authentication token missing.");
+      if (!societyId) toast.error("Society ID missing. Please ensure you are part of a society.");
+      return;
+    }
     fetchSocietyData();
-  }, [token, axios]);
+  }, [token, axios, societyId]); // Added societyId to dependencies
 
   useEffect(() => {
     if (user && isAdmin) {
@@ -117,8 +184,10 @@ export default function IntegrationPage() {
   }, [formData.stats.users, formData.stats.area]);
 
   const fetchSocietyData = async () => {
+    setLoading(true); // Start loading
     try {
-      const res = await axios.get("/api/users/society-integration", {
+      // Pass societyId as a query parameter
+      const res = await axios.get(`/api/users/society-integration?societyId=${societyId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -133,6 +202,7 @@ export default function IntegrationPage() {
         err.response?.data || err.message
       );
 
+      // If data is not found and user is admin, pre-fill admin details from user context
       if (err.response?.status === 404 && isAdmin && user) {
         const adminDetailsFromUser = {
           name: user.name || "",
@@ -148,11 +218,14 @@ export default function IntegrationPage() {
           ...prev,
           adminDetails: adminDetailsFromUser,
         }));
+        toast.info("No society integration data found. You can add it now.");
       } else {
         toast.error(
           err.response?.data?.message || "Failed to fetch society data."
         );
       }
+    } finally {
+      setLoading(false); // End loading
     }
   };
 
@@ -164,6 +237,8 @@ export default function IntegrationPage() {
     setOpenDialog(false);
     setAdminImageFile(null);
     setMapImageFile(null);
+    // Reset form data to current societyData when closing without saving
+    setFormData(societyData);
   };
 
   const handleFormChange = (e) => {
@@ -216,21 +291,36 @@ export default function IntegrationPage() {
 
   const handleFileChange = (e) => {
     const { name, files } = e.target;
-    if (name === "adminImage") {
-      setAdminImageFile(files[0]);
-    } else if (name === "mapImage") {
-      setMapImageFile(files[0]);
+    if (files && files[0]) {
+      const file = files[0];
+      if (file.size > 2 * 1024 * 1024) { // 2MB limit
+        toast.error("Image file size exceeds 2MB limit.");
+        if (name === "adminImage") {
+          setAdminImageFile(null);
+        } else if (name === "mapImage") {
+          setMapImageFile(null);
+        }
+        return;
+      }
+
+      if (name === "adminImage") {
+        setAdminImageFile(file);
+      } else if (name === "mapImage") {
+        setMapImageFile(file);
+      }
     }
   };
 
   const handleSubmit = async () => {
+    setSubmitting(true); // Start submitting loading
     try {
       const data = new FormData();
 
+      // Append all form fields
       data.append("adminDetails[name]", formData.adminDetails.name);
       data.append("adminDetails[contact]", formData.adminDetails.contact);
       data.append("adminDetails[address]", formData.adminDetails.address);
-
+      // If no new file is selected but there's an existing image, send its URL
       if (!adminImageFile && formData.adminDetails.image) {
         data.append("adminDetails[image]", formData.adminDetails.image);
       }
@@ -250,12 +340,16 @@ export default function IntegrationPage() {
       data.append("stats[cctvs]", formData.stats.cctvs);
       data.append("stats[securityGuards]", formData.stats.securityGuards);
 
+      // Append actual file objects if new ones are selected
       if (adminImageFile) {
         data.append("adminImage", adminImageFile);
       }
       if (mapImageFile) {
         data.append("mapImage", mapImageFile);
       }
+
+      // Add societyId to the form data
+      data.append("societyId", societyId);
 
       const res = await axios.post("/api/admin/society-integration", data, {
         headers: {
@@ -270,6 +364,8 @@ export default function IntegrationPage() {
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to save data.");
       console.error("Error saving data:", err.response?.data || err.message);
+    } finally {
+      setSubmitting(false); // End submitting loading
     }
   };
 
@@ -283,6 +379,17 @@ export default function IntegrationPage() {
     (societyData.stats.trees / 500) * 100,
     100
   );
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <CircularProgress color="primary" size={60} />
+        <Typography variant="h6" ml={2} color="text.secondary">
+          Loading society integration data...
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box
@@ -639,17 +746,16 @@ export default function IntegrationPage() {
           <Card
             sx={{
               p: 3,
-              bgcolor: isDark
-                ? theme.palette.background.paper
-                : theme.palette.common.white,
-              boxShadow: theme.shadows[5],
-              borderRadius: theme.shape.borderRadius * 2,
+              bgcolor: isDark ? "#1e1e1e" : "#fff",
+              boxShadow: 5,
+              borderRadius: 3,
               height: "100%",
-              transition: "box-shadow 0.3s ease, transform 0.3s ease",
-              "&:hover": {
-                boxShadow: theme.shadows[7],
-                transform: "translateY(-4px)",
-              },
+              transition: "box-shadow 0.3s ease",
+              "&:hover": { boxShadow: 7 },
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
             }}
           >
             <Stack spacing={1}>
@@ -921,6 +1027,7 @@ export default function IntegrationPage() {
               <TextField
                 label="Admin Contact"
                 name="adminDetails.contact"
+                type="tel" // Changed to tel for phone number input
                 value={formData.adminDetails.contact}
                 onChange={handleFormChange}
                 fullWidth
@@ -1065,22 +1172,20 @@ export default function IntegrationPage() {
             </Grid>
             <Grid item xs={12} sm={6} md={4}>
               <TextField
-                label="Population Density (person/km²)"
-                name="stats.populationDensity"
-                type="number"
-                value={formData.stats.populationDensity}
+                label="Daily Activities"
+                name="stats.dailyActivities"
+                value={formData.stats.dailyActivities}
+                onChange={handleFormChange}
                 fullWidth
                 margin="normal"
-                disabled
-                InputProps={{
-                  readOnly: true,
-                }}
                 variant="outlined"
+                multiline
+                rows={2}
               />
             </Grid>
             <Grid item xs={12} sm={6} md={4}>
               <TextField
-                label="Area of Society (sq.m)"
+                label="Area (sq. meters)"
                 name="stats.area"
                 type="number"
                 value={formData.stats.area}
@@ -1092,7 +1197,7 @@ export default function IntegrationPage() {
             </Grid>
             <Grid item xs={12} sm={6} md={4}>
               <TextField
-                label="Number of Trees"
+                label="Trees"
                 name="stats.trees"
                 type="number"
                 value={formData.stats.trees}
@@ -1126,17 +1231,15 @@ export default function IntegrationPage() {
                 variant="outlined"
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid item xs={12} sm={6} md={4}>
               <TextField
-                label="Daily Activities (comma separated)"
-                name="stats.dailyActivities"
-                multiline
-                rows={3}
-                value={formData.stats.dailyActivities}
-                onChange={handleFormChange}
+                label="Population Density (Auto Calculated)"
+                name="stats.populationDensity"
+                value={formData.stats.populationDensity}
                 fullWidth
                 margin="normal"
                 variant="outlined"
+                disabled
               />
             </Grid>
             <Grid item xs={12}>
@@ -1164,7 +1267,7 @@ export default function IntegrationPage() {
                   src={URL.createObjectURL(mapImageFile)}
                   alt="Map Preview"
                   style={{
-                    width: "100px",
+                    width: "150px",
                     height: "100px",
                     objectFit: "cover",
                     borderRadius: "8px",
@@ -1176,7 +1279,7 @@ export default function IntegrationPage() {
                   src={formData.mapImage}
                   alt="Current Map"
                   style={{
-                    width: "100px",
+                    width: "150px",
                     height: "100px",
                     objectFit: "cover",
                     borderRadius: "8px",
@@ -1193,143 +1296,35 @@ export default function IntegrationPage() {
         </DialogContent>
         <DialogActions
           sx={{
-            p: 2,
+            p: 3,
             bgcolor: isDark
-              ? theme.palette.background.default
-              : theme.palette.grey[50],
+              ? theme.palette.background.paper
+              : theme.palette.common.white,
+            borderBottomLeftRadius: theme.shape.borderRadius * 2,
+            borderBottomRightRadius: theme.shape.borderRadius * 2,
           }}
         >
           <Button
             onClick={handleCloseDialog}
-            color="primary"
+            color="secondary"
             variant="outlined"
+            disabled={submitting}
             sx={{ px: 3, py: 1 }}
           >
             Cancel
           </Button>
           <Button
             onClick={handleSubmit}
-            color="secondary"
+            color="primary"
             variant="contained"
+            disabled={submitting}
+            startIcon={submitting ? <CircularProgress size={20} color="inherit" /> : null}
             sx={{ px: 3, py: 1 }}
           >
-            Save
+            {submitting ? "Saving..." : "Save Changes"}
           </Button>
         </DialogActions>
       </Dialog>
     </Box>
-  );
-}
-
-function StatCard({ title, value, icon, isDark, tooltip, theme }) {
-  return (
-    <Grid item xs={12} sm={6} md={3}>
-      <Tooltip title={tooltip || ""} arrow>
-        <Card
-          sx={{
-            p: 3,
-            display: "flex",
-            alignItems: "center",
-            gap: 2,
-            bgcolor: isDark
-              ? theme.palette.background.paper
-              : theme.palette.common.white,
-            boxShadow: theme.shadows[4],
-            borderRadius: theme.shape.borderRadius * 2,
-            height: "100%",
-            cursor: tooltip ? "help" : "default",
-            transition: "box-shadow 0.3s ease, transform 0.3s ease",
-            "&:hover": {
-              boxShadow: theme.shadows[8],
-              transform: "translateY(-4px)",
-            },
-          }}
-        >
-          {icon}
-          <Box>
-            <Typography variant="h6" color={theme.palette.text.primary}>
-              {title}
-            </Typography>
-            <Typography variant="h4" fontWeight="bold" color="primary">
-              {value}
-            </Typography>
-          </Box>
-        </Card>
-      </Tooltip>
-    </Grid>
-  );
-}
-
-function CardStatAnimals({ dogs, cows, isDark, theme }) {
-  return (
-    <Grid item xs={12} sm={6} md={3}>
-      <Card
-        sx={{
-          p: 3,
-          bgcolor: isDark
-            ? theme.palette.background.paper
-            : theme.palette.common.white,
-          boxShadow: theme.shadows[4],
-          borderRadius: theme.shape.borderRadius * 2,
-          height: "100%",
-          cursor: "default",
-          transition: "box-shadow 0.3s ease, transform 0.3s ease",
-          "&:hover": {
-            boxShadow: theme.shadows[8],
-            transform: "translateY(-4px)",
-          },
-        }}
-      >
-        <Typography
-          variant="h6"
-          mb={2}
-          display="flex"
-          alignItems="center"
-          gap={1}
-          color={
-            isDark ? "#fff" : ""
-          }
-          fontWeight="bold"
-        >
-          <PetsIcon sx={{color : isDark ? "#fff" : "" }} />
-          Animals
-        </Typography>
-        <Stack direction="row" spacing={3} justifyContent="space-around">
-          <Box textAlign="center">
-            <Typography variant="h3" color={isDark ? "#fff" : ""} fontWeight="bold">
-              <span role="img" aria-label="dog">
-                🐕
-              </span>{" "}
-              {dogs}
-            </Typography>
-            <Typography
-              variant="subtitle1"
-              color={theme.palette.text.secondary}
-            >
-              Dogs
-            </Typography>
-          </Box>
-          <Divider
-            orientation="vertical"
-            flexItem
-            sx={{ mx: 2, borderColor: theme.palette.divider }}
-          />
-          <Box textAlign="center">
-            <Typography variant="h3" color="success.main" fontWeight="bold">
-              <span role="img" aria-label="cow">
-                🐄
-              </span>{" "}
-              {cows}
-            </Typography>
-            <Typography
-              variant="subtitle1"
-              color={theme.palette.text.secondary}
-            >
-              Cows
-            </Typography>
-          </Box>
-        </Stack>
-      </Card>
-    </Grid>
   );
 }

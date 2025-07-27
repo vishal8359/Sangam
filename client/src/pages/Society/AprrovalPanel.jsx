@@ -3,31 +3,31 @@ import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
 
 const ApprovalPanel = () => {
-  const { axios } = useAppContext();
+  const { axios, isAuthenticated, logout } = useAppContext();
+
   const [pendingRequests, setPendingRequests] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [actionId, setActionId] = useState(null); 
+  const [actionId, setActionId] = useState(null);
 
   const fetchPendingRequests = async () => {
-    const token = localStorage.getItem("adminToken");
-
-    if (!token || token === "undefined" || token === "null") {
-      toast.error("Admin token missing. Please login again.");
-      localStorage.removeItem("adminToken");
+    if (!isAuthenticated) {
+      toast.error(
+        "You are not logged in or your session has expired. Please log in."
+      );
+      setLoading(false);
       return;
     }
 
+    setLoading(true);
     try {
-      const { data } = await axios.get("/api/admin/pending", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const { data } = await axios.get("/api/admin/pending");
 
       setPendingRequests(data.requests || []);
     } catch (err) {
       console.error("Fetch error:", err);
-      if (err?.response?.status === 401) {
-        toast.error("Session expired. Please login again.");
-        localStorage.removeItem("adminToken");
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        toast.error("Session expired or unauthorized. Please login again.");
+        logout();
       } else {
         toast.error("Failed to fetch pending users.");
       }
@@ -37,7 +37,11 @@ const ApprovalPanel = () => {
   };
 
   const handleAction = async (requestId, action) => {
-    const token = localStorage.getItem("adminToken");
+    if (!isAuthenticated) {
+      toast.error("You are not logged in. Cannot perform action.");
+      return;
+    }
+
     const endpoint =
       action === "approve"
         ? `/api/admin/approve-request/${requestId}`
@@ -45,17 +49,17 @@ const ApprovalPanel = () => {
 
     try {
       setActionId(requestId);
-      const { data } = await axios.post(
-        endpoint,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const { data } = await axios.post(endpoint, {});
       toast.success(data.message || `${action}d successfully`);
       setPendingRequests((prev) => prev.filter((r) => r._id !== requestId));
     } catch (err) {
+      console.error("Action error:", err);
       toast.error(
         err?.response?.data?.message || `Failed to ${action} request`
       );
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        logout();
+      }
     } finally {
       setActionId(null);
     }
@@ -63,7 +67,7 @@ const ApprovalPanel = () => {
 
   useEffect(() => {
     fetchPendingRequests();
-  }, []);
+  }, [isAuthenticated, logout]);
 
   return (
     <div className="min-h-screen bg-gray-100 py-10 px-4">
@@ -105,7 +109,6 @@ const ApprovalPanel = () => {
                     <p>
                       <strong>Society:</strong> {society?.name || "N/A"}
                     </p>
-                    
                   </div>
 
                   <div className="flex flex-col gap-2">

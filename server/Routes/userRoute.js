@@ -12,6 +12,7 @@ import {
   addDeliveryAddress,
   setDefaultDeliveryAddress,
   deleteDeliveryAddress,
+  googleLogin,
 } from "../Controllers/userController.js";
 
 import {
@@ -75,6 +76,8 @@ router.post("/register", upload.single('avatar'), registerResident);
 router.post("/verify-otp", verifyOtp);
 // login
 router.post("/login", loginUser);
+router.post("/google-login", googleLogin);
+
 
 router.post("/society/create", createSociety);
 
@@ -199,6 +202,5 @@ router.delete("/health/:id", verifyUser, deleteHealthData);
 
 // Integration
 router.get("/society-integration", verifyUser, getSocietyIntegration);
-
 
 export default router;

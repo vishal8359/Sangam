@@ -9,7 +9,7 @@ import sendSMS from "../Utils/smsService.js";
 
 // Admin login
 export const loginAdmin = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, societyId: loginSocietyId } = req.body;
 
   try {
     const user = await User.findOne({ email });
@@ -18,33 +18,70 @@ export const loginAdmin = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    console.log("🔥 loginAdmin: User found from DB:", user._id.toString(), user.email);
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    const hasAdminRole = user.roles.some((r) => r.role === "admin");
-    if (!hasAdminRole) {
-      return res.status(403).json({ message: "Not authorized as admin" });
+    let adminRoleEntry = null;
+
+    if (loginSocietyId) {
+      adminRoleEntry = user.roles.find(
+        (r) => r.role === "admin" && r.society_id?.toString() === loginSocietyId
+      );
+      if (!adminRoleEntry) {
+        return res
+          .status(403)
+          .json({
+            message: `Not authorized as admin for society ${loginSocietyId}`,
+          });
+      }
+    } else {
+      adminRoleEntry = user.roles.find((r) => r.role === "admin");
+      if (!adminRoleEntry) {
+        return res
+          .status(403)
+          .json({ message: "Not authorized as admin (no admin roles found)." });
+      }
     }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+    if (!adminRoleEntry) {
+      return res
+        .status(403)
+        .json({ message: "Admin role could not be determined." });
+    }
+
+    const tokenPayload = {
+      userId: user._id.toString(),
+      societyId: adminRoleEntry.society_id.toString(),
+      role: "admin",
+    };
+
+    const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
       expiresIn: "7d",
     });
 
     res.status(200).json({
       message: "Admin login successful",
       token,
-      admin: {
-        user_id: user.user_id,
+      userId: user._id.toString(),
+      societyId: adminRoleEntry.society_id.toString(),
+      userRole: "admin",
+      userProfile: {
+        _id: user._id.toString(),
         name: user.name,
         email: user.email,
-        roles: user.roles.filter((r) => r.role === "admin"),
+        avatar: user.avatar,
+        phone_no: user.phone_no,
+        address: user.address,
       },
+      houseId: user.home_id ? user.home_id.toString() : null,
     });
   } catch (err) {
-    console.error("Login error:", err);
-    res.status(500).json({ message: "Server error" });
+    console.error("Admin Login Error:", err); 
+    res.status(500).json({ message: "Server error during admin login." });
   }
 };
 

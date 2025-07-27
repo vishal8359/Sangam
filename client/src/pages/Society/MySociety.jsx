@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Container,
@@ -12,14 +12,14 @@ import {
   useMediaQuery,
   Slide,
   Fade,
-} from "@mui/material";
-import { motion } from "framer-motion";
-import societyBg from "../../assets/societyBg.jpg";
-import MySocietyImg from "../../assets/mySocietyImg.jpg";
-import society_icon from "../../assets/society_icon.png";
-import { useAppContext } from "../../context/AppContext.jsx";
-import axios from "axios";
-import { toast } from "react-hot-toast";
+} from '@mui/material';
+import { motion } from 'framer-motion';
+import societyBg from '../../assets/societyBg.jpg';
+import MySocietyImg from '../../assets/mySocietyImg.jpg';
+import society_icon from '../../assets/society_icon.png';
+import { useAppContext } from '../../context/AppContext.jsx';
+import axios from 'axios';
+import { toast } from 'react-hot-toast';
 
 const MotionBox = motion(Box);
 const MotionPaper = motion(Paper);
@@ -27,9 +27,9 @@ const MotionButton = motion(Button);
 
 const MySociety = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const isDark = theme.palette.mode === "dark";
-  const { navigate, userRole, token, societyId } = useAppContext();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isDark = theme.palette.mode === 'dark';
+  const { navigate, userRole, token, societyId, logout } = useAppContext(); // Destructure logout from useAppContext
   const [society, setSociety] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -82,7 +82,7 @@ const MySociety = () => {
       y: 0,
       opacity: 1,
       transition: {
-        type: "spring",
+        type: 'spring',
         stiffness: 100,
         damping: 12,
       },
@@ -119,6 +119,11 @@ const MySociety = () => {
       </Box>
     );
   }
+
+  const handleLogout = () => {
+    logout(); // Call the logout function from AppContext
+    navigate('/'); // Redirect to the resident login page
+  };
 
   return (
     <Slide direction="up" in={true} mountOnEnter unmountOnExit timeout={700}>
@@ -370,7 +375,7 @@ const MySociety = () => {
             )}
 
             <MotionButton
-              onClick={() => navigate("/")}
+              onClick={handleLogout} // Call the new handleLogout function
               variant="outlined"
               color="secondary"
               sx={{
@@ -390,7 +395,7 @@ const MySociety = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
-              Leave Society
+              LogOut
             </MotionButton>
           </MotionBox>
         </MotionPaper>

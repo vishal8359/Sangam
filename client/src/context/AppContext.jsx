@@ -50,9 +50,6 @@ export const AppContextProvider = ({ children }) => {
 
   const [polls, setPolls] = useState([]);
 
-  // Removed addresses and selectedAddress as they were not used or defined elsewhere
-  // const [addresses, setAddresses] = useState([]);
-  // const [selectedAddress, setSelectedAddress] = useState(null);
   let messageHandler = null;
 
   const [notices, setNotices] = useState([]);
@@ -65,21 +62,24 @@ export const AppContextProvider = ({ children }) => {
   });
 
   const fetchCurrentUser = async () => {
-    if (!token) return;
+    if (!token) {
+      console.log("AppContext: fetchCurrentUser skipped, no token.");
+      return;
+    }
     try {
+      console.log("AppContext: Attempting to fetch current user with token.");
       const { data } = await axios.get("/api/users/me", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
       setUser(data.user);
-      setUserId(data.user._id);
+      setUserId(data.user._id); // Ensure this is MongoDB _id
       setUserProfile(data.user);
-
-      console.log("User data fetched and set in AppContext:", data.user);
+      console.log("AppContext: User data fetched and set:", data.user);
     } catch (err) {
       console.error(
-        "Failed to fetch logged-in user:",
+        "AppContext: Failed to fetch logged-in user:",
         err.response?.data || err.message
       );
     }
@@ -88,6 +88,25 @@ export const AppContextProvider = ({ children }) => {
   useEffect(() => {
     fetchCurrentUser();
   }, [token]);
+
+  // Derive societyId from the fetched user object's roles
+  useEffect(() => {
+    if (user && user.roles && user.roles.length > 0) {
+      // Assuming the first role's society_id is the primary one for the current context
+      const primarySocietyId = user.roles[0].society_id;
+      if (societyId !== primarySocietyId) {
+        setSocietyId(primarySocietyId);
+        console.log(
+          "AppContext: societyId updated from fetched user profile:",
+          primarySocietyId
+        );
+      }
+    } else {
+      console.log(
+        "AppContext: User or user.roles not available to derive societyId from profile."
+      );
+    }
+  }, [user, societyId]);
 
   useEffect(() => {
     localStorage.setItem("gallery-images", JSON.stringify(galleryImages));
@@ -115,7 +134,6 @@ export const AppContextProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    
     const stored = JSON.parse(localStorage.getItem("sangam-user"));
     const savedToken = localStorage.getItem("token");
     const savedTheme = localStorage.getItem("theme-mode");
@@ -128,11 +146,23 @@ export const AppContextProvider = ({ children }) => {
       setUserProfile(stored.userProfile || null);
       setToken(savedToken);
       setIsAuthenticated(true);
+
+      const currentPath = window.location.pathname;
+
+      if (
+        currentPath === "/" 
+      ) {
+        navigate("/my-society");
+      }
+    } else {
+      console.log(
+        "AppContext: No user data or token found in localStorage on initial load."
+      );
     }
 
     if (savedTheme) setThemeMode(savedTheme);
     setLoading(false);
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     localStorage.setItem("theme-mode", themeMode);
@@ -143,12 +173,19 @@ export const AppContextProvider = ({ children }) => {
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     } else {
       delete axios.defaults.headers.common["Authorization"];
+      console.log("AppContext: Axios Authorization header removed.");
     }
   }, [token]);
 
   useEffect(() => {
+    
     const fetchSociety = async () => {
-      if (!societyId || !token) return;
+      if (!societyId || !token) {
+        console.log(
+          "AppContext: fetchSociety skipped due to missing societyId or token."
+        );
+        return;
+      }
       try {
         const res = await axios.get(`/api/users/society/${societyId}/details`, {
           headers: {
@@ -156,9 +193,10 @@ export const AppContextProvider = ({ children }) => {
           },
         });
         setSocietyDetails(res.data.society);
+        console.log("AppContext: Society details fetched successfully.");
       } catch (err) {
         console.error(
-          "Failed to fetch society:",
+          "AppContext: Failed to fetch society:",
           err.response?.data || err.message
         );
       }
@@ -168,7 +206,12 @@ export const AppContextProvider = ({ children }) => {
 
   useEffect(() => {
     const fetchPolls = async () => {
-      if (!societyId || !token) return;
+      if (!societyId || !token) {
+        console.log(
+          "AppContext: fetchPolls skipped due to missing societyId or token."
+        );
+        return;
+      }
 
       try {
         const { data } = await axios.get(
@@ -194,9 +237,10 @@ export const AppContextProvider = ({ children }) => {
         }));
 
         setPolls(mapped);
+        console.log("AppContext: Polls fetched successfully.");
       } catch (err) {
         console.error(
-          "Failed to fetch polls:",
+          "AppContext: Failed to fetch polls:",
           err.response?.data || err.message
         );
       }
@@ -206,34 +250,41 @@ export const AppContextProvider = ({ children }) => {
   }, [societyId, token, userRole]);
 
   useEffect(() => {
+
     const fetchProducts = async () => {
-      // Ensure both token and societyId are available before fetching products
       if (!token || !societyId) {
+        console.log(
+          "AppContext: fetchProducts skipped due to missing societyId or token."
+        );
         setProductsLoading(false);
         return;
       }
       try {
         setProductsLoading(true);
-        // Include societyId as a query parameter in the GET request
-        const { data } = await axios.get(`/api/users/products?societyId=${societyId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setProducts(data.products);
+        const { data } = await axios.get(
+          `/api/users/products?societyId=${societyId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        setProducts(data);
+        console.log("AppContext: Products fetched successfully.");
       } catch (err) {
         console.error(
-          "Failed to fetch products:",
+          "AppContext: Failed to fetch products:",
           err.response?.data || err.message
         );
       } finally {
         setProductsLoading(false);
       }
     };
+
     if (token && societyId) {
       fetchProducts();
     }
-  }, [token, societyId]); // Add societyId to the dependency array
+  }, [token, societyId]);
 
   useEffect(() => {
     const fetchCartProducts = async () => {
@@ -260,7 +311,7 @@ export const AppContextProvider = ({ children }) => {
         setCartArray(formatted);
       } catch (err) {
         console.error(
-          "❌ Failed to fetch cart products:",
+          "❌ AppContext: Failed to fetch cart products:",
           err.response?.data || err.message
         );
       }
@@ -282,9 +333,17 @@ export const AppContextProvider = ({ children }) => {
   };
 
   const login = (data) => {
-    const { userId, houseId, societyId, userRole, userProfile, token } = data;
+    // Ensure data.userId, data.societyId, data.houseId are consistently MongoDB ObjectIds as strings
+    const {
+      userId: backendUserId,
+      houseId,
+      societyId,
+      userRole,
+      userProfile,
+      token,
+    } = data;
 
-    setUserId(userProfile?._id);
+    setUserId(backendUserId); 
     setHouseId(houseId);
     setSocietyId(societyId);
     setUserRole(userRole);
@@ -293,18 +352,28 @@ export const AppContextProvider = ({ children }) => {
     setToken(token);
     axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-    // Changed from sessionStorage to localStorage
+    console.log(
+      "AppContext: Login function called. Setting societyId:",
+      societyId,
+      "userId:",
+      backendUserId,
+      "userRole:",
+      userRole
+    );
+    console.log("AppContext: Login function received data:", data);
+
     localStorage.setItem("token", token);
     localStorage.setItem(
       "sangam-user",
       JSON.stringify({
-        userId: userProfile?._id,
+        userId: backendUserId, // Store MongoDB _id string
         houseId,
         societyId,
         userRole,
         userProfile,
       })
     );
+    console.log("AppContext: Data stored in localStorage.");
   };
 
   const logout = () => {
@@ -315,11 +384,11 @@ export const AppContextProvider = ({ children }) => {
     setUserProfile(null);
     setIsAuthenticated(false);
     setToken("");
-    // Changed from sessionStorage to localStorage
     localStorage.removeItem("sangam-user");
     localStorage.removeItem("token");
     setCartItems({});
     localStorage.removeItem("sangam-cart");
+    console.log("AppContext: User logged out, data cleared.");
   };
 
   const fetchComplaints = async () => {
@@ -339,17 +408,28 @@ export const AppContextProvider = ({ children }) => {
       return data;
     } catch (err) {
       console.error(
-        "Failed to fetch complaints:",
+        "AppContext: Failed to fetch complaints:",
         err.response?.data || err.message
       );
       return [];
     }
   };
 
-  const [messages, setMessages] = useState([]); 
+  const [messages, setMessages] = useState([]);
 
   useEffect(() => {
-    if (!userId || !token) return;
+    console.log(
+      "AppContext: Socket useEffect triggered. userId:",
+      userId,
+      "token exists:",
+      !!token
+    );
+    if (!userId || !token) {
+      console.log(
+        "AppContext: Socket connection skipped due to missing userId or token."
+      );
+      return;
+    }
 
     const socket = io(import.meta.env.VITE_BACKEND_URL, {
       transports: ["websocket"],
@@ -358,9 +438,10 @@ export const AppContextProvider = ({ children }) => {
 
     socket.emit("setup", userId);
     socketRef.current = socket;
+    console.log("AppContext: Socket connected and setup emitted.");
 
     socket.on("receive message", (msg) => {
-      console.log("Message received via socket:", msg);
+      console.log("AppContext: Message received via socket:", msg);
       if (typeof messageHandler === "function") {
         messageHandler(msg);
       }
@@ -404,17 +485,18 @@ export const AppContextProvider = ({ children }) => {
       }
     );
     socket.on("disconnect", () => {
-      console.log("🔴 Socket disconnected");
+      console.log("🔴 AppContext: Socket disconnected");
     });
 
     return () => {
+      console.log("AppContext: Socket cleanup initiated.");
       socket.disconnect();
       socket.off("user status");
       socket.off("receive message");
       socket.off("online status");
       socket.off("buzz message deleted for me");
       socket.off("buzz message deleted for all");
-      // socket.off("buzzMessageDeleted"); // If uncommented above, uncomment this too
+      socket.off("buzzMessageDeleted");
     };
   }, [userId, token]);
 

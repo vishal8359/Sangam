@@ -37,6 +37,12 @@ app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(express.json());
 
+app.use((req, res, next) => {
+  res.setHeader('Cross-Origin-Opener-Policy', 'unsafe-none');
+  res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none');
+  next();
+});
+
 app.use("/api/users", userRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/debug", debugRoutes);
@@ -60,7 +66,7 @@ async function broadcastOnlineStatus() {
       };
     }
 
-    io.emit("online status", statusMap); // ✅ Broadcast to all clients
+    io.emit("online status", statusMap); 
   } catch (err) {
     console.error("Failed to broadcast status:", err);
   }
@@ -124,7 +130,7 @@ io.on("connection", (socket) => {
       io.to(receiver).emit("delete message", { messageId });
     }
   });
-  
+
   socket.on("disconnect", async () => {
     const userId = socket.data.userId;
     if (userId) {

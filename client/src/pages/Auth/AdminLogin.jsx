@@ -11,7 +11,7 @@ import {
   Slide,
   Fade,
 } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom"; // Use useNavigate directly
 import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
@@ -23,7 +23,10 @@ const MotionTextField = motion(TextField);
 const MotionButton = motion(Button);
 
 const AdminLogin = () => {
-  const { login, navigate, axios } = useAppContext();
+  // Use useNavigate directly for navigation
+  const navigate = useNavigate();
+  // Get login and axios from AppContext
+  const { login, axios } = useAppContext();
 
   const [formData, setFormData] = useState({
     email: "",
@@ -61,27 +64,29 @@ const AdminLogin = () => {
       const res = await axios.post("/api/admin/login", {
         email: email.trim(),
         password: password.trim(),
+        // If you need to send a specific societyId during login:
+        // societyId: "YOUR_SOCIETY_ID_IF_NEEDED", // <-- uncomment and set if relevant for multi-society admin
       });
 
-      const { token, admin } = res.data;
+      // --- CRITICAL CHANGE START ---
+      // Destructure res.data to match your backend's response directly
+      const { token, userId, societyId, userRole, userProfile, houseId } = res.data;
 
-      localStorage.setItem("adminToken", token);
-
+      // AppContext's login function already handles localStorage and axios default headers
       login({
         token,
-        userId: admin.user_id,
-        userRole: "admin",
-        societyId: admin.roles[0]?.society_id || "",
-        houseId: "",
-        userProfile: {
-          name: admin.name,
-          email: admin.email,
-        },
+        userId,       // Use the top-level userId from backend response
+        userRole,     // Use the top-level userRole from backend response
+        societyId,    // Use the top-level societyId from backend response
+        houseId,      // Use the top-level houseId from backend response
+        userProfile,  // Use the top-level userProfile object from backend response
       });
+      // --- CRITICAL CHANGE END ---
 
       toast.success("Admin login successful");
-      navigate("/my-society");
+      navigate("/my-society"); // Navigate after successful login and state update
     } catch (err) {
+      console.error("Admin Login Frontend Error:", err); // Log the actual frontend error for debugging
       const msg = err?.response?.data?.message || "Login failed";
       setError(msg);
       toast.error(msg);

@@ -862,7 +862,7 @@ export default function NeighboursPage() {
                       height: "100%",
                       borderRadius: theme.shape.borderRadius * 2,
                       boxShadow: theme.shadows[3],
-                      width: 350,
+                      width: isMobile ? 290 : 350,
                       maxWidth:380,
                       bgcolor: theme.palette.background.paper,
                       color: theme.palette.text.primary,

@@ -32,7 +32,7 @@ export default function Register() {
     email: "",
     phone_no: "",
     address: "",
-    electricity_bill_no: "",
+    // electricity_bill_no: "",
     password: "",
     confirm_password: "",
   });
@@ -78,7 +78,7 @@ export default function Register() {
       "email",
       "phone_no",
       "address",
-      "electricity_bill_no",
+      // "electricity_bill_no",
       "password",
       "confirm_password",
     ];
@@ -128,7 +128,7 @@ export default function Register() {
         email: "",
         phone_no: "",
         address: "",
-        electricity_bill_no: "",
+        // electricity_bill_no: "",
         password: "",
         confirm_password: "",
       });
@@ -261,7 +261,7 @@ export default function Register() {
               { label: "Email", name: "email", type: "email" },
               { label: "Phone Number", name: "phone_no", type: "tel" },
               { label: "Address", name: "address", multiline: true, rows: 2 },
-              { label: "Electricity Bill Number", name: "electricity_bill_no" },
+              // { label: "Electricity Bill Number", name: "electricity_bill_no" },
               { label: "Password", name: "password", type: "password" },
               {
                 label: "Confirm Password",

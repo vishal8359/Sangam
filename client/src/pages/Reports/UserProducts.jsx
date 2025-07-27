@@ -226,7 +226,7 @@ const YourProductsPage = () => {
                   boxShadow: theme.shadows[6],
                   height: "100%",
                   display: "flex",
-                  width: isMobile ? 185 : 300,
+                  width: isMobile ? 140 : 300,
                   flexDirection: "column",
                   bgcolor: isDark ? theme.palette.background.paper : theme.palette.grey[100],
                   color: theme.palette.text.primary,
@@ -245,7 +245,7 @@ const YourProductsPage = () => {
                   alt={product.name}
                   sx={{
                     width: "100%",
-                    height: 180,
+                    height: isMobile ? 120 : 180,
                     objectFit: "cover",
                     borderTopLeftRadius: 3,
                     borderTopRightRadius: 3,
@@ -276,7 +276,7 @@ const YourProductsPage = () => {
                     </Typography>
                   </Typography>
                   <Typography variant="body2">
-                    Status:{" "}
+                   
                     <Typography component="span" fontWeight={500} color={product.isActive ? theme.palette.success.main : theme.palette.error.main}>
                       {product.isActive ? "Available" : "Unlisted"}
                     </Typography>
@@ -286,7 +286,7 @@ const YourProductsPage = () => {
                   </Typography>
 
                   <Box mt={2} display="flex" alignItems="center" justifyContent="space-between" gap={1}>
-                    <Typography variant="body2" fontWeight={500}>Listed for Sale:</Typography>
+                    <Typography variant="body2" fontWeight={500}>Listed :</Typography>
                     <Switch
                       sx={{
                         "& .MuiSwitch-thumb": {
@@ -388,7 +388,8 @@ const YourProductsPage = () => {
                       borderRadius: 3,
                       boxShadow: theme.shadows[3],
                       height: "100%",
-                      width: isMobile ? 160 : 200,
+                      maxWidth: isMobile ? 130 : 200,
+                      width: isMobile ? 116 : 200,
                       display: "flex",
                       flexDirection: "column",
                       bgcolor: isDark ? theme.palette.background.default : theme.palette.grey[50],

@@ -40,7 +40,7 @@ export const registerResident = async (req, res) => {
       address,
       password,
       confirm_password,
-      electricity_bill_no,
+      // electricity_bill_no,
     } = req.body;
 
     const avatarFile = req.file;
@@ -51,8 +51,9 @@ export const registerResident = async (req, res) => {
       !phone_no ||
       !address ||
       !password ||
-      !confirm_password ||
-      !electricity_bill_no
+      !confirm_password 
+      // ||
+      // !electricity_bill_no
     ) {
       return res.status(400).json({ message: "All fields are required" });
     }
@@ -93,7 +94,7 @@ export const registerResident = async (req, res) => {
       email,
       address,
       password,
-      electricity_bill_no,
+      // electricity_bill_no,
       otp,
       otpExpiry,
       avatar: avatarUrl,
@@ -131,14 +132,14 @@ export const verifyOtp = async (req, res) => {
     const street = rest.join(",").trim();
 
     let home = await Home.findOne({
-      electricity_bill_no: pendingData.electricity_bill_no,
+      // electricity_bill_no: pendingData.electricity_bill_no,
       street,
       houseNumber: houseNumber.trim(),
     });
 
     if (!home) {
       home = await Home.create({
-        electricity_bill_no: pendingData.electricity_bill_no,
+        // electricity_bill_no: pendingData.electricity_bill_no,
         houseNumber: houseNumber.trim(),
         street,
         houseSortOrder: extractSortOrder(houseNumber),
@@ -225,7 +226,6 @@ export const loginUser = async (req, res) => {
       (r) => r.society_id.toString() === society_id
     );
 
-    // If user is not associated with this society, or is not approved, handle join request
     if (!userRoleInSociety || !user.is_approved) {
       const existing = await JoinRequest.findOne({
         user_id: user._id,
@@ -248,13 +248,6 @@ export const loginUser = async (req, res) => {
       });
     }
 
-    // If user has a role and is approved, proceed with login
-    // --- DEBUGGING LOGS START (JWT Sign - loginUser) ---
-    console.log("--- JWT Signing (loginUser) ---");
-    console.log("Signing JWT with userId (user._id):", user._id.toString());
-    console.log("Signing JWT with societyId:", society_id);
-    console.log("Signing JWT with role:", userRoleInSociety.role);
-    // --- DEBUGGING LOGS END (JWT Sign - loginUser) ---
     const token = jwt.sign(
       { userId: user._id.toString(), societyId: society_id.toString(), role: userRoleInSociety.role }, // Ensure IDs are strings
       process.env.JWT_SECRET,
@@ -311,7 +304,7 @@ export const createSociety = async (req, res) => {
     }
 
     const newHome = await Home.create({
-      electricity_bill_no: "N/A-" + uuidv4().split("-")[0],
+      // electricity_bill_no: "N/A-" + uuidv4().split("-")[0],
       houseNumber: houseNumber.trim(),
       street,
       houseSortOrder: extractSortOrder(houseNumber),
@@ -517,7 +510,7 @@ export const getCurrentUser = async (req, res) => {
         address: user.address,
         delivery_addresses: user.delivery_addresses || [],
         avatar: user.avatar,
-        electricity_bill_no: user.electricity_bill_no,
+        // electricity_bill_no: user.electricity_bill_no,
         home_id: user.home_id?.toString(), // Ensure IDs are strings
         societyId: user.roles[0]?.society_id?.toString(), // Ensure IDs are strings
         user_id: user.user_id,
@@ -585,7 +578,7 @@ export const updateCurrentUserProfile = async (req, res) => {
         address: user.address,
         delivery_addresses: user.delivery_addresses || [],
         avatar: user.avatar,
-        electricity_bill_no: user.electricity_bill_no,
+        // electricity_bill_no: user.electricity_bill_no,
         home_id: user.home_id?.toString(), // Ensure IDs are strings
         societyId: user.roles[0]?.society_id?.toString(), // Ensure IDs are strings
         user_id: user.user_id,
@@ -800,7 +793,17 @@ export const googleLogin = async (req, res) => {
   const { googleIdToken, society_id } = req.body;
 
   if (!googleIdToken || !society_id) {
-    return res.status(400).json({ message: "Google ID token and Society ID are required." });
+    return res.status(400).json({
+      success: false,
+      message: "Google ID Token and Society ID are required.",
+    });
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(society_id)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid Society ID format.",
+    });
   }
 
   try {
@@ -811,145 +814,116 @@ export const googleLogin = async (req, res) => {
     const payload = ticket.getPayload();
     const { email, name, picture } = payload;
 
-    const society = await Society.findById(society_id);
-    if (!society) {
-      return res.status(404).json({ message: "Society not found with the provided ID." });
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Google account must have an email address.",
+      });
     }
 
-    let user = await User.findOne({ email }); 
-
-    if (user) {
-      // User with this email already exists in the system
-      const isMemberOfSociety = user.roles.some(
-        (role) => role.society_id.toString() === society_id
-      );
-
-      if (isMemberOfSociety) {
-        const userRoleInSociety = user.roles.find(
-          (role) => role.society_id.toString() === society_id
-        );
-        const token = jwt.sign(
-          { userId: user._id.toString(), societyId: society._id.toString(), role: userRoleInSociety.role }, 
-          process.env.JWT_SECRET,
-          { expiresIn: "1h" }
-        );
-
-        return res.status(200).json({
-          success: true,
-          message: "Google login successful",
-          token,
-          userId: user._id.toString(),
-          houseId: user.home_id?.toString(),
-          societyId: society._id.toString(),
-          userRole: userRoleInSociety.role, // Use the actual role
-          userProfile: {
-            name: user.name,
-            email: user.email,
-            avatar: user.avatar,
-            phone_no: user.phone_no, 
-            address: user.address,
-          },
-        });
-      } else {
-        const existingJoinRequest = await JoinRequest.findOne({
-          user_id: user._id,
-          society_id,
-          status: { $in: ["pending", "approved"] },
-        });
-
-        if (!existingJoinRequest) {
-          await JoinRequest.create({
-            user_id: user._id,
-            society_id,
-            status: "pending",
-            requested_at: new Date(),
-          });
-        }
-
-        return res.status(403).json({
-          success: false,
-          message: "Account exists, but not yet a member of this society. A join request has been sent for approval.",
-        });
-      }
-    } else {
-      // User does not exist in the system, create a new one
-      const newHouseNo = `GoogleUser-${Math.random().toString(36).substring(7)}`;
-      const defaultStreet = `${society.name} Main Street`;
-
-      let home = new Home({
-        society_id,
-        house_no: newHouseNo,
-        houseNumber: newHouseNo,
-        street: defaultStreet,
-        residents: [],
-        address: `${newHouseNo}, ${defaultStreet}, ${society.name}`,
-        houseSortOrder: 0,
-        electricity_bill_no: "N/A",
+    const society = await Society.findById(society_id);
+    if (!society) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid Society ID.",
       });
-      await home.save();
+    }
 
-      const randomPassword = Math.random().toString(36).slice(-8);
-      const hashedPassword = await bcrypt.hash(randomPassword, 10);
+    let user = await User.findOne({ email });
+    let isNewUser = false;
 
-      user = new User({
-        user_id: `google_${payload.sub}`,
-        name: name,
-        email: email,
-        phone_no: "N/A",
-        address: `House ${home.house_no}, ${society.name}`,
-        password: hashedPassword,
+    if (!user) {
+      isNewUser = true;
+      const generatedUserId = `google_${email.split('@')[0]}_${Date.now().toString().slice(-4)}`;
+      
+      user = await User.create({
+        user_id: generatedUserId,
+        email,
+        name,
         avatar: picture,
-        home_id: home._id,
-        roles: [{ society_id: society._id, role: "resident" }], // Default to resident for new Google users
-        joined_societies: [society._id],
-        is_verified: true,
-        is_approved: true, // Auto-approve for new Google users for simplicity, adjust as needed
-        electricity_bill_no: "N/A",
+        password: await bcrypt.hash(Date.now().toString(), 10),
+        is_approved: false,
+        roles: [],
+        phone_no: "N/A",
+        address: "N/A",
       });
-      await user.save();
+    }
 
-      home.residents.push(user._id);
-      await home.save();
+    const userRoleInSociety = user.roles.find(
+      (r) => r.society_id.toString() === society_id.toString()
+    );
 
-      // Add user to society members
-      if (!society.members) {
-        society.members = [];
-      }
-      society.members.push(user._id);
-      await society.save();
-
-      // --- DEBUGGING LOGS START (JWT Sign - New Google User) ---
-      console.log("--- JWT Signing (Google Login - New User) ---");
-      console.log("Signing JWT with userId (user._id):", user._id.toString());
-      console.log("Signing JWT with societyId:", society._id.toString());
-      console.log("Signing JWT with role: resident");
-      // --- DEBUGGING LOGS END (JWT Sign - New Google User) ---
+    if (userRoleInSociety && user.is_approved) {
       const token = jwt.sign(
-        { userId: user._id.toString(), societyId: society._id.toString(), role: "resident" }, // Ensure IDs are strings
+        {
+          userId: user._id.toString(),
+          societyId: society_id.toString(),
+          role: userRoleInSociety.role,
+        },
         process.env.JWT_SECRET,
-        { expiresIn: "1h" }
+        { expiresIn: "7d" }
       );
 
       return res.status(200).json({
         success: true,
-        message: "Google login successful",
+        message: "Login successful.",
         token,
         userId: user._id.toString(),
-        houseId: user.home_id?.toString(),
-        societyId: society._id.toString(),
-        userRole: "resident",
+        houseId: user.home_id?.toString() || "",
+        societyId: society_id.toString(),
+        userRole: userRoleInSociety.role,
         userProfile: {
           name: user.name,
           email: user.email,
           avatar: user.avatar,
-          phone_no: user.phone_no,
           address: user.address,
+          phone_no: user.phone_no,
         },
       });
-    }
+    } else {
+      let existingJoinRequest = await JoinRequest.findOne({
+        user_id: user._id,
+        society_id,
+        status: { $in: ["pending", "approved"] },
+      });
 
-  } catch (error) {
-    console.error("Google login backend error:", error);
-    res.status(500).json({ message: "Google login failed", error: error.message });
+      if (existingJoinRequest) {
+        if (existingJoinRequest.status === "pending") {
+          return res.status(403).json({
+            success: false,
+            message:
+              "Your join request for this society is pending admin approval.",
+          });
+        } else if (existingJoinRequest.status === "approved" && !user.is_approved) {
+          return res.status(403).json({
+            success: false,
+            message:
+              "Your join request was approved, but your account is not yet active. Please contact the society admin.",
+          });
+        }
+      } else {
+        await JoinRequest.create({
+          user_id: user._id,
+          society_id,
+          status: "pending",
+          requested_at: new Date(),
+        });
+
+        return res.status(403).json({
+          success: false,
+          message:
+            "Your join request for this society has been submitted and is pending admin approval. You will be notified via email after approval.",
+        });
+      }
+    }
+  } catch (err) {
+    console.error("Google Login Error:", err);
+    if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+      return res.status(401).json({ success: false, message: "Invalid or expired Google token." });
+    }
+    return res.status(500).json({
+      success: false,
+      message: "Server error during Google login. Please try again.",
+    });
   }
 };

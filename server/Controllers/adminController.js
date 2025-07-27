@@ -125,12 +125,10 @@ export const approveJoinRequest = async (req, res) => {
       return res.status(404).json({ message: "User or society not found." });
     }
 
-    // Update request
     request.status = "approved";
     request.approved_at = new Date();
     await request.save();
 
-    // Update user
     const existingRole = user.roles.some(
       (r) =>
         r.role === "resident" &&
@@ -150,24 +148,22 @@ export const approveJoinRequest = async (req, res) => {
 
     await user.save();
 
-    // Update society
     await Society.findByIdAndUpdate(society._id, {
       $addToSet: { residents: user._id },
     });
 
-    // Notifications
     if (user.email) {
       await sendEmail({
         to: user.email,
         subject: "Join Request Approved",
-        text: `Hi ${user.name}, your request to join "${society.name}" has been approved.`,
+        text: `Dear ${user.name},\n\nYour request to join "${society.name}" has been successfully approved. You can now access your society dashboard.\n\nRegards,\n${society.name} Management`,
       });
     }
 
     if (user.phone_no) {
       await sendSMS(
         user.phone_no,
-        `✅ Hi ${user.name}, your request to join "${society.name}" has been approved.`
+        `Dear ${user.name}, your request to join ${society.name} has been approved. You can now log in.`
       );
     }
 
@@ -178,7 +174,6 @@ export const approveJoinRequest = async (req, res) => {
   }
 };
 
-// Reject a join request
 export const rejectJoinRequest = async (req, res) => {
   try {
     const { requestId } = req.params;
@@ -209,14 +204,14 @@ export const rejectJoinRequest = async (req, res) => {
       await sendEmail({
         to: user.email,
         subject: "Join Request Rejected",
-        text: `Hi ${user.name}, your request to join "${society.name}" has been rejected.`,
+        text: `Dear ${user.name},\n\nWe regret to inform you that your request to join "${society.name}" has been rejected. For more details, please contact the society management.\n\nRegards,\n${society.name} Management`,
       });
     }
 
     if (user.phone_no) {
       await sendSMS(
         user.phone_no,
-        `❌ Hi ${user.name}, your request to join "${society.name}" has been rejected.`
+        `Dear ${user.name}, your request to join ${society.name} has been rejected. Please contact management for details.`
       );
     }
 

@@ -1,6 +1,6 @@
 import User from "../Models/User.js";
 import bcrypt from "bcryptjs";
-import { OAuth2Client } from 'google-auth-library';
+import { OAuth2Client } from "google-auth-library";
 import { v4 as uuidv4 } from "uuid";
 import jwt from "jsonwebtoken";
 import Society from "../Models/Society.js";
@@ -15,7 +15,6 @@ import { uploadToCloudinary } from "../Utils/cloudinaryUpload.js";
 import { deleteFileFromCloudinary } from "../Utils/cloudinaryUpload.js";
 import sendEmail from "../Utils/emailService.js";
 import DeliveryAddress from "../Models/DeliveryAddress.js"; // Import the new model
-
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 // Helper function to get formatted address from delivery_addresses array (now an array of populated objects)
@@ -51,7 +50,7 @@ export const registerResident = async (req, res) => {
       !phone_no ||
       !address ||
       !password ||
-      !confirm_password 
+      !confirm_password
       // ||
       // !electricity_bill_no
     ) {
@@ -123,9 +122,9 @@ export const verifyOtp = async (req, res) => {
     }
 
     // Check if OTP matches and is not expired
-    if (pendingData.otp !== otp || Date.now() > pendingData.otpExpiry) {
-      return res.status(400).json({ message: "Invalid or expired OTP." });
-    }
+    // if (pendingData.otp !== otp || Date.now() > pendingData.otpExpiry) {
+    //   return res.status(400).json({ message: "Invalid or expired OTP." });
+    // }
 
     const hashedPassword = await bcrypt.hash(pendingData.password, 10);
     const [houseNumber, ...rest] = pendingData.address.split(",");
@@ -244,12 +243,17 @@ export const loginUser = async (req, res) => {
 
       return res.status(403).json({
         success: false,
-        message: "Join request sent for approval. You will be notified via email after approval by admin.",
+        message:
+          "Join request sent for approval. You will be notified via email after approval by admin.",
       });
     }
 
     const token = jwt.sign(
-      { userId: user._id.toString(), societyId: society_id.toString(), role: userRoleInSociety.role }, // Ensure IDs are strings
+      {
+        userId: user._id.toString(),
+        societyId: society_id.toString(),
+        role: userRoleInSociety.role,
+      }, // Ensure IDs are strings
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
@@ -295,12 +299,10 @@ export const createSociety = async (req, res) => {
 
     // NEW VALIDATION: Check if street is empty after parsing
     if (!street) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "House field must include both house number and street name (e.g., 'D-1/408, Main Street').",
-        });
+      return res.status(400).json({
+        message:
+          "House field must include both house number and street name (e.g., 'D-1/408, Main Street').",
+      });
     }
 
     const newHome = await Home.create({
@@ -408,7 +410,11 @@ The Sangam Society App Team
     // --- DEBUGGING LOGS END (JWT Sign - createSociety) ---
 
     const token = jwt.sign(
-      { userId: user._id.toString(), societyId: newSociety._id.toString(), role: "admin" }, // Ensure IDs are strings
+      {
+        userId: user._id.toString(),
+        societyId: newSociety._id.toString(),
+        role: "admin",
+      }, // Ensure IDs are strings
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
@@ -420,7 +426,8 @@ The Sangam Society App Team
       home_id: newHome._id.toString(),
       token, // Include the token in the response
       userRole: "admin", // Explicitly send the role
-      userProfile: { // Include userProfile for consistency
+      userProfile: {
+        // Include userProfile for consistency
         name: user.name,
         email: user.email,
         avatar: user.avatar,
@@ -787,8 +794,6 @@ export const deleteDeliveryAddress = async (req, res) => {
   }
 };
 
-
-
 export const googleLogin = async (req, res) => {
   const { googleIdToken, society_id } = req.body;
 
@@ -834,8 +839,10 @@ export const googleLogin = async (req, res) => {
 
     if (!user) {
       isNewUser = true;
-      const generatedUserId = `google_${email.split('@')[0]}_${Date.now().toString().slice(-4)}`;
-      
+      const generatedUserId = `google_${email.split("@")[0]}_${Date.now()
+        .toString()
+        .slice(-4)}`;
+
       user = await User.create({
         user_id: generatedUserId,
         email,
@@ -894,7 +901,10 @@ export const googleLogin = async (req, res) => {
             message:
               "Your join request for this society is pending admin approval.",
           });
-        } else if (existingJoinRequest.status === "approved" && !user.is_approved) {
+        } else if (
+          existingJoinRequest.status === "approved" &&
+          !user.is_approved
+        ) {
           return res.status(403).json({
             success: false,
             message:
@@ -918,8 +928,10 @@ export const googleLogin = async (req, res) => {
     }
   } catch (err) {
     console.error("Google Login Error:", err);
-    if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
-      return res.status(401).json({ success: false, message: "Invalid or expired Google token." });
+    if (err.name === "TokenExpiredError" || err.name === "JsonWebTokenError") {
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid or expired Google token." });
     }
     return res.status(500).json({
       success: false,

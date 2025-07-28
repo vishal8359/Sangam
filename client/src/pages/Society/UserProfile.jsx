@@ -280,9 +280,9 @@ export default function UserProfileCard() {
             </motion.div>
 
             <motion.div variants={itemVariants}>
-              <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+              {/* <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
                 <FaBolt color={theme.palette.info.main} /> EB No : {user.electricity_bill_no || "N/A"}
-              </Typography>
+              </Typography> */}
             </motion.div>
             <motion.div variants={itemVariants}>
               <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>

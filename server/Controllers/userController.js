@@ -39,7 +39,7 @@ export const registerResident = async (req, res) => {
       address,
       password,
       confirm_password,
-      // electricity_bill_no,
+      // electricity_bill_no, // Removed as requested
     } = req.body;
 
     const avatarFile = req.file;
@@ -51,8 +51,7 @@ export const registerResident = async (req, res) => {
       !address ||
       !password ||
       !confirm_password
-      // ||
-      // !electricity_bill_no
+      // || !electricity_bill_no // Removed as requested
     ) {
       return res.status(400).json({ message: "All fields are required" });
     }
@@ -93,7 +92,7 @@ export const registerResident = async (req, res) => {
       email,
       address,
       password,
-      // electricity_bill_no,
+      // electricity_bill_no, // Removed as requested
       otp,
       otpExpiry,
       avatar: avatarUrl,
@@ -131,14 +130,14 @@ export const verifyOtp = async (req, res) => {
     const street = rest.join(",").trim();
 
     let home = await Home.findOne({
-      // electricity_bill_no: pendingData.electricity_bill_no,
+      // electricity_bill_no: pendingData.electricity_bill_no, // Removed as requested
       street,
       houseNumber: houseNumber.trim(),
     });
 
     if (!home) {
       home = await Home.create({
-        // electricity_bill_no: pendingData.electricity_bill_no,
+        // electricity_bill_no: pendingData.electricity_bill_no, // Removed as requested
         houseNumber: houseNumber.trim(),
         street,
         houseSortOrder: extractSortOrder(houseNumber),
@@ -283,6 +282,7 @@ export const loginUser = async (req, res) => {
   }
 };
 
+
 export const createSociety = async (req, res) => {
   try {
     const { name, house, contact, email, password, location } = req.body;
@@ -306,7 +306,7 @@ export const createSociety = async (req, res) => {
     }
 
     const newHome = await Home.create({
-      // electricity_bill_no: "N/A-" + uuidv4().split("-")[0],
+      // electricity_bill_no: "N/A-" + uuidv4().split("-")[0], // Removed as requested
       houseNumber: houseNumber.trim(),
       street,
       houseSortOrder: extractSortOrder(houseNumber),
@@ -517,7 +517,7 @@ export const getCurrentUser = async (req, res) => {
         address: user.address,
         delivery_addresses: user.delivery_addresses || [],
         avatar: user.avatar,
-        // electricity_bill_no: user.electricity_bill_no,
+        // electricity_bill_no: user.electricity_bill_no, // Removed as requested
         home_id: user.home_id?.toString(), // Ensure IDs are strings
         societyId: user.roles[0]?.society_id?.toString(), // Ensure IDs are strings
         user_id: user.user_id,
@@ -585,7 +585,7 @@ export const updateCurrentUserProfile = async (req, res) => {
         address: user.address,
         delivery_addresses: user.delivery_addresses || [],
         avatar: user.avatar,
-        // electricity_bill_no: user.electricity_bill_no,
+        // electricity_bill_no: user.electricity_bill_no, // Removed as requested
         home_id: user.home_id?.toString(), // Ensure IDs are strings
         societyId: user.roles[0]?.society_id?.toString(), // Ensure IDs are strings
         user_id: user.user_id,
@@ -597,7 +597,6 @@ export const updateCurrentUserProfile = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 export const addDeliveryAddress = async (req, res) => {
   try {
     const userId = req.user._id;

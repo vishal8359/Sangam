@@ -11,7 +11,7 @@ import {
   CircularProgress,
   Slide,
   Fade,
-  Avatar, 
+  Avatar,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { Link as RouterLink } from "react-router-dom";
@@ -19,7 +19,7 @@ import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
 import register_bg from "../../assets/societyBg.jpg";
-import { CloudUpload } from "@mui/icons-material"; 
+import { CloudUpload } from "@mui/icons-material";
 
 const MotionBox = motion(Box);
 const MotionPaper = motion(Paper);
@@ -32,12 +32,11 @@ export default function Register() {
     email: "",
     phone_no: "",
     address: "",
-    // electricity_bill_no: "",
     password: "",
     confirm_password: "",
   });
-  const [avatarFile, setAvatarFile] = useState(null); 
-  const [avatarPreview, setAvatarPreview] = useState(""); 
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState("");
 
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -54,7 +53,7 @@ export default function Register() {
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) { // setting the limits
+      if (file.size > 2 * 1024 * 1024) {
         toast.error("Avatar file size exceeds 2MB limit.");
         setAvatarFile(null);
         setAvatarPreview("");
@@ -78,7 +77,6 @@ export default function Register() {
       "email",
       "phone_no",
       "address",
-      // "electricity_bill_no",
       "password",
       "confirm_password",
     ];
@@ -103,18 +101,18 @@ export default function Register() {
 
     const dataToSend = new FormData();
     for (const key in formData) {
-      if (key !== "avatar") { // Exclude avatar from direct form data as it's handled as file
+      if (key !== "avatar") {
         dataToSend.append(key, formData[key].trim());
       }
     }
     if (avatarFile) {
-      dataToSend.append("avatar", avatarFile); // Append the actual file
+      dataToSend.append("avatar", avatarFile);
     }
 
     try {
       const { data } = await axios.post("/api/users/register", dataToSend, {
         headers: {
-          "Content-Type": "multipart/form-data", // Important for file uploads
+          "Content-Type": "multipart/form-data",
         },
       });
 
@@ -122,13 +120,11 @@ export default function Register() {
       toast.success(data.message || "Registration submitted. Awaiting OTP.");
       setError(null);
 
-      // Clear form data after successful submission
       setFormData({
         user_name: "",
         email: "",
         phone_no: "",
         address: "",
-        // electricity_bill_no: "",
         password: "",
         confirm_password: "",
       });
@@ -261,7 +257,6 @@ export default function Register() {
               { label: "Email", name: "email", type: "email" },
               { label: "Phone Number", name: "phone_no", type: "tel" },
               { label: "Address", name: "address", multiline: true, rows: 2 },
-              // { label: "Electricity Bill Number", name: "electricity_bill_no" },
               { label: "Password", name: "password", type: "password" },
               {
                 label: "Confirm Password",
@@ -289,7 +284,6 @@ export default function Register() {
               />
             ))}
 
-            {/* Avatar Upload Section */}
             <MotionBox variants={itemVariants} sx={{ my: 2 }}>
               <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
                 Profile Avatar (optional)

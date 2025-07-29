@@ -152,7 +152,7 @@ Push to the branch (git push origin feature/AmazingFeature).
 Open a Pull Request.
 
 ## License 
-This project is licensed under the [MIT License](LICENSE) 
+This project is licensed under the [MIT License](LICENSE.md) 
 
 10. Contact
 Vishal - [vishalgupta8359@gmail.com] - [https://www.linkedin.com/in/vishal-gupta-65068b257/]

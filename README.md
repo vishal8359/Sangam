@@ -7,35 +7,47 @@ Sangam is a comprehensive community platform designed to bridge the gaps in mode
 Sangam is packed with functionalities to create a vibrant and efficient community environment:
 
 Real-time Communication & Community Buzz
+
 Instant Messaging: Engage in real-time chats with individuals or groups.
 Multimedia Sharing: Send and receive images, videos, and audio messages effortlessly.
 Socket.io Integration: Powered by Socket.io for seamless, low-latency communication.
 Cloudinary & Multer: Robust handling of multimedia uploads and storage.
+
 Engaging Short-form Videos (Reels)
 Create & Share Reels: Users can create and upload captivating short-form videos.
 Interactive Engagement: Supports likes ❤️, comments 💬, and shares ↗️ to boost user interaction.
 Follow Functionality: Users can follow their favorite content creators within the community.
+
 Hyperlocal E-commerce & Local Business Empowerment
 Local Marketplace: A dedicated module for local businesses and firms to list and sell their products/services directly to residents.
 Razorpay Integration: Secure and seamless online payment processing.
 Cash on Delivery (COD): Flexible payment options for users.
 GeoJSON for Filtering: Location-based product filtering to ensure relevance for the hyperlocal community.
 Direct-to-Consumer Model: Crucially, Sangam empowers local businesses by allowing them to connect directly with residents, listing their offerings without the platform needing to manage delivery services, thereby significantly boosting local economic growth.
+
 Core Society Management Features
 Polls: Create and participate in community polls for quick decision-making.
+
 Events: Announce, manage, and view upcoming society events.
+
 Notices: Centralized system for official announcements and important notices.
+
 Complaints Management: Residents can easily lodge complaints, and admins can track and resolve them efficiently.
+
 Custom RESTful APIs: Robust backend support for all core functionalities.
+
 Robust Security & Authentication
 Role-Based Authentication: Ensures secure access control based on user roles (e.g., resident, admin).
 JWT (JSON Web Tokens): Secure user authentication and authorization.
 Cookie-Based Sessions: Maintains user sessions securely.
+
 Google Login: Convenient and fast sign-up/login option.
+
 Modern User Interface
 Fully Responsive: Optimized for seamless viewing and interaction across all devices (desktops, tablets, mobiles).
 Intuitive Design: Crafted for a smooth and engaging user experience.
 Dark Mode Support: Built-in toggle for a comfortable viewing experience in low-light conditions.
+
 3. Technical Stack
 Sangam is built using a powerful and modern MERN (MongoDB, Express.js, React.js, Node.js) stack, along with other cutting-edge technologies.
 
@@ -44,16 +56,20 @@ React.js: A declarative, component-based JavaScript library for building dynamic
 Tailwind CSS: A utility-first CSS framework for rapidly building custom designs.
 Material UI: A popular React UI framework implementing Google's Material Design.
 Framer Motion: A production-ready motion library for React to add animations and gestures.
+
 Backend
 Node.js: A JavaScript runtime for building scalable server-side applications.
 Express.js: A fast, unopinionated, minimalist web framework for Node.js.
 RESTful APIs: Designed and implemented for efficient data exchange between frontend and backend.
 Multer: Middleware for handling multipart/form-data, primarily used for file uploads.
+
 Database
 MongoDB: A NoSQL database for flexible, scalable, and high-performance data storage.
+
 Cloud & DevOps
 Render: Platform for deploying and maintaining the application, ensuring high availability and scalability.
 Cloudinary: Cloud-based image and video management service for multimedia storage and delivery.
+
 4. Performance & Reliability
 During development, over 500+ frontend and backend bugs were meticulously diagnosed and resolved, ensuring high performance, scalability, and an overall enhanced user experience. The platform is continuously monitored and maintained to provide reliable service to its active user base.
 
@@ -62,7 +78,8 @@ Total Lines of Code: 28,000+
 Frontend: 22,000+ lines
 Backend: 6,000+ lines
 Current User Base: Serving an active community of 50+ real society members.
-6. Live Demo & Testing
+
+7. Live Demo & Testing
 Experience Sangam firsthand! You can access the application through the web or my Android app.
 
 Accessing the App
@@ -73,6 +90,7 @@ Login/Sign Up: Open the Sangam app (web or Android). If you're new, click the "N
 Join a Society: During the onboarding process, you'll be prompted to join a society.
 Enter Society ID: Use the following Society ID to join the demo community: 68636d886a8a0a8ec7c116f9
 Await Approval: After requesting to join, please wait for an admin approval email. Once approved, log in again to gain full access and explore all the features, including the buzzing community feed and the hyperlocal marketplace!
+
 7. Getting Started (For Developers)
 To set up Sangam locally for development or contribution:
 
@@ -112,6 +130,7 @@ RAZORPAY_KEY_ID="your_razorpay_key_id"
 RAZORPAY_KEY_SECRET="your_razorpay_key_secret"
 # EMAIL_SERVICE_USER="your_email_user"
 # EMAIL_SERVICE_PASS="your_email_pass"
+
 Start the backend server:
 npm start # or node server.js (depending on your entry file)
 Frontend Setup:
@@ -131,6 +150,7 @@ Create your feature branch (git checkout -b feature/AmazingFeature).
 Commit your changes (git commit -m 'Add some AmazingFeature').
 Push to the branch (git push origin feature/AmazingFeature).
 Open a Pull Request.
+
 9. License
 This project is licensed under the MIT License - see the LICENSE file for details. 
 

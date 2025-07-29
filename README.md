@@ -151,8 +151,8 @@ Commit your changes (git commit -m 'Add some AmazingFeature').
 Push to the branch (git push origin feature/AmazingFeature).
 Open a Pull Request.
 
-9. License
-This project is licensed under the MIT License - see the LICENSE file for details. 
+## License 
+This project is licensed under the [MIT License](LICENSE) 
 
 10. Contact
 Vishal - [vishalgupta8359@gmail.com] - [https://www.linkedin.com/in/vishal-gupta-65068b257/]

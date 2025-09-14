@@ -281,6 +281,9 @@ export default function ResidentLogin() {
             <Typography variant="body1" color="text.secondary" textAlign="center" mb={isMobile ? 3 : 4}>
               Access your society dashboard.
             </Typography>
+            <Typography variant="body1" color="text.secondary" textAlign="center" mb={isMobile ? 3 : 4}>
+              Use SocID - 68636d886a8a0a8ec7c116f9
+            </Typography>
           </MotionBox>
 
           <MotionTextField

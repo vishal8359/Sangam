@@ -1,4 +1,4 @@
-name: Sangam CI/CD 
+name: Sangam CI/CD
 
 on:
   push:
@@ -24,17 +24,18 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
+      - name: Clear Backend Cache
+        run: rm -rf ${{ env.BACKEND_DIR }}/node_modules
+
       - name: Restore Node Modules Cache (Backend)
         uses: actions/cache@v4
         with:
-          # Cache path updated to target the 'server' directory
           path: ${{ env.BACKEND_DIR }}/node_modules
           key: ${{ runner.os }}-backend-node-${{ hashFiles(format('{0}/package-lock.json', env.BACKEND_DIR)) }}
           restore-keys: |
             ${{ runner.os }}-backend-node-
 
       - name: Install Backend Dependencies
-        # Commands run inside the 'server' directory
         run: npm install
         working-directory: ${{ env.BACKEND_DIR }}
 
@@ -54,17 +55,18 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
+      - name: Clear Frontend Cache
+        run: rm -rf ${{ env.FRONTEND_DIR }}/node_modules
+
       - name: Restore Node Modules Cache (Frontend)
         uses: actions/cache@v4
         with:
-          # Cache path updated to target the 'client' directory
           path: ${{ env.FRONTEND_DIR }}/node_modules
           key: ${{ runner.os }}-frontend-node-${{ hashFiles(format('{0}/package-lock.json', env.FRONTEND_DIR)) }}
           restore-keys: |
             ${{ runner.os }}-frontend-node-
 
       - name: Install Frontend Dependencies
-        # Commands run inside the 'client' directory
         run: npm install
         working-directory: ${{ env.FRONTEND_DIR }}
 
@@ -83,10 +85,8 @@ jobs:
           path: ${{ env.FRONTEND_DIR }}/build
           retention-days: 1
 
-
   # DEPLOY: TRIGGER RENDER WEBHOOKS
   deploy:
-    # This job only runs if both testing and building jobs succeed
     needs: [test-backend, build-frontend]
     runs-on: ubuntu-latest
     environment: production

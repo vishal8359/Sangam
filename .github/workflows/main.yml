@@ -1,0 +1,106 @@
+name: Sangam CI/CD Integration
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20'
+  # Updated environment variables based on user's project structure
+  FRONTEND_DIR: 'client'
+  BACKEND_DIR: 'server'
+
+jobs:
+  # --- 1. BACKEND: INSTALL & TEST 
+  test-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restore Node Modules Cache (Backend)
+        uses: actions/cache@v4
+        with:
+          # Cache path updated to target the 'server' directory
+          path: ${{ env.BACKEND_DIR }}/node_modules
+          key: ${{ runner.os }}-backend-node-${{ hashFiles(format('{0}/package-lock.json', env.BACKEND_DIR)) }}
+          restore-keys: |
+            ${{ runner.os }}-backend-node-
+
+      - name: Install Backend Dependencies
+        # Commands run inside the 'server' directory
+        run: npm install
+        working-directory: ${{ env.BACKEND_DIR }}
+
+      - name: Run Backend Tests
+        run: npm test
+        working-directory: ${{ env.BACKEND_DIR }}
+
+  # FRONTEND: INSTALL, BUILD & UPLOAD ARTIFACT 
+  build-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restore Node Modules Cache (Frontend)
+        uses: actions/cache@v4
+        with:
+          # Cache path updated to target the 'client' directory
+          path: ${{ env.FRONTEND_DIR }}/node_modules
+          key: ${{ runner.os }}-frontend-node-${{ hashFiles(format('{0}/package-lock.json', env.FRONTEND_DIR)) }}
+          restore-keys: |
+            ${{ runner.os }}-frontend-node-
+
+      - name: Install Frontend Dependencies
+        # Commands run inside the 'client' directory
+        run: npm install
+        working-directory: ${{ env.FRONTEND_DIR }}
+
+      - name: Run Frontend Tests
+        run: npm test
+        working-directory: ${{ env.FRONTEND_DIR }}
+
+      - name: Build Frontend Production Assets
+        run: npm run build
+        working-directory: ${{ env.FRONTEND_DIR }}
+
+      - name: Upload Frontend Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: ${{ env.FRONTEND_DIR }}/build
+          retention-days: 1
+
+
+  # DEPLOY: TRIGGER RENDER WEBHOOKS ---
+  deploy:
+    # This job only runs if both testing and building jobs succeed
+    needs: [test-backend, build-frontend]
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Trigger Backend (Server) Deployment on Render
+        run: |
+          echo "Triggering server deployment via webhook..."
+          curl -X POST -H "Content-Type: application/json" -d "{}" ${{ secrets.RENDER_BACKEND_HOOK }}
+
+      - name: Trigger Frontend (Client) Deployment on Render
+        run: |
+          echo "Triggering client deployment via webhook..."
+          curl -X POST -H "Content-Type: application/json" -d "{}" ${{ secrets.RENDER_FRONTEND_HOOK }}
+
+      - name: Deployment Initiated
+        run: echo "Render deployments for both client and server services have been triggered."
